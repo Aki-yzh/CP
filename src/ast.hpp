@@ -1,37 +1,53 @@
 #pragma once
 #include <iostream>
 #include <string>
+
+using namespace std;
 // 所有 AST 的基类
 class BaseAST {
  public:
   virtual ~BaseAST() = default;
   virtual void Dump() const = 0;
+  virtual void KoopaIR() const = 0;
 };
 
 class CompUnitAST : public BaseAST {
  public:
-  std::unique_ptr<BaseAST> func_def;
+  unique_ptr<BaseAST> func_def;
 
   void Dump() const override {
-    std::cout << "CompUnitAST { ";
+    cout << "CompUnitAST { ";
     func_def->Dump();
-    std::cout << " }";
+    cout << " }";
   }
+  void KoopaIR() const override {
+    func_def->KoopaIR();
+  }
+
+
 };
 
 class FuncDefAST : public BaseAST {
  public:
-  std::unique_ptr<BaseAST> func_type;
-  std::string ident;
-  std::unique_ptr<BaseAST> block;
+  unique_ptr<BaseAST> func_type;
+  string ident;
+  unique_ptr<BaseAST> block;
 
   void Dump() const override {
-    std::cout << "FuncDefAST { ";
+    cout << "FuncDefAST { ";
     func_type->Dump();
-    std::cout << ", " << ident << ", ";
+    cout << ", " << ident << ", ";
     block->Dump();
-    std::cout << " }";
+    cout << " }";
   }
+  void KoopaIR() const override {
+    cout << "fun @" << ident << "(): ";
+    func_type->KoopaIR();
+    cout << " {" << endl;
+    block->KoopaIR();
+    cout << endl << "}" << endl;
+  }
+
 };
 
 // 自己补充
@@ -39,22 +55,33 @@ class FuncDefAST : public BaseAST {
 class FuncTypeAST : public BaseAST {
  public:
   void Dump() const override {
-     std::cout << "FuncTypeAST { int }";
+     cout << "FuncTypeAST { int }";
+  }
+  void KoopaIR() const override {
+    cout << "i32";
   }
 };
 class BlockAST : public BaseAST {
  public:
-  std::unique_ptr<BaseAST> stmt;
+  unique_ptr<BaseAST> stmt;
   void Dump() const override {
-    std::cout << "BlockAST { ";
+    cout << "BlockAST { ";
     stmt->Dump();
-    std::cout << " }";
+    cout << " }";
+  }
+  void KoopaIR() const override {
+    cout << "%entry:" << endl;
+    cout << "  ";
+    stmt->KoopaIR();
   }
 };
 class StmtAST : public BaseAST {
  public:
-  std::int32_t number;
+  int32_t number;
   void Dump() const override {
-    std::cout << "StmtAST { "<<number<<" }";
+    cout << "StmtAST { "<<number<<" }";
+  }
+  void KoopaIR() const override {
+    cout << "ret " << number;
   }
 };

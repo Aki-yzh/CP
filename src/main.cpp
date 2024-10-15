@@ -4,6 +4,8 @@
 #include <memory>
 #include <string>
 #include "ast.hpp"
+#include <sstream>
+#include <fstream>
 
 using namespace std;
 
@@ -27,14 +29,27 @@ int main(int argc, const char *argv[]) {
   yyin = fopen(input, "r");
   assert(yyin);
 
+  ofstream outputfile(output);
+  assert(outputfile);
+
+
   // parse input file
   unique_ptr<BaseAST> ast;
   auto ret = yyparse(ast);
   assert(!ret);
 
-  // dump AST
-  ast->Dump();
-  cout << endl;
+
+
+  stringstream ss;
+  streambuf *coutbuf = cout.rdbuf(ss.rdbuf());
+  ast->KoopaIR();
+  cout.rdbuf(outputfile.rdbuf());
+  if(string(mode)=="-koopa")
+  {
+    cout << ss.str();
+  }
+  cout.rdbuf(coutbuf);
+  outputfile.close();
 
   return 0;
 }
