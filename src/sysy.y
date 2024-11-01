@@ -45,7 +45,7 @@ using namespace std;
 %token LAND LOR
 %token <str_val> IDENT RELOP EQOP
 %token <int_val> INT_CONST
-%token <char_val> MulOp
+%token <char_val> MULOP
 // 非终结符的类型定义
 // lv3.3参考语法规范，新添加的有Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
 %type <ast_val> FuncDef FuncType Block Stmt Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
@@ -181,7 +181,7 @@ MulExp
     ast->unaryexp = unique_ptr<BaseAST>($1);
     $$=ast;
   }
-  | MulExp MulOp UnaryExp {
+  | MulExp MULOP UnaryExp {
     auto ast=new MulExpAST();
     ast->type = 2;
     ast->mulexp = unique_ptr<BaseAST>($1);
