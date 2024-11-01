@@ -136,12 +136,14 @@ class UnaryExpAST : public BaseAST
       if (unaryop == '-') 
       {
         cout << "  %" << koopacnt << " = sub 0, %" << koopacnt - 1 << endl;
+        koopacnt++;
       } 
       else if (unaryop == '!') 
       {
         cout << "  %" << koopacnt << " = eq 0, %" << koopacnt - 1 << endl;
+        koopacnt++;
       }
-      koopacnt++;
+     
     }
   }
 };
