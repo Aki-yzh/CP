@@ -43,14 +43,14 @@ using namespace std;
 // 添加 比较运算符
 %token INT RETURN
 %token LAND LOR
-%token <str_val> IDENT RELOP EQOP ADDOP
+%token <str_val> IDENT RELOP EQOP
 %token <int_val> INT_CONST
 
 // 非终结符的类型定义
 // lv3.3参考语法规范，新添加的有Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
 %type <ast_val> FuncDef FuncType Block Stmt Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
 %type <int_val> Number
-%type <char_val> UnaryOp MulOp 
+%type <char_val> UnaryOp MulOp AddOp
 
 %%
 
@@ -212,17 +212,24 @@ AddExp
     ast->mulexp = unique_ptr<BaseAST>($1);
     $$=ast;
   }
-  | AddExp ADDOP MulExp {
+  | AddExp AddOp MulExp {
     auto ast=new AddExpAST();
     ast->type = 2;
     ast->addexp = unique_ptr<BaseAST>($1);
-    ast->addop = *unique_ptr<string>($2);
+    ast->addop = $2;
     ast->mulexp = unique_ptr<BaseAST>($3);
     $$=ast;
   }
   ;
 
-
+AddOp
+  : '+' {
+    $$ = '+';
+  }
+  | '-' {
+    $$ = '-';
+  }
+  ;
 
 //RelExp      ::= AddExp | RelExp ("<" | ">" | "<=" | ">=") AddExp;
 RelExp

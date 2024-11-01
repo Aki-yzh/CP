@@ -184,7 +184,7 @@ class MulExpAST : public BaseAST {
 class AddExpAST : public BaseAST {
  public:
   int type;
-  string addop;
+  char addop;
   unique_ptr<BaseAST> addexp;
   unique_ptr<BaseAST> mulexp;
   void KoopaIR() const override{
@@ -196,12 +196,12 @@ class AddExpAST : public BaseAST {
     int left = koopacnt-1;
     mulexp->KoopaIR();
     int right = koopacnt-1;
-    if(addop=="+") {
+    if(addop=='+') {
       cout << "  %" << koopacnt << " = add %";
       cout << left << ", %" << right << endl;
       koopacnt++;
     }
-    else if(addop=="-") {
+    else if(addop=='-') {
       cout << "  %" << koopacnt << " = sub %";
       cout << left << ", %" << right << endl;
       koopacnt++;
