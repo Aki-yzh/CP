@@ -33,6 +33,7 @@ Hexadecimal   0[xX][0-9a-fA-F]+
 RelOp         [<>]=?
 EqOp          [!=]=
 MulOp         [*/%]
+
 %%
 
 {WhiteSpace}    { /* 忽略, 不做任何操作 */ }
@@ -47,7 +48,8 @@ MulOp         [*/%]
 "&&"            { return LAND; }
 "||"            { return LOR; }
 {MulOp}         { yylval.char_val = yytext[0]; return MULOP; }
-
+"+"             { yylval.char_val = '+'; return AddOp; }
+"-"             { yylval.char_val = '-'; return AddOp; }
 
 {Identifier}    { yylval.str_val = new string(yytext); return IDENT; }
 
