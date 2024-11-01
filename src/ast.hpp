@@ -5,33 +5,35 @@
 using namespace std;
 static int koopacnt = 0;
 // 所有 AST 的基类
-class BaseAST {
+class BaseAST 
+{
  public:
   virtual ~BaseAST() = default;
-  
   virtual void KoopaIR() const = 0;
 };
 
-class CompUnitAST : public BaseAST {
+class CompUnitAST : public BaseAST 
+{
  public:
   unique_ptr<BaseAST> func_def;
-
-
-  void KoopaIR() const override {
+  void KoopaIR() const override
+  {
     func_def->KoopaIR();
   }
 
 
 };
 
-class FuncDefAST : public BaseAST {
+class FuncDefAST : public BaseAST 
+{
  public:
   unique_ptr<BaseAST> func_type;
   string ident;
   unique_ptr<BaseAST> block;
 
 
-  void KoopaIR() const override {
+  void KoopaIR() const override 
+  {
     cout << "fun @" << ident << "(): ";
     func_type->KoopaIR();
     cout << " {" << endl;
@@ -43,20 +45,23 @@ class FuncDefAST : public BaseAST {
 
 // 自己补充
 
-class FuncTypeAST : public BaseAST {
+class FuncTypeAST : public BaseAST 
+{
  public:
-
-  void KoopaIR() const override {
+  void KoopaIR() const override 
+  {
     cout << "i32";
   }
 };
-class BlockAST : public BaseAST {
+
+class BlockAST : public BaseAST 
+{
  public:
   unique_ptr<BaseAST> stmt;
 
-  void KoopaIR() const override {
-    cout << "%entry:" << endl;
-    cout << "  ";
+  void KoopaIR() const override 
+  {
+    cout << "%entry:" << endl<< "  ";
     stmt->KoopaIR();
   }
 };
