@@ -52,12 +52,11 @@ int main(int argc, const char *argv[]) {
   }
   else if(string(mode) == "-riscv")
   {
-    char* str = new char[ss.str().length()+1];
-    strcpy(str, ss.str().c_str());
+
     // 解析字符串 str, 得到 Koopa IR 程序
     koopa_program_t program;
-    koopa_error_code_t ret = koopa_parse_from_string(str, &program);
-    delete []str;
+    koopa_error_code_t ret = koopa_parse_from_string(ss.str().c_str(), &program);
+    
     assert(ret == KOOPA_EC_SUCCESS);  // 确保解析时没有出错
     // 创建一个 raw program builder, 用来构建 raw program
     koopa_raw_program_builder_t builder = koopa_new_raw_program_builder();
