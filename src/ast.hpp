@@ -193,33 +193,40 @@ class MulExpAST : public BaseAST
 
 // AddExp ::= MulExp | AddExp AddOp MulExp;
 // AddOp ::= "+" | "-"
-class AddExpAST : public BaseAST {
+class AddExpAST : public BaseAST 
+{
  public:
+  // type 为 1 时为 MulExp
+  // 在 type 为 2 时 为 AddExp AddOp MulExp
   int type;
   char addop;
   unique_ptr<BaseAST> addexp;
   unique_ptr<BaseAST> mulexp;
-  void KoopaIR() const override{
-  if(type==1) {
-    mulexp->KoopaIR();
-  }
-  else if(type==2) {
-    addexp->KoopaIR();
-    int left = koopacnt-1;
-    mulexp->KoopaIR();
-    int right = koopacnt-1;
-    if(addop=='+') {
-      cout << "  %" << koopacnt << " = add %";
-      cout << left << ", %" << right << endl;
-      koopacnt++;
+
+  void KoopaIR() const override 
+  {
+    if (type == 1) 
+    {
+      mulexp->KoopaIR();
+    } 
+    else if (type == 2) 
+    {
+      addexp->KoopaIR();
+      int left = koopacnt - 1;
+      mulexp->KoopaIR();
+      int right = koopacnt - 1;
+      if (addop == '+') 
+      {
+        cout << "  %" << koopacnt << " = add %" << left << ", %" << right << endl;
+        koopacnt++;
+      } 
+      else if (addop == '-') 
+      {
+        cout << "  %" << koopacnt << " = sub %" << left << ", %" << right << endl;
+        koopacnt++;
+      }
     }
-    else if(addop=='-') {
-      cout << "  %" << koopacnt << " = sub %";
-      cout << left << ", %" << right << endl;
-      koopacnt++;
-    }
   }
-}
 };
 
 // RelExp ::= AddExp | RelExp RelOp AddExp;
