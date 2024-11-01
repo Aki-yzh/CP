@@ -45,13 +45,13 @@ using namespace std;
 %token LAND LOR
 %token <str_val> IDENT RELOP EQOP
 %token <int_val> INT_CONST
-%token <char_val> MULOP AddOp
-
+%token <char_val> MULOP
 // 非终结符的类型定义
 // lv3.3参考语法规范，新添加的有Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
 %type <ast_val> FuncDef FuncType Block Stmt Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
 %type <int_val> Number
-%type <char_val> UnaryOp  
+%type <char_val> UnaryOp  AddOp
+
 %%
 
 // 开始符, CompUnit ::= FuncDef, 大括号后声明了解析完成后 parser 要做的事情
@@ -173,7 +173,7 @@ UnaryOp
     $$ = '!';
   }
   ;
-//MulExp      ::= UnaryExp | MulExp ("*" | "/" | "%") UnaryExp;这里将乘法相关符号也归纳下
+//MulExp      ::= UnaryExp | MulExp ("*" | "/" | "%") 
 MulExp
   : UnaryExp {
     auto ast=new MulExpAST();
@@ -210,8 +210,15 @@ AddExp
     $$=ast;
   }
   ;
-
-
+//不知道为什么写token里过不了样例，所以写这了
+AddOp
+  : '+' {
+    $$ = '+';
+  }
+  | '-' {
+    $$ = '-';
+  }
+  ;
 
 //RelExp      ::= AddExp | RelExp ("<" | ">" | "<=" | ">=") AddExp;
 RelExp

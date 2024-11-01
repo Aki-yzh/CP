@@ -48,8 +48,7 @@ MulOp         [*/%]
 "&&"            { return LAND; }
 "||"            { return LOR; }
 {MulOp}         { yylval.char_val = yytext[0]; return MULOP; }
-"+"             { yylval.char_val = '+'; return AddOp; }
-"-"             { yylval.char_val = '-'; return AddOp; }
+
 
 {Identifier}    { yylval.str_val = new string(yytext); return IDENT; }
 
