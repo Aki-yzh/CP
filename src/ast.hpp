@@ -172,19 +172,17 @@ class MulExpAST : public BaseAST
       int left = koopacnt - 1;
       unaryexp->KoopaIR();
       int right = koopacnt - 1;
-      if (mulop == '*') 
+      static const unordered_map<char, string> mulop_map = 
       {
-        cout << "  %" << koopacnt << " = mul %" << left << ", %" << right << endl;
-        koopacnt++;
-      } 
-      else if (mulop == '/') 
+        {'*', "mul"},
+        {'/', "div"},
+        {'%', "mod"}
+      };
+
+      auto it = mulop_map.find(mulop);
+      if (it != mulop_map.end()) 
       {
-        cout << "  %" << koopacnt << " = div %" << left << ", %" << right << endl;
-        koopacnt++;
-      } 
-      else if (mulop == '%') 
-      {
-        cout << "  %" << koopacnt << " = mod %" << left << ", %" << right << endl;
+        cout << "  %" << koopacnt << " = " << it->second << " %" << left << ", %" << right << endl;
         koopacnt++;
       }
      
@@ -216,14 +214,16 @@ class AddExpAST : public BaseAST
       int left = koopacnt - 1;
       mulexp->KoopaIR();
       int right = koopacnt - 1;
-      if (addop == '+') 
+      static const unordered_map<char, string> addop_map = 
       {
-        cout << "  %" << koopacnt << " = add %" << left << ", %" << right << endl;
-        koopacnt++;
-      } 
-      else if (addop == '-') 
+        {'+', "add"},
+        {'-', "sub"}
+      };
+
+      auto it = addop_map.find(addop);
+      if (it != addop_map.end()) 
       {
-        cout << "  %" << koopacnt << " = sub %" << left << ", %" << right << endl;
+        cout << "  %" << koopacnt << " = " << it->second << " %" << left << ", %" << right << endl;
         koopacnt++;
       }
     }
@@ -255,7 +255,7 @@ class RelExpAST : public BaseAST
       int left = koopacnt - 1;
       addexp->KoopaIR();
       int right = koopacnt - 1;
-            static const unordered_map<string, string> relop_map = 
+      static const unordered_map<string, string> relop_map = 
       {
         {"<", "lt"},
         {">", "gt"},
@@ -299,14 +299,16 @@ class EqExpAST : public BaseAST
       int left = koopacnt - 1;
       relexp->KoopaIR();
       int right = koopacnt - 1;
-      if (eqop == "==") 
+      static const unordered_map<string, string> eqop_map = 
       {
-        cout << "  %" << koopacnt << " = eq %" << left << ", %" << right << endl;
-        koopacnt++;
-      } 
-      else if (eqop == "!=") 
+        {"==", "eq"},
+        {"!=", "ne"}
+      };
+
+      auto it = eqop_map.find(eqop);
+      if (it != eqop_map.end()) 
       {
-        cout << "  %" << koopacnt << " = ne %" << left << ", %" << right << endl;
+        cout << "  %" << koopacnt << " = " << it->second << " %" << left << ", %" << right << endl;
         koopacnt++;
       }
       
