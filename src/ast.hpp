@@ -351,34 +351,35 @@ class LAndExpAST : public BaseAST
   }
 };
 
-
 // LOrExp  ::= LAndExp | LOrExp "||" LAndExp;
-class LOrExpAST : public BaseAST {
+class LOrExpAST : public BaseAST 
+{
  public:
+  // type 为 1 时为 LAndExp
+  // 在 type 为 2 时 为 LOrExp "||" LAndExp
   int type;
   unique_ptr<BaseAST> lorexp;
   unique_ptr<BaseAST> landexp;
-  void KoopaIR() const override {
-  if(type==1) {
-    landexp->KoopaIR();
+
+  void KoopaIR() const override 
+  {
+    if (type == 1) 
+    {
+      landexp->KoopaIR();
+    } 
+    else if (type == 2) 
+    {
+      lorexp->KoopaIR();
+      int left = koopacnt - 1;
+      landexp->KoopaIR();
+      int right = koopacnt - 1;
+      // A||B <==> (A!=0)|(B!=0)
+      cout << "  %" << koopacnt << " = ne %" << left << ", 0" << endl;
+      left = koopacnt++;
+      cout << "  %" << koopacnt << " = ne %" << right << ", 0" << endl;
+      right = koopacnt++;
+      cout << "  %" << koopacnt << " = or %" << left << ", %" << right << endl;
+      koopacnt++;
+    }
   }
-  else if(type==2) {
-    lorexp->KoopaIR();
-    int left = koopacnt-1;
-    landexp->KoopaIR();
-    int right = koopacnt-1;
-    // A||B <==> (A!=0)|(B!=0)
-    cout << "  %" << koopacnt << " = ne %";
-    cout << left << ", 0" << endl;
-    left = koopacnt;
-    koopacnt++;
-    cout << "  %" << koopacnt << " = ne %";
-    cout << right << ", 0" << endl;
-    right = koopacnt;
-    koopacnt++;
-    cout << "  %" << koopacnt << " = or %";
-    cout << left << ", %" << right << endl;
-    koopacnt++;
-  }
-}
 };
