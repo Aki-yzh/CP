@@ -172,18 +172,19 @@ class MulExpAST : public BaseAST
       int left = koopacnt - 1;
       unaryexp->KoopaIR();
       int right = koopacnt - 1;
-       static const unordered_map<string, string> relop_map = 
+      if (mulop == '*') 
       {
-        {"<", "lt"},
-        {">", "gt"},
-        {"<=", "le"},
-        {">=", "ge"}
-      };
-
-      auto it = relop_map.find(relop);
-      if (it != relop_map.end()) 
+        cout << "  %" << koopacnt << " = mul %" << left << ", %" << right << endl;
+        koopacnt++;
+      } 
+      else if (mulop == '/') 
       {
-        cout << "  %" << koopacnt << " = " << it->second << " %" << left << ", %" << right << endl;
+        cout << "  %" << koopacnt << " = div %" << left << ", %" << right << endl;
+        koopacnt++;
+      } 
+      else if (mulop == '%') 
+      {
+        cout << "  %" << koopacnt << " = mod %" << left << ", %" << right << endl;
         koopacnt++;
       }
      
@@ -254,25 +255,19 @@ class RelExpAST : public BaseAST
       int left = koopacnt - 1;
       addexp->KoopaIR();
       int right = koopacnt - 1;
-      if (relop == "<") 
+            static const unordered_map<string, string> relop_map = 
       {
-        cout << "  %" << koopacnt << " = lt %" << left << ", %" << right << endl;
-         koopacnt++;
-      } 
-      else if (relop == ">") 
+        {"<", "lt"},
+        {">", "gt"},
+        {"<=", "le"},
+        {">=", "ge"}
+      };
+
+      auto it = relop_map.find(relop);
+      if (it != relop_map.end()) 
       {
-        cout << "  %" << koopacnt << " = gt %" << left << ", %" << right << endl;
-         koopacnt++;
-      } 
-      else if (relop == "<=") 
-      {
-        cout << "  %" << koopacnt << " = le %" << left << ", %" << right << endl;
-         koopacnt++;
-      } 
-      else if (relop == ">=") 
-      {
-        cout << "  %" << koopacnt << " = ge %" << left << ", %" << right << endl;
-         koopacnt++;
+        cout << "  %" << koopacnt << " = " << it->second << " %" << left << ", %" << right << endl;
+        koopacnt++;
       }
      
     }
