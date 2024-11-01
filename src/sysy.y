@@ -1,4 +1,5 @@
-%code requires {
+%code requires 
+{
   #include <memory>
   #include <string>
   #include "ast.hpp"
@@ -30,7 +31,8 @@ using namespace std;
 // 至于为什么要用字符串指针而不直接用 string 或者 unique_ptr<string>?
 // 请自行 STFW 在 union 里写一个带析构函数的类会出现什么情况
 
-%union {
+%union 
+{
   std::string *str_val;
   int int_val;
   BaseAST *ast_val;
@@ -50,7 +52,7 @@ using namespace std;
 // lv3.3参考语法规范，新添加的有Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
 %type <ast_val> FuncDef FuncType Block Stmt Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
 %type <int_val> Number
-%type <char_val> UnaryOp  AddOp
+%type <char_val> UnaryOp AddOp
 
 %%
 
@@ -60,7 +62,8 @@ using namespace std;
 // 此时我们应该把 FuncDef 返回的结果收集起来, 作为 AST 传给调用 parser 的函数
 // $1 指代规则里第一个符号的返回值, 也就是 FuncDef 的返回值
 CompUnit
-  : FuncDef {
+  : FuncDef 
+  {
     auto comp_unit = make_unique<CompUnitAST>();
     comp_unit->func_def = unique_ptr<BaseAST>($1);
     ast = move(comp_unit);
@@ -80,7 +83,8 @@ CompUnit
 
 //FuncDef     ::= FuncType IDENT "(" ")" Block;
 FuncDef
-  : FuncType IDENT '(' ')' Block {
+  : FuncType IDENT '(' ')' Block 
+  {
     auto ast = new FuncDefAST();
     ast->func_type = unique_ptr<BaseAST>($1);
     ast->ident = *unique_ptr<string>($2);
@@ -92,14 +96,16 @@ FuncDef
 // 同上, 不再解释
 //FuncType    ::= "int";
 FuncType
-  : INT {
+  : INT 
+  {
     auto ast = new FuncTypeAST();
     $$ = ast;
   }
   ;
 //Block       ::= "{" Stmt "}";
 Block
-  : '{' Stmt '}' {
+  : '{' Stmt '}' 
+  {
     auto ast = new BlockAST();
     ast->stmt = unique_ptr<BaseAST>($2);
     $$ = ast;
@@ -107,7 +113,8 @@ Block
   ;
 //Stmt        ::= "return" Exp ";";
 Stmt
-  : RETURN Exp ';' {
+  : RETURN Exp ';' 
+  {
     auto ast = new StmtAST();
     ast->exp = unique_ptr<BaseAST>($2);
     $$ = ast;
@@ -115,7 +122,8 @@ Stmt
   ;
 //Number      ::= INT_CONST;
 Number
-  : INT_CONST {
+  : INT_CONST 
+  {
     $$ = $1;
   }
   ;
@@ -123,7 +131,8 @@ Number
 
 // Exp         ::= LOrExp;
 Exp
-  : LOrExp {
+  : LOrExp 
+  {
     auto ast = new ExpAST();
     ast->lorexp = unique_ptr<BaseAST>($1);
     $$ = ast;
@@ -131,167 +140,186 @@ Exp
   ;
 // PrimaryExp  ::= "(" Exp ")" | Number;
 PrimaryExp
-  : '(' Exp ')' {
-    auto ast=new PrimaryExpAST();
+  : '(' Exp ')' 
+  {
+    auto ast = new PrimaryExpAST();
     ast->type = 1;
     ast->exp = unique_ptr<BaseAST>($2);
-    $$=ast;
+    $$ = ast;
   }
-  | Number {
-    auto ast=new PrimaryExpAST();
+  | Number 
+  {
+    auto ast = new PrimaryExpAST();
     ast->type = 2;
     ast->number = $1;
-    $$=ast;
+    $$ = ast;
   }
-  ;//
+  ;
 
 //UnaryExp    ::= PrimaryExp | UnaryOp UnaryExp;
 UnaryExp
-  : PrimaryExp {
-    auto ast=new UnaryExpAST();
+  : PrimaryExp 
+  {
+    auto ast = new UnaryExpAST();
     ast->type = 1;
     ast->primaryexp1_unaryexp2 = unique_ptr<BaseAST>($1);
-    $$=ast;
+    $$ = ast;
   }
-  | UnaryOp UnaryExp {
-    auto ast=new UnaryExpAST();
+  | UnaryOp UnaryExp 
+  {
+    auto ast = new UnaryExpAST();
     ast->type = 2;
     ast->unaryop = $1;
     ast->primaryexp1_unaryexp2 = unique_ptr<BaseAST>($2);
-    $$=ast;
+    $$ = ast;
   }
   ;
 //UnaryOp     ::= "+" | "-" | "!";
 UnaryOp
-  : '+' {
+  : '+' 
+  {
     $$ = '+';
   }
-  | '-' {
+  | '-' 
+  {
     $$ = '-';
   }
-  | '!' {
+  | '!' 
+  {
     $$ = '!';
   }
   ;
 //MulExp      ::= UnaryExp | MulExp ("*" | "/" | "%") 
 MulExp
-  : UnaryExp {
-    auto ast=new MulExpAST();
+  : UnaryExp 
+  {
+    auto ast = new MulExpAST();
     ast->type = 1;
     ast->unaryexp = unique_ptr<BaseAST>($1);
-    $$=ast;
+    $$ = ast;
   }
-  | MulExp MULOP UnaryExp {
-    auto ast=new MulExpAST();
+  | MulExp MULOP UnaryExp 
+  {
+    auto ast = new MulExpAST();
     ast->type = 2;
     ast->mulexp = unique_ptr<BaseAST>($1);
     ast->mulop = $2;
     ast->unaryexp = unique_ptr<BaseAST>($3);
-    $$=ast;
+    $$ = ast;
   }
   ;
 
-
-
 //AddExp      ::= MulExp | AddExp ("+" | "-") MulExp;
 AddExp
-  : MulExp {
-    auto ast=new AddExpAST();
+  : MulExp 
+  {
+    auto ast = new AddExpAST();
     ast->type = 1;
     ast->mulexp = unique_ptr<BaseAST>($1);
-    $$=ast;
+    $$ = ast;
   }
-  | AddExp AddOp MulExp {
-    auto ast=new AddExpAST();
+  | AddExp AddOp MulExp 
+  {
+    auto ast = new AddExpAST();
     ast->type = 2;
     ast->addexp = unique_ptr<BaseAST>($1);
     ast->addop = $2;
     ast->mulexp = unique_ptr<BaseAST>($3);
-    $$=ast;
+    $$ = ast;
   }
   ;
 //不知道为什么写token里过不了样例，所以写这了
 AddOp
-  : '+' {
+  : '+' 
+  {
     $$ = '+';
   }
-  | '-' {
+  | '-' 
+  {
     $$ = '-';
   }
   ;
 
 //RelExp      ::= AddExp | RelExp ("<" | ">" | "<=" | ">=") AddExp;
 RelExp
-  : AddExp {
-    auto ast=new RelExpAST();
+  : AddExp 
+  {
+    auto ast = new RelExpAST();
     ast->type = 1;
     ast->addexp = unique_ptr<BaseAST>($1);
-    $$=ast;
+    $$ = ast;
   }
-  | RelExp RELOP AddExp {
-    auto ast=new RelExpAST();
+  | RelExp RELOP AddExp 
+  {
+    auto ast = new RelExpAST();
     ast->type = 2;
     ast->relexp = unique_ptr<BaseAST>($1);
     ast->relop = *unique_ptr<string>($2);
     ast->addexp = unique_ptr<BaseAST>($3);
-    $$=ast;
+    $$ = ast;
   }
   ;
 // EqExp       ::= RelExp | EqExp ("==" | "!=") RelExp;
 EqExp
-  : RelExp {
-    auto ast=new EqExpAST();
+  : RelExp 
+  {
+    auto ast = new EqExpAST();
     ast->type = 1;
     ast->relexp = unique_ptr<BaseAST>($1);
-    $$=ast;
+    $$ = ast;
   }
-  | EqExp EQOP RelExp {
-    auto ast=new EqExpAST();
+  | EqExp EQOP RelExp 
+  {
+    auto ast = new EqExpAST();
     ast->type = 2;
     ast->eqexp = unique_ptr<BaseAST>($1);
     ast->eqop = *unique_ptr<string>($2);
     ast->relexp = unique_ptr<BaseAST>($3);
-    $$=ast;
+    $$ = ast;
   }
   ;
 //LAndExp     ::= EqExp | LAndExp "&&" EqExp;
 LAndExp
-  : EqExp {
-    auto ast=new LAndExpAST();
+  : EqExp 
+  {
+    auto ast = new LAndExpAST();
     ast->type = 1;
     ast->eqexp = unique_ptr<BaseAST>($1);
-    $$=ast;
+    $$ = ast;
   }
-  | LAndExp LAND EqExp {
-    auto ast=new LAndExpAST();
+  | LAndExp LAND EqExp 
+  {
+    auto ast = new LAndExpAST();
     ast->type = 2;
     ast->landexp = unique_ptr<BaseAST>($1);
     ast->eqexp = unique_ptr<BaseAST>($3);
-    $$=ast;
+    $$ = ast;
   }
   ;
 //LOrExp      ::= LAndExp | LOrExp "||" LAndExp;
 LOrExp
-  : LAndExp {
-    auto ast=new LOrExpAST();
+  : LAndExp 
+  {
+    auto ast = new LOrExpAST();
     ast->type = 1;
     ast->landexp = unique_ptr<BaseAST>($1);
-    $$=ast;
+    $$ = ast;
   }
-  | LOrExp LOR LAndExp {
-    auto ast=new LOrExpAST();
+  | LOrExp LOR LAndExp 
+  {
+    auto ast = new LOrExpAST();
     ast->type = 2;
     ast->lorexp = unique_ptr<BaseAST>($1);
     ast->landexp = unique_ptr<BaseAST>($3);
-    $$=ast;
+    $$ = ast;
   }
   ;
-
 
 %%
 
 // 定义错误处理函数, 其中第二个参数是错误信息
 // parser 如果发生错误 (例如输入的程序出现了语法错误), 就会调用这个函数
-void yyerror(unique_ptr<BaseAST> &ast, const char *s) {
+void yyerror(unique_ptr<BaseAST> &ast, const char *s) 
+{
   cerr << "error: " << s << endl;
 }
