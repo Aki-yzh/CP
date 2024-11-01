@@ -32,7 +32,7 @@ Hexadecimal   0[xX][0-9a-fA-F]+
 /* 比较运算符 */
 RelOp         [<>]=?
 EqOp          [!=]=
-AddOp         [+-]
+MULOP         [*/%]
 %%
 
 {WhiteSpace}    { /* 忽略, 不做任何操作 */ }
@@ -44,11 +44,9 @@ AddOp         [+-]
 
 {RelOp}         { yylval.str_val = new string(yytext); return RELOP; }
 {EqOp}          { yylval.str_val = new string(yytext); return EQOP; }
-{AddOp}         { yylval.char_val = yytext[0]; return ADDOP; }
 "&&"            { return LAND; }
 "||"            { return LOR; }
-
-
+{MULOP}         { yylval.char_val = yytext[0]; return MulOp; }
 
 
 {Identifier}    { yylval.str_val = new string(yytext); return IDENT; }
