@@ -147,42 +147,48 @@ class UnaryExpAST : public BaseAST
     }
   }
 };
-
 // MulExp ::= UnaryExp | MulExp MulOp UnaryExp;
 // MulOp ::= "*" | "/" | "%"
-class MulExpAST : public BaseAST {
+class MulExpAST : public BaseAST 
+{
  public:
+  // type 为 1 时为 UnaryExp
+  // 在 type 为 2 时 为 MulExp MulOp UnaryExp
   int type;
   char mulop;
   unique_ptr<BaseAST> mulexp;
   unique_ptr<BaseAST> unaryexp;
-  void KoopaIR() const override {
-    
-  if(type==1) {
-    unaryexp->KoopaIR();
+
+  void KoopaIR() const override 
+  {
+    if (type == 1) 
+    {
+      unaryexp->KoopaIR();
+    } 
+    else if (type == 2) 
+    {
+      mulexp->KoopaIR();
+      int left = koopacnt - 1;
+      unaryexp->KoopaIR();
+      int right = koopacnt - 1;
+      if (mulop == '*') 
+      {
+        cout << "  %" << koopacnt << " = mul %" << left << ", %" << right << endl;
+        koopacnt++;
+      } 
+      else if (mulop == '/') 
+      {
+        cout << "  %" << koopacnt << " = div %" << left << ", %" << right << endl;
+        koopacnt++;
+      } 
+      else if (mulop == '%') 
+      {
+        cout << "  %" << koopacnt << " = mod %" << left << ", %" << right << endl;
+        koopacnt++;
+      }
+     
+    }
   }
-  else if(type==2) {
-    mulexp->KoopaIR();
-    int left = koopacnt-1;
-    unaryexp->KoopaIR();
-    int right = koopacnt-1;
-    if(mulop=='*') {
-      cout << "  %" << koopacnt << " = mul %";
-      cout << left << ", %" << right << endl;
-      koopacnt++;
-    }
-    else if(mulop=='/') {
-      cout << "  %" << koopacnt << " = div %";
-      cout << left << ", %" << right << endl;
-      koopacnt++;
-    }
-    else if(mulop=='%') {
-      cout << "  %" << koopacnt << " = mod %";
-      cout << left << ", %" << right << endl;
-      koopacnt++;
-    }
-  }
-}
 };
 
 // AddExp ::= MulExp | AddExp AddOp MulExp;
