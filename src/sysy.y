@@ -45,12 +45,13 @@ using namespace std;
 %token LAND LOR
 %token <str_val> IDENT RELOP EQOP
 %token <int_val> INT_CONST
+%token <char_val> ADDOP
 
 // 非终结符的类型定义
 // lv3.3参考语法规范，新添加的有Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
 %type <ast_val> FuncDef FuncType Block Stmt Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
 %type <int_val> Number
-%type <char_val> UnaryOp MulOp AddOp
+%type <char_val> UnaryOp MulOp
 
 %%
 
@@ -212,7 +213,7 @@ AddExp
     ast->mulexp = unique_ptr<BaseAST>($1);
     $$=ast;
   }
-  | AddExp AddOp MulExp {
+  | AddExp ADDOP MulExp {
     auto ast=new AddExpAST();
     ast->type = 2;
     ast->addexp = unique_ptr<BaseAST>($1);
@@ -222,14 +223,6 @@ AddExp
   }
   ;
 
-AddOp
-  : '+' {
-    $$ = '+';
-  }
-  | '-' {
-    $$ = '-';
-  }
-  ;
 
 //RelExp      ::= AddExp | RelExp ("<" | ">" | "<=" | ">=") AddExp;
 RelExp
