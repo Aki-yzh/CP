@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <string>
+#include <unordered_map>
 
 using namespace std;
 static int koopacnt = 0;
@@ -171,19 +172,18 @@ class MulExpAST : public BaseAST
       int left = koopacnt - 1;
       unaryexp->KoopaIR();
       int right = koopacnt - 1;
-      if (mulop == '*') 
+       static const unordered_map<string, string> relop_map = 
       {
-        cout << "  %" << koopacnt << " = mul %" << left << ", %" << right << endl;
-        koopacnt++;
-      } 
-      else if (mulop == '/') 
+        {"<", "lt"},
+        {">", "gt"},
+        {"<=", "le"},
+        {">=", "ge"}
+      };
+
+      auto it = relop_map.find(relop);
+      if (it != relop_map.end()) 
       {
-        cout << "  %" << koopacnt << " = div %" << left << ", %" << right << endl;
-        koopacnt++;
-      } 
-      else if (mulop == '%') 
-      {
-        cout << "  %" << koopacnt << " = mod %" << left << ", %" << right << endl;
+        cout << "  %" << koopacnt << " = " << it->second << " %" << left << ", %" << right << endl;
         koopacnt++;
       }
      
