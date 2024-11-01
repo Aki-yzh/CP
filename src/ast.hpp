@@ -119,31 +119,31 @@ class PrimaryExpAST : public BaseAST
 
 // UnaryExp ::= PrimaryExp | UnaryOp UnaryExp;
 // UnaryOp ::= "+" | "-" | "!"
-class UnaryExpAST : public BaseAST {
+class UnaryExpAST : public BaseAST 
+{
  public:
-  int type;
-  char unaryop;
   // type 为 1 时为 PrimaryExp
   // 在 type 为 2 时 为 UnaryOp UnaryExp
+  int type;
+  char unaryop;
   unique_ptr<BaseAST> primaryexp1_unaryexp2;
-  void KoopaIR() const override{
-  if(type==1) {
+
+  void KoopaIR() const override 
+  {
     primaryexp1_unaryexp2->KoopaIR();
-  }
-  else if(type==2) {
-    primaryexp1_unaryexp2->KoopaIR();
-    if(unaryop=='-') {
-      cout << "  %" << koopacnt << " = sub 0, %";
-      cout << koopacnt-1 <<endl;
+    if (type == 2) 
+    {
+      if (unaryop == '-') 
+      {
+        cout << "  %" << koopacnt << " = sub 0, %" << koopacnt - 1 << endl;
+      } 
+      else if (unaryop == '!') 
+      {
+        cout << "  %" << koopacnt << " = eq 0, %" << koopacnt - 1 << endl;
+      }
       koopacnt++;
     }
-    else if(unaryop=='!') {
-      cout << "  %" << koopacnt << " = eq 0, %";
-      cout << koopacnt-1 <<endl;
-      koopacnt++;
-    }
   }
-}
 };
 
 // MulExp ::= UnaryExp | MulExp MulOp UnaryExp;
