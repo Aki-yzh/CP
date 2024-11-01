@@ -79,7 +79,7 @@ class StmtAST : public BaseAST {
 // Stmt ::= "return" Exp ";";
 class StmtAST : public BaseAST {
  public:
-  std::unique_ptr<BaseAST> exp;
+  unique_ptr<BaseAST> exp;
   void KoopaIR() const override
   {
     exp->KoopaIR();
@@ -90,7 +90,7 @@ class StmtAST : public BaseAST {
 // Exp ::= LOrExp;
 class ExpAST : public BaseAST {
  public:
-  std::unique_ptr<BaseAST> lorexp;
+  unique_ptr<BaseAST> lorexp;
   void KoopaIR() const override {
   lorexp->KoopaIR();
 }
@@ -100,15 +100,15 @@ class ExpAST : public BaseAST {
 class PrimaryExpAST : public BaseAST {
  public:
   int type;
-  std::unique_ptr<BaseAST> exp;
-  std::int32_t number;
+  unique_ptr<BaseAST> exp;
+  int32_t number;
   void KoopaIR() const override {
   if(type==1) {
     exp->KoopaIR();
   }
   else if(type==2) {
-    std::cout << "  %" << koopacnt << " = add 0, ";
-    std::cout<< number << std::endl;
+    cout << "  %" << koopacnt << " = add 0, ";
+    cout<< number << endl;
     koopacnt++;
   }
 }
@@ -122,7 +122,7 @@ class UnaryExpAST : public BaseAST {
   char unaryop;
   // primaryexp1_unaryexp2 表示在 type 为 1 时为 PrimaryExp
   // 在 type 为 2 时 为 UnaryExp
-  std::unique_ptr<BaseAST> primaryexp1_unaryexp2;
+  unique_ptr<BaseAST> primaryexp1_unaryexp2;
   void KoopaIR() const override{
   if(type==1) {
     primaryexp1_unaryexp2->KoopaIR();
@@ -130,13 +130,13 @@ class UnaryExpAST : public BaseAST {
   else if(type==2) {
     primaryexp1_unaryexp2->KoopaIR();
     if(unaryop=='-') {
-      std::cout << "  %" << koopacnt << " = sub 0, %";
-      std::cout << koopacnt-1 <<std::endl;
+      cout << "  %" << koopacnt << " = sub 0, %";
+      cout << koopacnt-1 <<endl;
       koopacnt++;
     }
     else if(unaryop=='!') {
-      std::cout << "  %" << koopacnt << " = eq 0, %";
-      std::cout << koopacnt-1 <<std::endl;
+      cout << "  %" << koopacnt << " = eq 0, %";
+      cout << koopacnt-1 <<endl;
       koopacnt++;
     }
   }
@@ -149,8 +149,8 @@ class MulExpAST : public BaseAST {
  public:
   int type;
   char mulop;
-  std::unique_ptr<BaseAST> mulexp;
-  std::unique_ptr<BaseAST> unaryexp;
+  unique_ptr<BaseAST> mulexp;
+  unique_ptr<BaseAST> unaryexp;
   void KoopaIR() const override {
   if(type==1) {
     unaryexp->KoopaIR();
@@ -161,18 +161,18 @@ class MulExpAST : public BaseAST {
     unaryexp->KoopaIR();
     int right = koopacnt-1;
     if(mulop=='*') {
-      std::cout << "  %" << koopacnt << " = mul %";
-      std::cout << left << ", %" << right << std::endl;
+      cout << "  %" << koopacnt << " = mul %";
+      cout << left << ", %" << right << endl;
       koopacnt++;
     }
     else if(mulop=='/') {
-      std::cout << "  %" << koopacnt << " = div %";
-      std::cout << left << ", %" << right << std::endl;
+      cout << "  %" << koopacnt << " = div %";
+      cout << left << ", %" << right << endl;
       koopacnt++;
     }
     else if(mulop=='%') {
-      std::cout << "  %" << koopacnt << " = mod %";
-      std::cout << left << ", %" << right << std::endl;
+      cout << "  %" << koopacnt << " = mod %";
+      cout << left << ", %" << right << endl;
       koopacnt++;
     }
   }
@@ -184,9 +184,9 @@ class MulExpAST : public BaseAST {
 class AddExpAST : public BaseAST {
  public:
   int type;
-  char addop;
-  std::unique_ptr<BaseAST> addexp;
-  std::unique_ptr<BaseAST> mulexp;
+  string addop;
+  unique_ptr<BaseAST> addexp;
+  unique_ptr<BaseAST> mulexp;
   void KoopaIR() const override{
   if(type==1) {
     mulexp->KoopaIR();
@@ -196,14 +196,14 @@ class AddExpAST : public BaseAST {
     int left = koopacnt-1;
     mulexp->KoopaIR();
     int right = koopacnt-1;
-    if(addop=='+') {
-      std::cout << "  %" << koopacnt << " = add %";
-      std::cout << left << ", %" << right << std::endl;
+    if(addop=="+") {
+      cout << "  %" << koopacnt << " = add %";
+      cout << left << ", %" << right << endl;
       koopacnt++;
     }
-    else if(addop=='-') {
-      std::cout << "  %" << koopacnt << " = sub %";
-      std::cout << left << ", %" << right << std::endl;
+    else if(addop=="-") {
+      cout << "  %" << koopacnt << " = sub %";
+      cout << left << ", %" << right << endl;
       koopacnt++;
     }
   }
@@ -215,9 +215,9 @@ class AddExpAST : public BaseAST {
 class RelExpAST : public BaseAST {
  public:
   int type;
-  std::string relop;
-  std::unique_ptr<BaseAST> relexp;
-  std::unique_ptr<BaseAST> addexp;
+  string relop;
+  unique_ptr<BaseAST> relexp;
+  unique_ptr<BaseAST> addexp;
   void KoopaIR() const override{
   if(type==1) {
     addexp->KoopaIR();
@@ -228,23 +228,23 @@ class RelExpAST : public BaseAST {
     addexp->KoopaIR();
     int right = koopacnt-1;
     if(relop=="<") {
-      std::cout << "  %" << koopacnt << " = lt %";
-      std::cout << left << ", %" << right << std::endl;
+      cout << "  %" << koopacnt << " = lt %";
+      cout << left << ", %" << right << endl;
       koopacnt++;
     }
     else if(relop==">") {
-      std::cout << "  %" << koopacnt << " = gt %";
-      std::cout << left << ", %" << right << std::endl;
+      cout << "  %" << koopacnt << " = gt %";
+      cout << left << ", %" << right << endl;
       koopacnt++;
     }
     else if(relop=="<=") {
-      std::cout << "  %" << koopacnt << " = le %";
-      std::cout << left << ", %" << right << std::endl;
+      cout << "  %" << koopacnt << " = le %";
+      cout << left << ", %" << right << endl;
       koopacnt++;
     }
     else if(relop==">=") {
-      std::cout << "  %" << koopacnt << " = ge %";
-      std::cout << left << ", %" << right << std::endl;
+      cout << "  %" << koopacnt << " = ge %";
+      cout << left << ", %" << right << endl;
       koopacnt++;
     }
   }
@@ -256,9 +256,9 @@ class RelExpAST : public BaseAST {
 class EqExpAST : public BaseAST {
  public:
   int type;
-  std::string eqop;
-  std::unique_ptr<BaseAST> eqexp;
-  std::unique_ptr<BaseAST> relexp;
+  string eqop;
+  unique_ptr<BaseAST> eqexp;
+  unique_ptr<BaseAST> relexp;
   void KoopaIR() const override{
   if(type==1) {
     relexp->KoopaIR();
@@ -269,13 +269,13 @@ class EqExpAST : public BaseAST {
     relexp->KoopaIR();
     int right = koopacnt-1;
     if(eqop=="==") {
-      std::cout << "  %" << koopacnt << " = eq %";
-      std::cout << left << ", %" << right << std::endl;
+      cout << "  %" << koopacnt << " = eq %";
+      cout << left << ", %" << right << endl;
       koopacnt++;
     }
     else if(eqop=="!=") {
-      std::cout << "  %" << koopacnt << " = ne %";
-      std::cout << left << ", %" << right << std::endl;
+      cout << "  %" << koopacnt << " = ne %";
+      cout << left << ", %" << right << endl;
       koopacnt++;
     }
   }
@@ -286,8 +286,8 @@ class EqExpAST : public BaseAST {
 class LAndExpAST : public BaseAST {
  public:
   int type;
-  std::unique_ptr<BaseAST> landexp;
-  std::unique_ptr<BaseAST> eqexp;
+  unique_ptr<BaseAST> landexp;
+  unique_ptr<BaseAST> eqexp;
   void KoopaIR() const override{
   if(type==1) {
     eqexp->KoopaIR();
@@ -298,16 +298,16 @@ class LAndExpAST : public BaseAST {
     eqexp->KoopaIR();
     int right = koopacnt-1;
     // A&&B <==> (A!=0)&(B!=0)
-    std::cout << "  %" << koopacnt << " = ne %";
-    std::cout << left << ", 0" << std::endl;
+    cout << "  %" << koopacnt << " = ne %";
+    cout << left << ", 0" << endl;
     left = koopacnt;
     koopacnt++;
-    std::cout << "  %" << koopacnt << " = ne %";
-    std::cout << right << ", 0" << std::endl;
+    cout << "  %" << koopacnt << " = ne %";
+    cout << right << ", 0" << endl;
     right = koopacnt;
     koopacnt++;
-    std::cout << "  %" << koopacnt << " = and %";
-    std::cout << left << ", %" << right << std::endl;
+    cout << "  %" << koopacnt << " = and %";
+    cout << left << ", %" << right << endl;
     koopacnt++;
   }
 }
@@ -318,8 +318,8 @@ class LAndExpAST : public BaseAST {
 class LOrExpAST : public BaseAST {
  public:
   int type;
-  std::unique_ptr<BaseAST> lorexp;
-  std::unique_ptr<BaseAST> landexp;
+  unique_ptr<BaseAST> lorexp;
+  unique_ptr<BaseAST> landexp;
   void KoopaIR() const override {
   if(type==1) {
     landexp->KoopaIR();
@@ -330,16 +330,16 @@ class LOrExpAST : public BaseAST {
     landexp->KoopaIR();
     int right = koopacnt-1;
     // A||B <==> (A!=0)|(B!=0)
-    std::cout << "  %" << koopacnt << " = ne %";
-    std::cout << left << ", 0" << std::endl;
+    cout << "  %" << koopacnt << " = ne %";
+    cout << left << ", 0" << endl;
     left = koopacnt;
     koopacnt++;
-    std::cout << "  %" << koopacnt << " = ne %";
-    std::cout << right << ", 0" << std::endl;
+    cout << "  %" << koopacnt << " = ne %";
+    cout << right << ", 0" << endl;
     right = koopacnt;
     koopacnt++;
-    std::cout << "  %" << koopacnt << " = or %";
-    std::cout << left << ", %" << right << std::endl;
+    cout << "  %" << koopacnt << " = or %";
+    cout << left << ", %" << right << endl;
     koopacnt++;
   }
 }
