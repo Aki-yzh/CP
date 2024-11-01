@@ -68,42 +68,54 @@ class BlockAST : public BaseAST
 //从这里开始需要修改
 
 // Stmt ::= "return" Exp ";";
-class StmtAST : public BaseAST {
+class StmtAST : public BaseAST 
+{
  public:
   unique_ptr<BaseAST> exp;
-  void KoopaIR() const override
+
+  void KoopaIR() const override 
   {
     exp->KoopaIR();
-    cout << "  ret %" << koopacnt-1;
+    cout << "  ret %" << koopacnt - 1;
   }
 };
 
 // Exp ::= LOrExp;
-class ExpAST : public BaseAST {
+class ExpAST : public BaseAST 
+{
  public:
   unique_ptr<BaseAST> lorexp;
-  void KoopaIR() const override {
-  lorexp->KoopaIR();
-}
+
+  void KoopaIR() const override 
+  {
+    lorexp->KoopaIR();
+  }
 };
 
 // PrimaryExp ::= "(" Exp ")" | Number;
-class PrimaryExpAST : public BaseAST {
+class PrimaryExpAST : public BaseAST 
+{
  public:
+  // type 为 1 时为 "(" Exp ")"
+  // type 为 2 时为 Number
   int type;
   unique_ptr<BaseAST> exp;
   int32_t number;
-  void KoopaIR() const override {
-  if(type==1) {
-    exp->KoopaIR();
+
+  void KoopaIR() const override 
+  {
+    if (type == 1) 
+    {
+      exp->KoopaIR();
+    } 
+    else if (type == 2) 
+    {
+      cout << "  %" << koopacnt << " = add 0, " << number << endl;
+      koopacnt++;
+    }
   }
-  else if(type==2) {
-    cout << "  %" << koopacnt << " = add 0, ";
-    cout<< number << endl;
-    koopacnt++;
-  }
-}
 };
+
 
 // UnaryExp ::= PrimaryExp | UnaryOp UnaryExp;
 // UnaryOp ::= "+" | "-" | "!"
