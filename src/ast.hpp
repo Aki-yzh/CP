@@ -134,14 +134,16 @@ class UnaryExpAST : public BaseAST
     primaryexp1_unaryexp2->KoopaIR();
     if (type == 2) 
     {
-      if (unaryop == '-') 
+      static const unordered_map<char, string> unaryop_map = 
       {
-        cout << "  %" << koopacnt << " = sub 0, %" << koopacnt - 1 << endl;
-        koopacnt++;
-      } 
-      else if (unaryop == '!') 
+        {'-', "sub 0, %"},
+        {'!', "eq 0, %"}
+      };
+
+      auto it = unaryop_map.find(unaryop);
+      if (it != unaryop_map.end()) 
       {
-        cout << "  %" << koopacnt << " = eq 0, %" << koopacnt - 1 << endl;
+        cout << "  %" << koopacnt << " = " << it->second << koopacnt - 1 << endl;
         koopacnt++;
       }
      
