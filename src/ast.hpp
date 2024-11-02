@@ -250,31 +250,31 @@ class RelExpAST : public BaseAST
 
   void KoopaIR() const override 
   {
-    if (type == 1) 
+    switch (type)
     {
-      addexp->KoopaIR();
-    } 
-    else if (type == 2) 
-    {
-      relexp->KoopaIR();
-      int left = koopacnt - 1;
-      addexp->KoopaIR();
-      int right = koopacnt - 1;
-      static const unordered_map<string, string> relop_map = 
-      {
-        {"<", "lt"},
-        {">", "gt"},
-        {"<=", "le"},
-        {">=", "ge"}
-      };
+      case 1:
+        addexp->KoopaIR();
+        break;
+      case 2:
+        relexp->KoopaIR();
+        int left = koopacnt - 1;
+        addexp->KoopaIR();
+        int right = koopacnt - 1;
+        static const unordered_map<string, string> relop_map = 
+        {
+          {"<", "lt"},
+          {">", "gt"},
+          {"<=", "le"},
+          {">=", "ge"}
+        };
 
-      auto it = relop_map.find(relop);
-      if (it != relop_map.end()) 
-      {
-        cout << "  %" << koopacnt << " = " << it->second << " %" << left << ", %" << right << endl;
-        koopacnt++;
-      }
-     
+        auto it = relop_map.find(relop);
+        if (it != relop_map.end()) 
+        {
+          cout << "  %" << koopacnt << " = " << it->second << " %" << left << ", %" << right << endl;
+          koopacnt++;
+        }
+        break;
     }
   }
 };
@@ -294,29 +294,30 @@ class EqExpAST : public BaseAST
 
   void KoopaIR() const override 
   {
-    if (type == 1) 
-    {
-      relexp->KoopaIR();
-    } 
-    else if (type == 2) 
-    {
-      eqexp->KoopaIR();
-      int left = koopacnt - 1;
-      relexp->KoopaIR();
-      int right = koopacnt - 1;
-      static const unordered_map<string, string> eqop_map = 
-      {
-        {"==", "eq"},
-        {"!=", "ne"}
-      };
 
-      auto it = eqop_map.find(eqop);
-      if (it != eqop_map.end()) 
-      {
-        cout << "  %" << koopacnt << " = " << it->second << " %" << left << ", %" << right << endl;
-        koopacnt++;
-      }
-      
+    switch (type)
+    {
+      case 1:
+        relexp->KoopaIR();
+        break;
+      case 2:
+        eqexp->KoopaIR();
+        int left = koopacnt - 1;
+        relexp->KoopaIR();
+        int right = koopacnt - 1;
+        static const unordered_map<string, string> eqop_map = 
+        {
+          {"==", "eq"},
+          {"!=", "ne"}
+        };
+
+        auto it = eqop_map.find(eqop);
+        if (it != eqop_map.end()) 
+        {
+          cout << "  %" << koopacnt << " = " << it->second << " %" << left << ", %" << right << endl;
+          koopacnt++;
+        }
+        break;
     }
   }
 };
@@ -332,23 +333,25 @@ class LAndExpAST : public BaseAST
 
   void KoopaIR() const override 
   {
-    if (type == 1) 
+
+    switch (type)
     {
-      eqexp->KoopaIR();
-    } 
-    else if (type == 2) 
-    {
-      landexp->KoopaIR();
-      int left = koopacnt - 1;
-      eqexp->KoopaIR();
-      int right = koopacnt - 1;
-      // A&&B <==> (A!=0)&(B!=0)
-      cout << "  %" << koopacnt << " = ne %" << left << ", 0" << endl;
-      left = koopacnt++;
-      cout << "  %" << koopacnt << " = ne %" << right << ", 0" << endl;
-      right = koopacnt++;
-      cout << "  %" << koopacnt << " = and %" << left << ", %" << right << endl;
-      koopacnt++;
+      case 1:
+        eqexp->KoopaIR();
+        break;
+      case 2:
+        landexp->KoopaIR();
+        int left = koopacnt - 1;
+        eqexp->KoopaIR();
+        int right = koopacnt - 1;
+        // A&&B <==> (A!=0)&(B!=0)
+        cout << "  %" << koopacnt << " = ne %" << left << ", 0" << endl;
+        left = koopacnt++;
+        cout << "  %" << koopacnt << " = ne %" << right << ", 0" << endl;
+        right = koopacnt++;
+        cout << "  %" << koopacnt << " = and %" << left << ", %" << right << endl;
+        koopacnt++;
+        break;
     }
   }
 };
@@ -365,23 +368,24 @@ class LOrExpAST : public BaseAST
 
   void KoopaIR() const override 
   {
-    if (type == 1) 
+    switch (type)
     {
-      landexp->KoopaIR();
-    } 
-    else if (type == 2) 
-    {
-      lorexp->KoopaIR();
-      int left = koopacnt - 1;
-      landexp->KoopaIR();
-      int right = koopacnt - 1;
-      // A||B <==> (A!=0)|(B!=0)
-      cout << "  %" << koopacnt << " = ne %" << left << ", 0" << endl;
-      left = koopacnt++;
-      cout << "  %" << koopacnt << " = ne %" << right << ", 0" << endl;
-      right = koopacnt++;
-      cout << "  %" << koopacnt << " = or %" << left << ", %" << right << endl;
-      koopacnt++;
+      case 1:
+        landexp->KoopaIR();
+        break;
+      case 2:
+        lorexp->KoopaIR();
+        int left = koopacnt - 1;
+        landexp->KoopaIR();
+        int right = koopacnt - 1;
+        // A||B <==> (A!=0)|(B!=0)
+        cout << "  %" << koopacnt << " = ne %" << left << ", 0" << endl;
+        left = koopacnt++;
+        cout << "  %" << koopacnt << " = ne %" << right << ", 0" << endl;
+        right = koopacnt++;
+        cout << "  %" << koopacnt << " = or %" << left << ", %" << right << endl;
+        koopacnt++;
+        break;
     }
   }
 };
