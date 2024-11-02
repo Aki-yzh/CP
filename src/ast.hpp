@@ -165,7 +165,7 @@ class MulExpAST : public BaseAST
 
   void KoopaIR() const override 
   {
-    switch type
+    switch (type)
     {
       case 1:
         unaryexp->KoopaIR();
@@ -207,7 +207,7 @@ class AddExpAST : public BaseAST
 
   void KoopaIR() const override 
   {
-    switch type
+    switch (type)
     {
       case 1:
         mulexp->KoopaIR();
