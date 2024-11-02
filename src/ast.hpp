@@ -105,14 +105,15 @@ class PrimaryExpAST : public BaseAST
 
   void KoopaIR() const override 
   {
-    if (type == 1) 
+    switch (type) 
     {
-      exp->KoopaIR();
-    } 
-    else if (type == 2) 
-    {
-      cout << "  %" << koopacnt << " = add 0, " << number << endl;
-      koopacnt++;
+      case 1:
+        exp->KoopaIR();
+        break;
+      case 2:
+        cout << "  %" << koopacnt << " = add 0, " << number << endl;
+        koopacnt++;
+        break;
     }
   }
 };
@@ -164,30 +165,30 @@ class MulExpAST : public BaseAST
 
   void KoopaIR() const override 
   {
-    if (type == 1) 
+    switch type
     {
-      unaryexp->KoopaIR();
-    } 
-    else if (type == 2) 
-    {
-      mulexp->KoopaIR();
-      int left = koopacnt - 1;
-      unaryexp->KoopaIR();
-      int right = koopacnt - 1;
-      static const unordered_map<char, string> mulop_map = 
-      {
-        {'*', "mul"},
-        {'/', "div"},
-        {'%', "mod"}
-      };
+      case 1:
+        unaryexp->KoopaIR();
+        break;
+      case 2:
+        mulexp->KoopaIR();
+        int left = koopacnt - 1;
+        unaryexp->KoopaIR();
+        int right = koopacnt - 1;
+        static const unordered_map<char, string> mulop_map = 
+        {
+          {'*', "mul"},
+          {'/', "div"},
+          {'%', "mod"}
+        };
 
-      auto it = mulop_map.find(mulop);
-      if (it != mulop_map.end()) 
-      {
-        cout << "  %" << koopacnt << " = " << it->second << " %" << left << ", %" << right << endl;
-        koopacnt++;
-      }
-     
+        auto it = mulop_map.find(mulop);
+        if (it != mulop_map.end()) 
+        {
+          cout << "  %" << koopacnt << " = " << it->second << " %" << left << ", %" << right << endl;
+          koopacnt++;
+        }
+        break;
     }
   }
 };
@@ -206,29 +207,31 @@ class AddExpAST : public BaseAST
 
   void KoopaIR() const override 
   {
-    if (type == 1) 
+    switch type
     {
-      mulexp->KoopaIR();
-    } 
-    else if (type == 2) 
-    {
-      addexp->KoopaIR();
-      int left = koopacnt - 1;
-      mulexp->KoopaIR();
-      int right = koopacnt - 1;
-      static const unordered_map<char, string> addop_map = 
-      {
-        {'+', "add"},
-        {'-', "sub"}
-      };
+      case 1:
+        mulexp->KoopaIR();
+        break;
+      case 2:
+        addexp->KoopaIR();
+        int left = koopacnt - 1;
+        mulexp->KoopaIR();
+        int right = koopacnt - 1;
+        static const unordered_map<char, string> addop_map = 
+        {
+          {'+', "add"},
+          {'-', "sub"}
+        };
 
-      auto it = addop_map.find(addop);
-      if (it != addop_map.end()) 
-      {
-        cout << "  %" << koopacnt << " = " << it->second << " %" << left << ", %" << right << endl;
-        koopacnt++;
-      }
+        auto it = addop_map.find(addop);
+        if (it != addop_map.end()) 
+        {
+          cout << "  %" << koopacnt << " = " << it->second << " %" << left << ", %" << right << endl;
+          koopacnt++;
+        }
+        break;
     }
+    
   }
 };
 
