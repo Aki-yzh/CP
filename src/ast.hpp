@@ -10,16 +10,16 @@ class BaseAST
 {
  public:
   virtual ~BaseAST() = default;
-  virtual void KoopaIR() const = 0;
+  virtual void Dump() const = 0;
 };
 
 class CompUnitAST : public BaseAST 
 {
  public:
   unique_ptr<BaseAST> func_def;
-  void KoopaIR() const override
+  void Dump() const override
   {
-    func_def->KoopaIR();
+    func_def->Dump();
   }
 
 
@@ -33,12 +33,12 @@ class FuncDefAST : public BaseAST
   unique_ptr<BaseAST> block;
 
 
-  void KoopaIR() const override 
+  void Dump() const override 
   {
     cout << "fun @" << ident << "(): ";
-    func_type->KoopaIR();
+    func_type->Dump();
     cout << " {" << endl;
-    block->KoopaIR();
+    block->Dump();
     cout << endl << "}" << endl;
   }
 
@@ -49,7 +49,7 @@ class FuncDefAST : public BaseAST
 class FuncTypeAST : public BaseAST 
 {
  public:
-  void KoopaIR() const override 
+  void Dump() const override 
   {
     cout << "i32";
   }
@@ -60,10 +60,10 @@ class BlockAST : public BaseAST
  public:
   unique_ptr<BaseAST> stmt;
 
-  void KoopaIR() const override 
+  void Dump() const override 
   {
     cout << "%entry:" << endl<< "  ";
-    stmt->KoopaIR();
+    stmt->Dump();
   }
 };
 //lv3从这里开始需要修改
@@ -74,9 +74,9 @@ class StmtAST : public BaseAST
  public:
   unique_ptr<BaseAST> exp;
 
-  void KoopaIR() const override 
+  void Dump() const override 
   {
-    exp->KoopaIR();
+    exp->Dump();
     cout << "  ret %" << koopacnt - 1;
   }
 };
@@ -87,9 +87,9 @@ class ExpAST : public BaseAST
  public:
   unique_ptr<BaseAST> lorexp;
 
-  void KoopaIR() const override 
+  void Dump() const override 
   {
-    lorexp->KoopaIR();
+    lorexp->Dump();
   }
 };
 
@@ -103,12 +103,12 @@ class PrimaryExpAST : public BaseAST
   unique_ptr<BaseAST> exp;
   int32_t number;
 
-  void KoopaIR() const override 
+  void Dump() const override 
   {
     switch (type) 
     {
       case 1:
-        exp->KoopaIR();
+        exp->Dump();
         break;
       case 2:
         cout << "  %" << koopacnt << " = add 0, " << number << endl;
@@ -130,9 +130,9 @@ class UnaryExpAST : public BaseAST
   char unaryop;
   unique_ptr<BaseAST> primaryexp1_unaryexp2;
 
-  void KoopaIR() const override 
+  void Dump() const override 
   {
-    primaryexp1_unaryexp2->KoopaIR();
+    primaryexp1_unaryexp2->Dump();
     if (type == 2) 
     {
       static const unordered_map<char, string> unaryop_map = 
@@ -163,17 +163,17 @@ class MulExpAST : public BaseAST
   unique_ptr<BaseAST> mulexp;
   unique_ptr<BaseAST> unaryexp;
 
-  void KoopaIR() const override 
+  void Dump() const override 
   {
     switch (type)
     {
       case 1:
-        unaryexp->KoopaIR();
+        unaryexp->Dump();
         break;
       case 2:
-        mulexp->KoopaIR();
+        mulexp->Dump();
         int left = koopacnt - 1;
-        unaryexp->KoopaIR();
+        unaryexp->Dump();
         int right = koopacnt - 1;
         static const unordered_map<char, string> mulop_map = 
         {
@@ -205,17 +205,17 @@ class AddExpAST : public BaseAST
   unique_ptr<BaseAST> addexp;
   unique_ptr<BaseAST> mulexp;
 
-  void KoopaIR() const override 
+  void Dump() const override 
   {
     switch (type)
     {
       case 1:
-        mulexp->KoopaIR();
+        mulexp->Dump();
         break;
       case 2:
-        addexp->KoopaIR();
+        addexp->Dump();
         int left = koopacnt - 1;
-        mulexp->KoopaIR();
+        mulexp->Dump();
         int right = koopacnt - 1;
         static const unordered_map<char, string> addop_map = 
         {
@@ -248,17 +248,17 @@ class RelExpAST : public BaseAST
   unique_ptr<BaseAST> relexp;
   unique_ptr<BaseAST> addexp;
 
-  void KoopaIR() const override 
+  void Dump() const override 
   {
     switch (type)
     {
       case 1:
-        addexp->KoopaIR();
+        addexp->Dump();
         break;
       case 2:
-        relexp->KoopaIR();
+        relexp->Dump();
         int left = koopacnt - 1;
-        addexp->KoopaIR();
+        addexp->Dump();
         int right = koopacnt - 1;
         static const unordered_map<string, string> relop_map = 
         {
@@ -292,18 +292,18 @@ class EqExpAST : public BaseAST
   unique_ptr<BaseAST> eqexp;
   unique_ptr<BaseAST> relexp;
 
-  void KoopaIR() const override 
+  void Dump() const override 
   {
 
     switch (type)
     {
       case 1:
-        relexp->KoopaIR();
+        relexp->Dump();
         break;
       case 2:
-        eqexp->KoopaIR();
+        eqexp->Dump();
         int left = koopacnt - 1;
-        relexp->KoopaIR();
+        relexp->Dump();
         int right = koopacnt - 1;
         static const unordered_map<string, string> eqop_map = 
         {
@@ -331,18 +331,18 @@ class LAndExpAST : public BaseAST
   unique_ptr<BaseAST> landexp;
   unique_ptr<BaseAST> eqexp;
 
-  void KoopaIR() const override 
+  void Dump() const override 
   {
 
     switch (type)
     {
       case 1:
-        eqexp->KoopaIR();
+        eqexp->Dump();
         break;
       case 2:
-        landexp->KoopaIR();
+        landexp->Dump();
         int left = koopacnt - 1;
-        eqexp->KoopaIR();
+        eqexp->Dump();
         int right = koopacnt - 1;
         // A&&B <==> (A!=0)&(B!=0)
         cout << "  %" << koopacnt << " = ne %" << left << ", 0" << endl;
@@ -366,17 +366,17 @@ class LOrExpAST : public BaseAST
   unique_ptr<BaseAST> lorexp;
   unique_ptr<BaseAST> landexp;
 
-  void KoopaIR() const override 
+  void Dump() const override 
   {
     switch (type)
     {
       case 1:
-        landexp->KoopaIR();
+        landexp->Dump();
         break;
       case 2:
-        lorexp->KoopaIR();
+        lorexp->Dump();
         int left = koopacnt - 1;
-        landexp->KoopaIR();
+        landexp->Dump();
         int right = koopacnt - 1;
         // A||B <==> (A!=0)|(B!=0)
         cout << "  %" << koopacnt << " = ne %" << left << ", 0" << endl;

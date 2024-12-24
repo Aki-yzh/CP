@@ -11,8 +11,6 @@ void Visit(const koopa_raw_basic_block_t &bb);
 // 访问指令
 void Visit(const koopa_raw_value_t &value);
 
-
-
 // 访问 return 指令
 void Visit(const koopa_raw_return_t &value);
 // 访问 integer 指令

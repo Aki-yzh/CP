@@ -45,7 +45,7 @@ int main(int argc, const char *argv[])
   //输出重定向到文件
   stringstream ss;
   streambuf *coutbuf = cout.rdbuf(ss.rdbuf());
-  ast->KoopaIR();
+  ast->Dump();
   if(string(mode) == "-koopa")
   {
       cout.rdbuf(outputfile.rdbuf());

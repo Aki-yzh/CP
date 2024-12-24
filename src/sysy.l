@@ -42,6 +42,7 @@ MulOp         [*/%]
 
 "int"           { return INT; }
 "return"        { return RETURN; }
+"const"         { return CONST;}
 
 {RelOp}         { yylval.str_val = new string(yytext); return RELOP; }
 {EqOp}          { yylval.str_val = new string(yytext); return EQOP; }

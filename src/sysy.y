@@ -2,6 +2,7 @@
 {
   #include <memory>
   #include <string>
+  #include <vector>
   #include "ast.hpp"
 }
 
@@ -37,16 +38,18 @@ using namespace std;
   int int_val;
   BaseAST *ast_val;
   char char_val;
+  vector<unique_ptr<BaseAST> > *vec_val;
 }
 
 // lexer 返回的所有 token 种类的声明
 // 注意 IDENT 和 INT_CONST 会返回 token 的值, 分别对应 str_val 和 int_val
 // 添加 &&与||
 // 添加 比较运算符
-%token INT RETURN
+%token INT RETURN CONST
 %token LAND LOR
 %token <str_val> IDENT RELOP EQOP
 %token <int_val> INT_CONST
+
 %token <char_val> MULOP
 // 非终结符的类型定义
 // lv3.3参考语法规范，新添加的有Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
