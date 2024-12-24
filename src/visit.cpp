@@ -84,6 +84,7 @@ void Visit(const koopa_raw_value_t &value)
       assert(false);
   }
 }
+// new
 
 // 访问 return 指令
 void Visit(const koopa_raw_return_t &value) 
@@ -94,11 +95,11 @@ void Visit(const koopa_raw_return_t &value)
 }
 
 // 访问 integer 指令
-void Visit(const koopa_raw_integer_t &value) 
+void Visit(const koopa_raw_integer_t &integer) 
 {
   // 访问返回值
-  cout << "  li a0, " << value.value << endl;
+  cout << "  li a0, " << integer.value << endl;
 }
-
+// 访问 binary指令
 // 视需求自行实现
 // ...
