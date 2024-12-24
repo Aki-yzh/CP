@@ -1,5 +1,6 @@
 #pragma once
 #include "koopa.h"
+#include <string>
 // 访问 raw program
 void Visit(const koopa_raw_program_t &program);
 // 访问 raw slice
@@ -13,8 +14,13 @@ void Visit(const koopa_raw_value_t &value);
 
 //new
 
-// 访问 return 指令
-void Visit(const koopa_raw_return_t &value);
 // 访问 integer 指令
 void Visit(const koopa_raw_integer_t &integer);
+// 访问 load 指令
+void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value);
+// 访问 store 指令
+void Visit(const koopa_raw_store_t &store);
 // 访问 binary 指令
+void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value);
+// 访问 return 指令
+void Visit(const koopa_raw_return_t &ret);
