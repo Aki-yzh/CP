@@ -10,9 +10,11 @@ class BaseAST {
   // 类中的type表示是第几个生成式, type=1表示最左侧第一个生成式, 依此类推.
   // xxx1_yyy2 表示在 type 为 1 时为 xxx, 在 type 为 2 时为 yyy.
   virtual ~BaseAST() = default;
+ 
   // 输出 Dump 到 stdout
   virtual void Dump() const = 0;
   virtual int Calc() const = 0;
+
 };
 
 /************************CompUnit*************************/
