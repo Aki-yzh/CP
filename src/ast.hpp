@@ -1,205 +1,514 @@
 #pragma once
-#include <memory>
+#include <iostream>
 #include <string>
+#include <cassert>
+#include <unordered_map>
+#include <memory>
 #include <vector>
 #include "Symbol_table.hpp"
 
+using namespace std;
+static int koopacnt = 0;
 // 所有 AST 的基类
-class BaseAST {
+class BaseAST 
+{
  public:
-  // 类中的type表示是第几个生成式, type=1表示最左侧第一个生成式, 依此类推.
-  // xxx1_yyy2 表示在 type 为 1 时为 xxx, 在 type 为 2 时为 yyy.
   virtual ~BaseAST() = default;
- 
-  // 输出 Dump 到 stdout
   virtual void Dump() const = 0;
   virtual int Calc() const = 0;
-
 };
 
-/************************CompUnit*************************/
-
-// CompUnit ::= FuncDef;
-class CompUnitAST : public BaseAST {
+class CompUnitAST : public BaseAST 
+{
  public:
-  std::unique_ptr<BaseAST> func_def;
-  void Dump() const override;
-  int Calc() const override;
+  unique_ptr<BaseAST> func_def;
+  void Dump() const override
+  {
+    func_def->Dump();
+  }
+  int Calc() const override
+  {
+    assert(0);
+    return 0;
+  }
+
+
 };
 
-/**************************Decl***************************/
+//---
 
-// Decl ::= ConstDecl | VarDecl;
+
 class DeclAST : public BaseAST {
  public:
   int type;
-  std::unique_ptr<BaseAST> const_decl1_var_decl2;
-  void Dump() const override;
-  int Calc() const override;
+  unique_ptr<BaseAST> const_decl1_var_decl2;
+  void Dump() const override
+  {
+     const_decl1_var_decl2->Dump();
+  }
+  int Calc() const override
+  {
+    assert(0);
+    return 0;
+  }
 };
 
 // ConstDecl ::= "const" BType ConstDefList ";";
 // ConstDefList ::= ConstDef | ConstDefList "," ConstDef;
 class ConstDeclAST : public BaseAST {
  public:
-  std::unique_ptr<BaseAST> b_type;
-  std::unique_ptr<std::vector<std::unique_ptr<BaseAST> > > const_def_list;
-  void Dump() const override;
-  int Calc() const override;
+  unique_ptr<BaseAST> b_type;
+  unique_ptr<vector<unique_ptr<BaseAST> > > const_def_list;
+  void Dump() const override
+  {
+    for(auto& const_def: *const_def_list)
+      const_def->Dump();
+  }
+  int Calc() const override
+  {
+    assert(0);
+    return 0;
+  }
 };
 
 // BType ::= "int";
 class BTypeAST : public BaseAST {
  public:
-  void Dump() const override;
-  int Calc() const override;
+  void Dump() const override
+  {
+    assert(0);
+    return;
+  }
+  int Calc() const override
+  {
+    assert(0);
+    return 0;
+  }
 };
 
 // ConstDef ::= IDENT "=" ConstInitVal;
 class ConstDefAST : public BaseAST {
  public:
-  std::string ident;
-  std::unique_ptr<BaseAST> const_init_val;
-  void Dump() const override;
-  int Calc() const override;
+  string ident;
+  unique_ptr<BaseAST> const_init_val;
+  void Dump() const override
+  {
+     insert_symbol(ident, SYM_TYPE_CONST, const_init_val->Calc());
+  }
+  int Calc() const override
+  {
+    assert(0);
+    return 0;
+  }
 };
 
 // ConstInitVal ::= ConstExp;
 class ConstInitValAST : public BaseAST {
  public:
-  std::unique_ptr<BaseAST> const_exp;
-  void Dump() const override;
-  int Calc() const override;
+  unique_ptr<BaseAST> const_exp;
+  void Dump() const override
+  {
+    assert(0);
+    return;
+  }
+  int Calc() const override
+  {
+     return const_exp->Calc();
+  }
 };
 
 // VarDecl ::= BType VarDefList ";";
 // VarDefList ::= VarDef | VarDefList "," VarDef;
 class VarDeclAST : public BaseAST {
  public:
-  std::unique_ptr<BaseAST> b_type;
-  std::unique_ptr<std::vector<std::unique_ptr<BaseAST> > > var_def_list;
-  void Dump() const override;
-  int Calc() const override;
+  unique_ptr<BaseAST> b_type;
+  unique_ptr<vector<unique_ptr<BaseAST> > > var_def_list;
+  void Dump() const override
+  {
+    for(auto& var_def : *var_def_list)
+      var_def->Dump();
+  }
+
+  int Calc() const override
+  {
+    assert(0);
+    return 0;
+  }
 };
 
 // VarDef ::= IDENT | IDENT "=" InitVal;
 class VarDefAST : public BaseAST {
  public:
   int type;
-  std::string ident;
-  std::unique_ptr<BaseAST> init_val;
-  void Dump() const override;
-  int Calc() const override;
+  string ident;
+  unique_ptr<BaseAST> init_val;
+  void Dump() const override
+  {
+    // 先 alloc 一段内存
+    // @x = alloc i32
+    cout << "  @" << ident << " = alloc i32" << endl;
+    if(type==2) {
+      init_val->Dump();
+      // 存入 InitVal
+      // store %1, @x
+      cout << "  store %" << koopacnt-1 << ", @" << ident << endl;
+    }
+    insert_symbol(ident, SYM_TYPE_VAR, 0);
+  }
+  int Calc() const override
+  {
+    assert(0);
+    return 0;
+  }
 };
 
 // InitVal ::= Exp;
 class InitValAST : public BaseAST {
  public:
-  std::unique_ptr<BaseAST> exp;
-  void Dump() const override;
-  int Calc() const override;
+  unique_ptr<BaseAST> exp;
+  void Dump() const override
+  {
+     exp->Dump();
+  }
+  int Calc() const override
+  {
+    assert(0);
+    return 0;
+  }
 };
 
-/**************************Func***************************/
 
-// FuncDef ::= FuncType IDENT "(" ")" Block;
-class FuncDefAST : public BaseAST {
+
+
+class FuncDefAST : public BaseAST 
+{
  public:
-  std::unique_ptr<BaseAST> func_type;
-  std::string ident;
-  std::unique_ptr<BaseAST> block;
-  void Dump() const override;
-  int Calc() const override;
+  unique_ptr<BaseAST> func_type;
+  string ident;
+  unique_ptr<BaseAST> block;
+
+
+  void Dump() const override 
+  {
+    cout << "fun @" << ident << "(): ";
+    func_type->Dump();
+    cout << " {" << endl;
+    block->Dump();
+    cout << endl << "}" << endl;
+  }
+  int Calc() const override
+  {
+     assert(0);
+     return 0;
+  }
+
 };
 
-// FuncType ::= "int";
-class FuncTypeAST : public BaseAST {
+// 自己补充
+
+class FuncTypeAST : public BaseAST 
+{
  public:
-  void Dump() const override;
-  int Calc() const override;
+  void Dump() const override 
+  {
+    cout << "i32";
+  }
+  int Calc() const override
+  {
+     assert(0);
+      return 0;
+  }
 };
 
-/**************************Block***************************/
-
-// Block ::= "{" BlockItemList "}";
-// BlockItemList ::=  | BlockItemList BlockItem;
-class BlockAST : public BaseAST {
+class BlockAST : public BaseAST 
+{
  public:
-  std::unique_ptr<std::vector<std::unique_ptr<BaseAST> > > block_item_list;
-  void Dump() const override;
-  int Calc() const override;
-};
+   unique_ptr<vector<unique_ptr<BaseAST> > > block_item_list;
 
+  void Dump() const override 
+  {
+   cout << "%entry:" << endl;
+    for(auto& block_item: *block_item_list)
+    {
+      block_item->Dump();
+    }
+  }
+  int Calc() const override
+  {
+    assert(0);
+    return 0;
+  }
+};
 // BlockItem ::= Decl | Stmt;
 class BlockItemAST : public BaseAST {
  public:
   int type;
-  std::unique_ptr<BaseAST> decl1_stmt2;
-  void Dump() const override;
-  int Calc() const override;
+  unique_ptr<BaseAST> decl1_stmt2;
+  void Dump() const override
+  {
+    decl1_stmt2->Dump();
+  }
+  int Calc() const override 
+  {
+    assert(0);
+    return 0;
+  }
+
 };
 
-// Stmt ::= LVal "=" Exp ";"
-//        | "return" Exp ";";
-class StmtAST : public BaseAST {
- public:
-  int type;
-  std::unique_ptr<BaseAST> lval;
-  std::unique_ptr<BaseAST> exp;
-  void Dump() const override;
-  int Calc() const override;
-};
-
-/***************************Exp***************************/
-
-// Exp ::= LOrExp;
-class ExpAST : public BaseAST {
- public:
-  std::unique_ptr<BaseAST> lorexp;
-  void Dump() const override;
-  int Calc() const override;
-};
 
 // LVal ::= IDENT;
 class LValAST : public BaseAST {
  public:
-  std::string ident;
-  void Dump() const override;
-  int Calc() const override;
+  string ident;
+  void Dump() const override
+  {
+    auto val = query_symbol(ident);
+    assert(val->type != SYM_TYPE_UND);
+
+    if(val->type == SYM_TYPE_CONST)
+    {
+      // 此处有优化空间
+      // %0 = add 0, 233
+      cout << "  %" << koopacnt << " = add 0, ";
+      cout<< val->value << endl;
+      koopacnt++;
+    }
+    else if(val->type == SYM_TYPE_VAR)
+    {
+      // 从内存读取 LVal
+      // %0 = load @x
+      cout << "  %" << koopacnt << " = load @" << ident << endl;
+      koopacnt++;
+    }
+    return;
+  }
+  int Calc() const override
+  {
+    auto val = query_symbol(ident);
+    assert(val->type == SYM_TYPE_CONST);
+    return val->value;
+  }
 };
 
-// PrimaryExp ::= "(" Exp ")" | LVal | Number;
-class PrimaryExpAST : public BaseAST {
- public:
+//lv3从这里开始需要修改
+
+// Stmt ::= "return" Exp ";";
+class StmtAST : public BaseAST 
+{
+  public:
   int type;
-  std::unique_ptr<BaseAST> exp1_lval2;
-  int number;
-  void Dump() const override;
-  int Calc() const override;
+  unique_ptr<BaseAST> lval;
+  unique_ptr<BaseAST> exp;
+  void Dump() const override
+  {
+      if(type==1)
+      {
+      exp->Dump();
+      // 存入刚刚计算出的值
+      // store %1, @x
+      cout << "  store %" << koopacnt-1 << ", @";
+      cout << dynamic_cast<LValAST*>(lval.get())->ident << endl;
+      }
+      else if(type==2) 
+      {
+        exp->Dump();
+        // ret %0
+        cout << "  ret %" << koopacnt-1;
+      }
+    }
+    int Calc() const override
+    {
+      assert(0);
+      return 0;
+    }
 };
+
+// Exp ::= LOrExp;
+class ExpAST : public BaseAST 
+{
+ public:
+  unique_ptr<BaseAST> lorexp;
+
+  void Dump() const override 
+  {
+    lorexp->Dump();
+  }
+  int Calc() const override
+  {
+    return lorexp->Calc();
+  }
+};
+
+
+
+
+// PrimaryExp ::= "(" Exp ")" | Number;
+class PrimaryExpAST : public BaseAST 
+{
+ public:
+  // type 为 1 时为 "(" Exp ")"
+  // type 为 2 时为 Number
+  int type;
+  unique_ptr<BaseAST> exp;
+  int32_t number;
+
+  void Dump() const override 
+  {
+    switch (type) 
+    {
+      case 1:
+        exp->Dump();
+        break;
+      case 2:
+        exp->Dump();
+        break;
+      case 3:
+        cout << "  %" << koopacnt << " = add 0, " << number << endl;
+        koopacnt++;
+        break;
+    }
+  }
+  int Calc() const override
+  {
+     if(type==1) 
+     {
+        return exp->Calc();
+      }
+      else if(type==2) 
+      {
+        return exp->Calc();
+      }
+      else if(type==3) 
+      {
+        return number;
+      }
+      assert(0);
+      return 0;
+  }
+};
+
 
 // UnaryExp ::= PrimaryExp | UnaryOp UnaryExp;
 // UnaryOp ::= "+" | "-" | "!"
-class UnaryExpAST : public BaseAST {
+class UnaryExpAST : public BaseAST 
+{
  public:
+  // type 为 1 时为 PrimaryExp
+  // 在 type 为 2 时 为 UnaryOp UnaryExp
   int type;
   char unaryop;
-  std::unique_ptr<BaseAST> primaryexp1_unaryexp2;
-  void Dump() const override;
-  int Calc() const override;
+  unique_ptr<BaseAST> primaryexp1_unaryexp2;
+
+  void Dump() const override 
+  {
+     if(type==1) {
+    primaryexp1_unaryexp2->Dump();
+    }
+    else if(type==2) {
+      primaryexp1_unaryexp2->Dump();
+      if(unaryop=='-') {
+        // %1 = sub 0, %0
+        cout << "  %" << koopacnt << " = sub 0, %";
+        cout << koopacnt-1 <<endl;
+        koopacnt++;
+      }
+      else if(unaryop=='!') {
+        // %1 = eq 0, %0
+        cout << "  %" << koopacnt << " = eq 0, %";
+        cout << koopacnt-1 <<endl;
+        koopacnt++;
+      }
+    }
+  }
+  int Calc() const override
+    {
+    if(type==1) {
+      return primaryexp1_unaryexp2->Calc();
+    }
+    else if(type==2) {
+      int tmp = primaryexp1_unaryexp2->Calc();
+      if(unaryop=='+') {
+        return tmp;
+      }
+      else if(unaryop=='-') {
+        return -tmp;
+      }
+      else if(unaryop=='!') {
+        return !tmp;
+      }
+    }
+    assert(0);
+    return 0;
+  }
+
+
 };
 
+
+
+
+// MulExp ::= UnaryExp | MulExp MulOp UnaryExp;
+// MulOp ::= "*" | "/" | "%"
 // MulExp ::= UnaryExp | MulExp MulOp UnaryExp;
 // MulOp ::= "*" | "/" | "%"
 class MulExpAST : public BaseAST {
  public:
   int type;
   char mulop;
-  std::unique_ptr<BaseAST> mulexp;
-  std::unique_ptr<BaseAST> unaryexp;
-  void Dump() const override;
-  int Calc() const override;
+  unique_ptr<BaseAST> mulexp;
+  unique_ptr<BaseAST> unaryexp;
+
+  void Dump() const override {
+    if(type == 1) {
+      unaryexp->Dump();
+    }
+    else if(type == 2) {
+      mulexp->Dump();
+      int left = koopacnt - 1;
+      unaryexp->Dump();
+      int right = koopacnt - 1;
+      if(mulop == '*') {
+        // %2 = mul %0, %1
+        cout << "  %" << koopacnt << " = mul %" << left << ", %" << right << endl;
+        koopacnt++;
+      }
+      else if(mulop == '/') {
+        // %2 = div %0, %1
+        cout << "  %" << koopacnt << " = div %" << left << ", %" << right << endl;
+        koopacnt++;
+      }
+      else if(mulop == '%') {
+        // %2 = mod %0, %1
+        cout << "  %" << koopacnt << " = mod %" << left << ", %" << right << endl;
+        koopacnt++;
+      }
+    }
+  }
+
+  int Calc() const override {
+    if(type == 1) {
+      return unaryexp->Calc();
+    }
+    else if(type == 2) {
+      int left = mulexp->Calc();
+      int right = unaryexp->Calc();
+      if(mulop == '*') {
+        return left * right;
+      }
+      else if(mulop == '/') {
+        return left / right;
+      }
+      else if(mulop == '%') {
+        return left % right;
+      }
+    }
+    assert(0);
+    return 0;
+  }
 };
+
+
 
 // AddExp ::= MulExp | AddExp AddOp MulExp;
 // AddOp ::= "+" | "-"
@@ -207,60 +516,271 @@ class AddExpAST : public BaseAST {
  public:
   int type;
   char addop;
-  std::unique_ptr<BaseAST> addexp;
-  std::unique_ptr<BaseAST> mulexp;
-  void Dump() const override;
-  int Calc() const override;
+  unique_ptr<BaseAST> addexp;
+  unique_ptr<BaseAST> mulexp;
+
+  void Dump() const override {
+    if(type == 1) {
+      mulexp->Dump();
+    }
+    else if(type == 2) {
+      addexp->Dump();
+      int left = koopacnt - 1;
+      mulexp->Dump();
+      int right = koopacnt - 1;
+      if(addop == '+') {
+        // %2 = add %0, %1
+        cout << "  %" << koopacnt << " = add %" << left << ", %" << right << endl;
+        koopacnt++;
+      }
+      else if(addop == '-') {
+        // %2 = sub %0, %1
+        cout << "  %" << koopacnt << " = sub %" << left << ", %" << right << endl;
+        koopacnt++;
+      }
+    }
+  }
+
+  int Calc() const override {
+    if(type == 1) {
+      return mulexp->Calc();
+    }
+    else if(type == 2) {
+      int left = addexp->Calc();
+      int right = mulexp->Calc();
+      if(addop == '+') {
+        return left + right;
+      }
+      else if(addop == '-') {
+        return left - right;
+      }
+    }
+    assert(0);
+    return 0;
+  }
 };
+
+
+
 
 // RelExp ::= AddExp | RelExp RelOp AddExp;
 // RelOp ::= "<" | ">" | "<=" | ">="
 class RelExpAST : public BaseAST {
  public:
   int type;
-  std::string relop;
-  std::unique_ptr<BaseAST> relexp;
-  std::unique_ptr<BaseAST> addexp;
-  void Dump() const override;
-  int Calc() const override;
+  string relop;
+  unique_ptr<BaseAST> relexp;
+  unique_ptr<BaseAST> addexp;
+
+  void Dump() const override {
+    if(type == 1) {
+      addexp->Dump();
+    }
+    else if(type == 2) {
+      relexp->Dump();
+      int left = koopacnt - 1;
+      addexp->Dump();
+      int right = koopacnt - 1;
+      if(relop == "<") {
+        // %2 = lt %0, %1
+        cout << "  %" << koopacnt << " = lt %" << left << ", %" << right << endl;
+        koopacnt++;
+      }
+      else if(relop == ">") {
+        // %2 = gt %0, %1
+        cout << "  %" << koopacnt << " = gt %" << left << ", %" << right << endl;
+        koopacnt++;
+      }
+      else if(relop == "<=") {
+        // %2 = le %0, %1
+        cout << "  %" << koopacnt << " = le %" << left << ", %" << right << endl;
+        koopacnt++;
+      }
+      else if(relop == ">=") {
+        // %2 = ge %0, %1
+        cout << "  %" << koopacnt << " = ge %" << left << ", %" << right << endl;
+        koopacnt++;
+      }
+    }
+  }
+
+  int Calc() const override {
+    if(type == 1) {
+      return addexp->Calc();
+    }
+    else if(type == 2) {
+      int left = relexp->Calc();
+      int right = addexp->Calc();
+      if(relop == "<") {
+        return left < right;
+      }
+      else if(relop == ">") {
+        return left > right;
+      }
+      else if(relop == "<=") {
+        return left <= right;
+      }
+      else if(relop == ">=") {
+        return left >= right;
+      }
+    }
+    assert(0);
+    return 0;
+  }
 };
+
+
 
 // EqExp ::= RelExp | EqExp EqOp RelExp;
 // EqOp ::= "==" | "!="
 class EqExpAST : public BaseAST {
  public:
   int type;
-  std::string eqop;
-  std::unique_ptr<BaseAST> eqexp;
-  std::unique_ptr<BaseAST> relexp;
-  void Dump() const override;
-  int Calc() const override;
+  string eqop;
+  unique_ptr<BaseAST> eqexp;
+  unique_ptr<BaseAST> relexp;
+
+  void Dump() const override {
+    if(type == 1) {
+      relexp->Dump();
+    }
+    else if(type == 2) {
+      eqexp->Dump();
+      int left = koopacnt - 1;
+      relexp->Dump();
+      int right = koopacnt - 1;
+      if(eqop == "==") {
+        // %2 = eq %0, %1
+        cout << "  %" << koopacnt << " = eq %" << left << ", %" << right << endl;
+        koopacnt++;
+      }
+      else if(eqop == "!=") {
+        // %2 = ne %0, %1
+        cout << "  %" << koopacnt << " = ne %" << left << ", %" << right << endl;
+        koopacnt++;
+      }
+    }
+  }
+
+  int Calc() const override {
+    if(type == 1) {
+      return relexp->Calc();
+    }
+    else if(type == 2) {
+      int left = eqexp->Calc();
+      int right = relexp->Calc();
+      if(eqop == "==") {
+        return left == right;
+      }
+      else if(eqop == "!=") {
+        return left != right;
+      }
+    }
+    assert(0);
+    return 0;
+  }
 };
 
 // LAndExp ::= EqExp | LAndExp "&&" EqExp;
 class LAndExpAST : public BaseAST {
  public:
   int type;
-  std::unique_ptr<BaseAST> landexp;
-  std::unique_ptr<BaseAST> eqexp;
-  void Dump() const override;
-  int Calc() const override;
+  unique_ptr<BaseAST> landexp;
+  unique_ptr<BaseAST> eqexp;
+
+  void Dump() const override {
+    if(type == 1) {
+      eqexp->Dump();
+    }
+    else if(type == 2) {
+      landexp->Dump();
+      int left = koopacnt - 1;
+      eqexp->Dump();
+      int right = koopacnt - 1;
+      // A&&B <==> (A!=0)&(B!=0)
+      // %2 = ne %0, 0
+      cout << "  %" << koopacnt << " = ne %" << left << ", 0" << endl;
+      left = koopacnt;
+      koopacnt++;
+      // %3 = ne %1, 0
+      cout << "  %" << koopacnt << " = ne %" << right << ", 0" << endl;
+      right = koopacnt;
+      koopacnt++;
+      // %4 = and %2, %3
+      cout << "  %" << koopacnt << " = and %" << left << ", %" << right << endl;
+      koopacnt++;
+    }
+  }
+
+  int Calc() const override {
+    if(type == 1) {
+      return eqexp->Calc();
+    }
+    else if(type == 2) {
+      int left = landexp->Calc();
+      int right = eqexp->Calc();
+      return left && right;
+    }
+    assert(0);
+    return 0;
+  }
 };
 
 // LOrExp  ::= LAndExp | LOrExp "||" LAndExp;
 class LOrExpAST : public BaseAST {
  public:
   int type;
-  std::unique_ptr<BaseAST> lorexp;
-  std::unique_ptr<BaseAST> landexp;
-  void Dump() const override;
-  int Calc() const override;
-};
+  unique_ptr<BaseAST> lorexp;
+  unique_ptr<BaseAST> landexp;
 
+  void Dump() const override {
+    if(type == 1) {
+      landexp->Dump();
+    }
+    else if(type == 2) {
+      lorexp->Dump();
+      int left = koopacnt - 1;
+      landexp->Dump();
+      int right = koopacnt - 1;
+      // A||B <==> (A!=0)|(B!=0)
+      // %2 = ne %0, 0
+      cout << "  %" << koopacnt << " = ne %" << left << ", 0" << endl;
+      left = koopacnt;
+      koopacnt++;
+      // %3 = ne %1, 0
+      cout << "  %" << koopacnt << " = ne %" << right << ", 0" << endl;
+      right = koopacnt;
+      koopacnt++;
+      // %4 = or %2, %3
+      cout << "  %" << koopacnt << " = or %" << left << ", %" << right << endl;
+      koopacnt++;
+    }
+  }
+
+  int Calc() const override {
+    if(type == 1) {
+      return landexp->Calc();
+    }
+    else if(type == 2) {
+      int left = lorexp->Calc();
+      int right = landexp->Calc();
+      return left || right;
+    }
+    assert(0);
+    return 0;
+  }
+};
 // ConstExp ::= Exp;
 class ConstExpAST : public BaseAST {
  public:
-  std::unique_ptr<BaseAST> exp;
-  void Dump() const override;
-  int Calc() const override;
+  unique_ptr<BaseAST> exp;
+
+  void Dump() const override {
+    assert(0);
+    return;
+  }
+
+  int Calc() const override {
+    return exp->Calc();
+  }
 };
