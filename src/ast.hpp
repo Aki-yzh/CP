@@ -151,7 +151,8 @@ class VarDeclAST : public BaseAST
 };
 
 // VarDef ::= IDENT | IDENT "=" InitVal;
-class VarDefAST : public BaseAST {
+class VarDefAST : public BaseAST 
+{
  public:
   int type;
   string ident;
@@ -179,7 +180,8 @@ class VarDefAST : public BaseAST {
 };
 
 // InitVal ::= Exp;
-class InitValAST : public BaseAST {
+class InitValAST : public BaseAST 
+{
  public:
   unique_ptr<BaseAST> exp;
   void Dump() const override
@@ -193,9 +195,10 @@ class InitValAST : public BaseAST {
   }
 };
 
-/**************************Func***************************/
+
 // FuncType ::= "int";
-class FuncTypeAST : public BaseAST {
+class FuncTypeAST : public BaseAST 
+{
  public:
   string type;
   void Dump() const override
@@ -211,7 +214,8 @@ class FuncTypeAST : public BaseAST {
 };
 
 // FuncDef ::= FuncType IDENT "(" ")" Block;
-class FuncDefAST : public BaseAST {
+class FuncDefAST : public BaseAST 
+{
  public:
   unique_ptr<BaseAST> func_type;
   string ident;
@@ -246,7 +250,8 @@ class FuncDefAST : public BaseAST {
   }
 };
 
-class BlockAST : public BaseAST {
+class BlockAST : public BaseAST 
+{
  public:
   unique_ptr<vector<unique_ptr<BaseAST> > > block_item_list;
   void Dump() const override
@@ -268,7 +273,8 @@ class BlockAST : public BaseAST {
 
 
 // BlockItem ::= Decl | Stmt;
-class BlockItemAST : public BaseAST {
+class BlockItemAST : public BaseAST 
+{
  public:
   int type;
   unique_ptr<BaseAST> decl1_stmt2;
@@ -287,7 +293,8 @@ class BlockItemAST : public BaseAST {
 //-----
 
 // LVal ::= IDENT;
-class LValAST : public BaseAST {
+class LValAST : public BaseAST 
+{
  public:
   string ident;
   void Dump() const override
@@ -314,7 +321,8 @@ class LValAST : public BaseAST {
 
 
 // Stmt ::= LVal "=" Exp ";"
-class StmtAssignAST : public BaseAST {
+class StmtAssignAST : public BaseAST 
+{
  public:
   unique_ptr<BaseAST> lval;
   unique_ptr<BaseAST> exp;
@@ -334,7 +342,8 @@ class StmtAssignAST : public BaseAST {
 
 //        | ";"
 //        | Exp ";"
-class StmtExpAST : public BaseAST {
+class StmtExpAST : public BaseAST 
+{
  public:
   int type;
   unique_ptr<BaseAST> exp;
@@ -353,7 +362,8 @@ class StmtExpAST : public BaseAST {
 };
 
 //        | Block
-class StmtBlockAST : public BaseAST {
+class StmtBlockAST : public BaseAST 
+{
  public:
   unique_ptr<BaseAST> block;
   void Dump() const override
@@ -368,7 +378,8 @@ class StmtBlockAST : public BaseAST {
 };
 
 
-class StmtIfAST : public BaseAST {
+class StmtIfAST : public BaseAST 
+{
  public:
   int type;
   unique_ptr<BaseAST> exp;
@@ -387,17 +398,20 @@ class StmtIfAST : public BaseAST {
 
 //        | "return" ";";
 //        | "return" Exp ";";
-class StmtReturnAST : public BaseAST {
+class StmtReturnAST : public BaseAST 
+{
  public:
   int type;
   unique_ptr<BaseAST> exp;
   void Dump() const override
   {
-    if(type==1) {
+    if(type==1) 
+    {
       cout << "  ret" << endl;
       entry_returned = 1;
     }
-    else if(type==2) {
+    else if(type==2) 
+    {
       exp->Dump();
       // ret %0
       cout << "  ret %" << koopacnt-1 << endl;
@@ -416,7 +430,8 @@ class StmtReturnAST : public BaseAST {
 
 
 // Exp ::= LOrExp;
-class ExpAST : public BaseAST {
+class ExpAST : public BaseAST 
+{
  public:
   unique_ptr<BaseAST> lorexp;
   void Dump() const override
@@ -675,7 +690,8 @@ class RelExpAST : public BaseAST
             int right = koopacnt - 1;
 
             // Map relational operators to their corresponding instructions
-            unordered_map<string, string> relop_map = {
+            unordered_map<string, string> relop_map = 
+            {
                 {"<", "lt"},
                 {">", "gt"},
                 {"<=", "le"},
@@ -683,7 +699,8 @@ class RelExpAST : public BaseAST
             };
 
             auto it = relop_map.find(relop);
-            if (it != relop_map.end()) {
+            if (it != relop_map.end()) 
+            {
                 // %2 = <op> %0, %1
                 cout << "  %" << koopacnt << " = " << it->second 
                     << " %" << left << ", %" << right << endl;
@@ -796,12 +813,10 @@ class LAndExpAST : public BaseAST
         // A&&B <==> (A!=0)&(B!=0)
         // %2 = ne %0, 0
         cout << "  %" << koopacnt << " = ne %" << left << ", 0" << endl;
-        left = koopacnt;
-        koopacnt++;
+        left = koopacnt++;
         // %3 = ne %1, 0
         cout << "  %" << koopacnt << " = ne %" << right << ", 0" << endl;
-        right = koopacnt;
-        koopacnt++;
+        right = koopacnt++;
         // %4 = and %2, %3
         cout << "  %" << koopacnt++ << " = and %" << left << ", %" << right << endl;
         break;
@@ -851,12 +866,10 @@ class LOrExpAST : public BaseAST
           // A||B <==> (A!=0)|(B!=0)
           // %2 = ne %0, 0
           cout << "  %" << koopacnt << " = ne %" << left << ", 0" << endl;
-          left = koopacnt;
-          koopacnt++;
+          left = koopacnt++;
           // %3 = ne %1, 0
           cout << "  %" << koopacnt << " = ne %" << right << ", 0" << endl;
-          right = koopacnt;
-          koopacnt++;
+          right = koopacnt++;
           // %4 = or %2, %3
           cout << "  %" << koopacnt++ << " = or %" << left << ", %" << right << endl;
           break;
