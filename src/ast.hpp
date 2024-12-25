@@ -28,7 +28,7 @@ class CompUnitAST : public BaseAST
   }
   int Calc() const override
   {
-    
+    assert(0);
     return 0;
   }
 };
@@ -47,7 +47,7 @@ class DeclAST : public BaseAST
   }
   int Calc() const override
   {
-    
+    assert(0);
     return 0;
   }
 };
@@ -66,7 +66,7 @@ class ConstDeclAST : public BaseAST
   }
   int Calc() const override
   {
-    
+    assert(0);
     return 0;
   }
 };
@@ -77,12 +77,12 @@ class BTypeAST : public BaseAST
  public:
   void Dump() const override
   {
-    
+    assert(0);
     return;
   }
   int Calc() const override
   {
-    
+    assert(0);
     return 0;
   }
 };
@@ -99,7 +99,7 @@ class ConstDefAST : public BaseAST
   }
   int Calc() const override
   {
-    
+    assert(0);
     return 0;
   }
 };
@@ -111,7 +111,7 @@ class ConstInitValAST : public BaseAST
   unique_ptr<BaseAST> const_exp;
   void Dump() const override
   {
-    
+    assert(0);
     return;
   }
   int Calc() const override
@@ -135,7 +135,7 @@ class VarDeclAST : public BaseAST
 
   int Calc() const override
   {
-    
+    assert(0);
     return 0;
   }
 };
@@ -160,7 +160,7 @@ class VarDefAST : public BaseAST
   }
   int Calc() const override
   {
-    
+    assert(0);
     return 0;
   }
 };
@@ -176,7 +176,7 @@ class InitValAST : public BaseAST
   }
   int Calc() const override
   {
-    
+    assert(0);
     return 0;
   }
 };
@@ -199,7 +199,7 @@ class FuncDefAST : public BaseAST
   }
   int Calc() const override
   {
-     
+     assert(0);
      return 0;
   }
 
@@ -216,7 +216,7 @@ class FuncTypeAST : public BaseAST
   }
   int Calc() const override
   {
-     
+     assert(0);
       return 0;
   }
 };
@@ -236,7 +236,7 @@ class BlockAST : public BaseAST
   }
   int Calc() const override
   {
-    
+    assert(0);
     return 0;
   }
 };
@@ -252,7 +252,7 @@ class BlockItemAST : public BaseAST
   }
   int Calc() const override 
   {
-    
+    assert(0);
     return 0;
   }
 
@@ -269,8 +269,8 @@ class LValAST : public BaseAST
       auto val = query_symbol(ident);
       assert(val->type != SYM_TYPE_UND);
       // %0 = add 0, 233   // %0 = load @x
-      string instruction = (val->type == SYM_TYPE_CONST) 
-                                ? "add 0, " + to_string(val->value) 
+      std::string instruction = (val->type == SYM_TYPE_CONST) 
+                                ? "add 0, " + std::to_string(val->value) 
                                 : "load @" + ident;
 
       cout << "  %" << koopacnt++ << " = " << instruction << endl;
@@ -316,11 +316,13 @@ class StmtAST : public BaseAST
             cout << "  ret %" << (koopacnt - 1) << endl;
             break;
         }
+        default:
+            break;
     }
     }
     int Calc() const override
     {
-      
+      assert(0);
       return 0;
     }
 };
@@ -379,7 +381,7 @@ class PrimaryExpAST : public BaseAST
             return number;
             break;
     }
-    
+    assert(0);
     return 0;
   }
 };
@@ -401,9 +403,21 @@ class UnaryExpAST : public BaseAST
     primaryexp1_unaryexp2->Dump();
     if (type == 2) 
     {
-        cout << "  %" << koopacnt++ << " = "
-         << (unaryop == '-' ? "sub" : "eq")
-         << " 0, %" << (koopacnt - 2) << endl;
+        switch (unaryop) 
+        {
+            case '-':
+                // %1 = sub 0, %0
+                cout << "  %" << koopacnt << " = sub 0, %" << (koopacnt - 1) << endl;
+                koopacnt++;
+                break;
+            case '!':
+                // %1 = eq 0, %0
+                cout << "  %" << koopacnt << " = eq 0, %" << (koopacnt - 1) << endl;
+                koopacnt++;
+                break;
+            default:
+                break;
+        }
     }
   }
   int Calc() const override
@@ -415,10 +429,17 @@ class UnaryExpAST : public BaseAST
           case 2: 
           {
               int tmp = primaryexp1_unaryexp2->Calc();
-              return (unaryop == '+') ? tmp :
-                    (unaryop == '-') ? -tmp :
-                    (unaryop == '!') ? !tmp :
-                    0; 
+              switch (unaryop) 
+              {
+                  case '+':
+                      return tmp;
+                  case '-':
+                      return -tmp;
+                  case '!':
+                      return !tmp;
+                  default:
+                      return 0;
+              }
               break;
           }
           default:
@@ -456,14 +477,24 @@ class MulExpAST : public BaseAST
             int left = koopacnt - 1;
             unaryexp->Dump();
             int right = koopacnt - 1;
-            string op;
-            switch(mulop)
+            switch(mulop) 
             {
-                case '*': op = "mul"; break;
-                case '/': op = "div"; break;
-                case '%': op = "mod"; break;
+                case '*':
+                    // %2 = mul %0, %1
+                    cout << "  %" << koopacnt << " = mul %" << left << ", %" << right << endl;
+                    koopacnt++;
+                    break;
+                case '/':
+                    // %2 = div %0, %1
+                    cout << "  %" << koopacnt << " = div %" << left << ", %" << right << endl;
+                    koopacnt++;
+                    break;
+                case '%':
+                    // %2 = mod %0, %1
+                    cout << "  %" << koopacnt << " = mod %" << left << ", %" << right << endl;
+                    koopacnt++;
+                    break;
             }
-            cout << "  %" << koopacnt++ << " = " << op << " %" << left << ", %" << right << endl;
             break;
 
     }
@@ -479,11 +510,20 @@ class MulExpAST : public BaseAST
             {
                 int left = mulexp->Calc();
                 int right = unaryexp->Calc();
-                // %2 = mul/div/mod %0, %1
-                return (mulop == '*') ? left * right :
-                      (mulop == '/') ? left / right :
-                      (mulop == '%') ? left % right :
-                      0; 
+                switch(mulop) 
+                {
+                    case '*':
+                        // %2 = mul %0, %1
+                        return left * right;
+                    case '/':
+                        // %2 = div %0, %1
+                        return left / right;
+                    case '%':
+                        // %2 = mod %0, %1
+                        return left % right;
+                    default:
+                        return 0;
+                }
             }
             default:            
                 return 0;
@@ -515,19 +555,19 @@ class AddExpAST : public BaseAST
             int left = koopacnt - 1;
             mulexp->Dump();
             int right = koopacnt - 1;
-            string op;
             switch(addop) 
             {
                 case '+':
                     // %2 = add %0, %1
-                    op = "add";
+                    cout << "  %" << koopacnt << " = add %" << left << ", %" << right << endl;
+                    koopacnt++;
                     break;
                 case '-':
                     // %2 = sub %0, %1
-                    op = "sub";
+                    cout << "  %" << koopacnt << " = sub %" << left << ", %" << right << endl;
+                    koopacnt++;
                     break;
             }
-            cout << "  %" << koopacnt++ << " = " << op << " %" << left << ", %" << right << endl;
             break;
     }
   }
@@ -542,10 +582,18 @@ class AddExpAST : public BaseAST
           {
               int left = addexp->Calc();
               int right = mulexp->Calc();
-              // %2 = add/sub %0, %1
-              return (addop == '+') ? left + right :
-                    (addop == '-') ? left - right :
-                    0; 
+              switch(addop) 
+              {
+                  case '+':
+                      // %2 = add %0, %1
+                      return left + right;
+                  case '-':
+                      // %2 = sub %0, %1
+                      return left - right;
+                  default:
+                      // 未知的 addop，返回 0
+                      return 0;
+              }
           }
           default:
               // 未知的 type，返回 0
@@ -583,7 +631,7 @@ class RelExpAST : public BaseAST
             int right = koopacnt - 1;
 
             // Map relational operators to their corresponding instructions
-            unordered_map<string, string> relop_map = {
+            std::unordered_map<std::string, std::string> relop_map = {
                 {"<", "lt"},
                 {">", "gt"},
                 {"<=", "le"},
@@ -613,12 +661,23 @@ class RelExpAST : public BaseAST
           {
               int left = relexp->Calc();
               int right = addexp->Calc();
-              return (relop == "<") ? (left < right) :
-                    (relop == "<=") ? (left <= right) :
-                    (relop == ">") ? (left > right) :
-                    (relop == ">=") ? (left >= right) :
-                    0; 
-              
+              switch(relop[0]) // Assuming relop is a string and using the first character
+              {
+                  case '<':
+                      if(relop == "<")
+                          return left < right;
+                      else if(relop == "<=")
+                          return left <= right;
+                      break;
+                  case '>':
+                      if(relop == ">")
+                          return left > right;
+                      else if(relop == ">=")
+                          return left >= right;
+                      break;
+              }
+              // 如果 relop 是多字符且未匹配任何条件
+              return 0;
           }
           default:
               // 未知的 type，返回 0
@@ -670,11 +729,19 @@ class EqExpAST : public BaseAST
         {
             int left = eqexp->Calc();
             int right = relexp->Calc();
-            return (eqop == "==") ? (left == right) :
-                  (eqop == "!=") ? (left != right) :
-                  0; 
+            switch(eqop[0])
+            {
+                case '=':
+                    return left == right;  // "=="
+                case '!':
+                    return left != right;  // "!="
+                default:
+                    assert(0);
+                    return 0;
+            }
         }
         default:
+            assert(0);
             return 0;
     }
   }
@@ -745,48 +812,45 @@ class LOrExpAST : public BaseAST
 
   void Dump() const override 
   {
-    switch(type)
+    if(type == 1) 
     {
-        case 1:
-          landexp->Dump();
-          break;
-        case 2:
-        {
-          lorexp->Dump();
-          int left = koopacnt - 1;
-          landexp->Dump();
-          int right = koopacnt - 1;
-          // A||B <==> (A!=0)|(B!=0)
-          // %2 = ne %0, 0
-          cout << "  %" << koopacnt << " = ne %" << left << ", 0" << endl;
-          left = koopacnt;
-          koopacnt++;
-          // %3 = ne %1, 0
-          cout << "  %" << koopacnt << " = ne %" << right << ", 0" << endl;
-          right = koopacnt;
-          koopacnt++;
-          // %4 = or %2, %3
-          cout << "  %" << koopacnt++ << " = or %" << left << ", %" << right << endl;
-          break;
-        }
-      }   
+      landexp->Dump();
+    }
+    else if(type == 2) 
+    {
+      lorexp->Dump();
+      int left = koopacnt - 1;
+      landexp->Dump();
+      int right = koopacnt - 1;
+      // A||B <==> (A!=0)|(B!=0)
+      // %2 = ne %0, 0
+      cout << "  %" << koopacnt << " = ne %" << left << ", 0" << endl;
+      left = koopacnt;
+      koopacnt++;
+      // %3 = ne %1, 0
+      cout << "  %" << koopacnt << " = ne %" << right << ", 0" << endl;
+      right = koopacnt;
+      koopacnt++;
+      // %4 = or %2, %3
+      cout << "  %" << koopacnt << " = or %" << left << ", %" << right << endl;
+      koopacnt++;
+    }
   }
 
   int Calc() const override 
   {
-      switch(type)
-      {
-          case 1:
-              return landexp->Calc();
-          case 2:
-          {
-              int left = lorexp->Calc();
-              int right = landexp->Calc();
-              return left || right;
-          }
-          default:           
-              return 0;
-      }
+    if(type == 1) 
+    {
+      return landexp->Calc();
+    }
+    else if(type == 2) 
+    {
+      int left = lorexp->Calc();
+      int right = landexp->Calc();
+      return left || right;
+    }
+    assert(0);
+    return 0;
   }
 };
 // ConstExp ::= Exp;
@@ -796,7 +860,8 @@ class ConstExpAST : public BaseAST
   unique_ptr<BaseAST> exp;
 
   void Dump() const override 
-  { 
+  {
+    assert(0);
     return;
   }
 
