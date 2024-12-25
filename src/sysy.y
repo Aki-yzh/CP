@@ -293,38 +293,44 @@ BlockItem
 //Stmt          ::= LVal "=" Exp ";"| "return" Exp ";";
 
 Stmt
- : LVal '=' Exp ';' {
+ : LVal '=' Exp ';' 
+ {
     auto ast = new StmtAST();
     ast->type = 1;
     ast->lval = unique_ptr<BaseAST>($1);
     ast->exp = unique_ptr<BaseAST>($3);
     $$ = ast;
   }
-  | ';' {
+  | ';' 
+  {
     auto ast = new StmtAST();
     ast->type = 2;
     $$ = ast;
   }
-  | Exp ';' {
+  | Exp ';' 
+  {
     auto ast = new StmtAST();
     ast->type = 3;
     ast->exp = unique_ptr<BaseAST>($1);
     $$ = ast;
   }
-  | Block {
+  | Block 
+  {
     auto ast = new StmtAST();
     ast->type = 4;
     ast->block = unique_ptr<BaseAST>($1);
     $$ = ast;
   }
-  | IF "(" Exp ")" Stmt %prec IFX {
+  | IF "(" Exp ")" Stmt %prec IFX 
+  {
     auto ast = new StmtAST();
     ast->type = 5;
     ast->exp = unique_ptr<BaseAST>($3);
     ast->stmt_if = unique_ptr<BaseAST>($5);
     $$ = ast;
   }
-  | IF "(" Exp ")" Stmt ELSE Stmt {
+  | IF "(" Exp ")" Stmt ELSE Stmt 
+  {
     auto ast = new StmtAST();
     ast->type = 6;
     ast->exp = unique_ptr<BaseAST>($3);
@@ -332,12 +338,14 @@ Stmt
     ast->stmt_else = unique_ptr<BaseAST>($7);
     $$ = ast;
   }
-  | RETURN ';' {
+  | RETURN ';' 
+  {
     auto ast = new StmtAST();
     ast->type = 7;
     $$ = ast;
   }
-  | RETURN Exp ';' {
+  | RETURN Exp ';' 
+  {
     auto ast = new StmtAST();
     ast->type = 8;
     ast->exp = unique_ptr<BaseAST>($2);
