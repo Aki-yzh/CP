@@ -8,7 +8,7 @@
 using namespace std;
 
 // 类型为 koopa_raw_value 的有返回值的语句的存储位置
-static std::unordered_map<koopa_raw_value_t, std::string> loc;
+static unordered_map<koopa_raw_value_t, string> loc;
 // 栈帧长度
 static int stack_frame_length = 0;
 // 已经使用的栈帧长度
@@ -78,15 +78,12 @@ void Visit(const koopa_raw_function_t &func)
         var_cnt--;
     }
   }
-  // std::cout<<"++++"<<var_cnt<<std::endl;
   stack_frame_length = var_cnt << 2;
-  // std::cout<<"++++"<<stack_frame_length<<std::endl;
   // 将栈帧长度对齐到 16
   stack_frame_length = (stack_frame_length + 16 - 1) & (~(16 - 1));
-  // std::cout<<"++++"<<stack_frame_length<<std::endl;
 
   if (stack_frame_length != 0)
-    std::cout << "  addi sp, sp, -" << stack_frame_length << std::endl;
+    cout << "  addi sp, sp, -" << stack_frame_length << endl;
 
 
   // 访问所有基本块
@@ -114,7 +111,7 @@ void Visit(const koopa_raw_value_t &value)
       Visit(kind.data.integer);
       break;
      case KOOPA_RVT_ALLOC:
-      loc[value] = std::to_string(stack_frame_used) + "(sp)";
+      loc[value] = to_string(stack_frame_used) + "(sp)";
       stack_frame_used += 4;
       break;
     case KOOPA_RVT_LOAD:
@@ -138,14 +135,16 @@ void Visit(const koopa_raw_value_t &value)
 }
 // new
 // 将 value 的值放置在标号为 reg 的寄存器中
-static void load2reg(const koopa_raw_value_t &value, const std::string &reg) {
-  // std::cout<<value->kind.tag<<reg<<std::endl;
-  if (value->kind.tag == KOOPA_RVT_INTEGER) {
-    std::cout << "  li " << reg << ", " << value->kind.data.integer.value << std::endl;
+static void load2reg(const koopa_raw_value_t &value, const string &reg) 
+{
+ 
+  if (value->kind.tag == KOOPA_RVT_INTEGER) 
+  {
+    cout << "  li " << reg << ", " << value->kind.data.integer.value << endl;
   }
-  else {
-    // value->kind.tag = KOOPA_RVT_LOAD, KOOPA_RVT_BINARY 之类的有返回值的语句
-    std::cout << "  lw " << reg << ", " << loc[value] << std::endl;
+  else
+  {
+    cout << "  lw " << reg << ", " << loc[value] << endl;
   }
 }
 void Visit(const koopa_raw_return_t &ret) 
@@ -154,91 +153,101 @@ void Visit(const koopa_raw_return_t &ret)
   load2reg(ret.value, "a0");
   // 恢复栈帧
   if (stack_frame_length != 0)
-    std::cout << "  addi sp, sp, " << stack_frame_length << std::endl;
-  std::cout << "  ret" << std::endl;
+     cout << "  addi sp, sp, " << stack_frame_length << endl;
+  cout << "  ret" << endl;
 }
 
 
-void Visit(const koopa_raw_integer_t &integer) {
-  std::cout << "  li a0, " << integer.value << std::endl;
+void Visit(const koopa_raw_integer_t &integer) 
+{
+  cout << "  li a0, " << integer.value << endl;
 }
-void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value) {
+void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value) 
+{
   load2reg(load.src, "t0");
-  loc[value] = std::to_string(stack_frame_used) + "(sp)";
+  loc[value] = to_string(stack_frame_used) + "(sp)";
   stack_frame_used += 4;
-  std::cout << "  sw t0, " << loc[value] << std::endl;
+  cout << "  sw t0, " << loc[value] << endl;
 }
 // 访问 store 指令
-void Visit(const koopa_raw_store_t &store) {
+void Visit(const koopa_raw_store_t &store) 
+{
   load2reg(store.value, "t0");
-  std::cout << "  sw t0, " << loc[store.dest] << std::endl;
+  cout << "  sw t0, " << loc[store.dest] << endl;
 }
 // 访问 binary 指令
-void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value) {
+void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value) 
+{
   // 将运算数存入 t0 和 t1
   load2reg(binary.lhs, "t0");
   load2reg(binary.rhs, "t1");
   // 进行运算，结果存入t0
-  if(binary.op == KOOPA_RBO_NOT_EQ) {
-    std::cout << "  xor t0, t0, t1" << std::endl;
-    std::cout << "  snez t0, t0" << std::endl;
-  }
-  else if(binary.op == KOOPA_RBO_EQ) {
-    std::cout << "  xor t0, t0, t1" << std::endl;
-    std::cout << "  seqz t0, t0" << std::endl;
-  }
-  else if(binary.op == KOOPA_RBO_GT) {
-    std::cout << "  sgt t0, t0, t1" << std::endl;
-  }
-  else if(binary.op == KOOPA_RBO_LT) {
-    std::cout << "  slt t0, t0, t1" << std::endl;
-  }
-  else if(binary.op == KOOPA_RBO_GE) {
-    std::cout << "  slt t0, t0, t1" << std::endl;
-    std::cout << "  xori t0, t0, 1" << std::endl;
-  }
-  else if(binary.op == KOOPA_RBO_LE) {
-    std::cout << "  sgt t0, t0, t1" << std::endl;
-    std::cout << "  xori t0, t0, 1" << std::endl;
-  }
-  else if(binary.op == KOOPA_RBO_ADD) {
-    std::cout << "  add t0, t0, t1" << std::endl;
-  }
-  else if(binary.op == KOOPA_RBO_SUB) {
-    std::cout << "  sub t0, t0, t1" << std::endl;
-  }
-  else if(binary.op == KOOPA_RBO_MUL) {
-    std::cout << "  mul t0, t0, t1" << std::endl;
-  }
-  else if(binary.op == KOOPA_RBO_DIV) {
-    std::cout << "  div t0, t0, t1" << std::endl;
-  }
-  else if(binary.op == KOOPA_RBO_MOD) {
-    std::cout << "  rem t0, t0, t1" << std::endl;
-  }
-  else if(binary.op == KOOPA_RBO_AND) {
-    std::cout << "  and t0, t0, t1" << std::endl;
-  }
-  else if(binary.op == KOOPA_RBO_OR) {
-    std::cout << "  or t0, t0, t1" << std::endl;
-  }
-  else if(binary.op == KOOPA_RBO_XOR) {
-    std::cout << "  xor t0, t0, t1" << std::endl;
-  }
-  else if(binary.op == KOOPA_RBO_SHL) {
-    std::cout << "  sll t0, t0, t1" << std::endl;
-  }
-  else if(binary.op == KOOPA_RBO_SHR) {
-    std::cout << "  srl t0, t0, t1" << std::endl;
-  }
-  else if(binary.op == KOOPA_RBO_SAR) {
-    std::cout << "  sra t0, t0, t1" << std::endl;
+switch (binary.op)
+{
+    case KOOPA_RBO_NOT_EQ:
+        cout << "  xor t0, t0, t1" << endl;
+        cout << "  snez t0, t0" << endl;
+        break;
+    case KOOPA_RBO_EQ:
+        cout << "  xor t0, t0, t1" << endl;
+        cout << "  seqz t0, t0" << endl;
+        break;
+    case KOOPA_RBO_GT:
+        cout << "  sgt t0, t0, t1" << endl;
+        break;
+    case KOOPA_RBO_LT:
+        cout << "  slt t0, t0, t1" << endl;
+        break;
+    case KOOPA_RBO_GE:
+        cout << "  slt t0, t0, t1" << endl;
+        cout << "  xori t0, t0, 1" << endl;
+        break;
+    case KOOPA_RBO_LE:
+        cout << "  sgt t0, t0, t1" << endl;
+        cout << "  xori t0, t0, 1" << endl;
+        break;
+    case KOOPA_RBO_ADD:
+        cout << "  add t0, t0, t1" << endl;
+        break;
+    case KOOPA_RBO_SUB:
+        cout << "  sub t0, t0, t1" << endl;
+        break;
+    case KOOPA_RBO_MUL:
+        cout << "  mul t0, t0, t1" << endl;
+        break;
+    case KOOPA_RBO_DIV:
+        cout << "  div t0, t0, t1" << endl;
+        break;
+    case KOOPA_RBO_MOD:
+        cout << "  rem t0, t0, t1" << endl;
+        break;
+    case KOOPA_RBO_AND:
+        cout << "  and t0, t0, t1" << endl;
+        break;
+    case KOOPA_RBO_OR:
+        cout << "  or t0, t0, t1" << endl;
+        break;
+    case KOOPA_RBO_XOR:
+        cout << "  xor t0, t0, t1" << endl;
+        break;
+    case KOOPA_RBO_SHL:
+        cout << "  sll t0, t0, t1" << endl;
+        break;
+    case KOOPA_RBO_SHR:
+        cout << "  srl t0, t0, t1" << endl;
+        break;
+    case KOOPA_RBO_SAR:
+        cout << "  sra t0, t0, t1" << endl;
+        break;
+    default:
+        // 未处理的操作符
+        break;
   }
   // 将 t0 中的结果存入栈
-  loc[value] = std::to_string(stack_frame_used) + "(sp)";
+  loc[value] = to_string(stack_frame_used) + "(sp)";
   stack_frame_used += 4;
-  std::cout << "  sw t0, " << loc[value] << std::endl;
+  cout << "  sw t0, " << loc[value] << endl;
 }
-// 访问 binary指令
+
 // 视需求自行实现
 // ...
