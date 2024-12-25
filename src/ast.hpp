@@ -28,7 +28,6 @@ class CompUnitAST : public BaseAST
   }
   int Calc() const override
   {
-    assert(0);
     return 0;
   }
 };
@@ -47,7 +46,6 @@ class DeclAST : public BaseAST
   }
   int Calc() const override
   {
-    assert(0);
     return 0;
   }
 };
@@ -66,7 +64,6 @@ class ConstDeclAST : public BaseAST
   }
   int Calc() const override
   {
-    assert(0);
     return 0;
   }
 };
@@ -77,12 +74,10 @@ class BTypeAST : public BaseAST
  public:
   void Dump() const override
   {
-    assert(0);
     return;
   }
   int Calc() const override
   {
-    assert(0);
     return 0;
   }
 };
@@ -99,7 +94,6 @@ class ConstDefAST : public BaseAST
   }
   int Calc() const override
   {
-    assert(0);
     return 0;
   }
 };
@@ -111,7 +105,6 @@ class ConstInitValAST : public BaseAST
   unique_ptr<BaseAST> const_exp;
   void Dump() const override
   {
-    assert(0);
     return;
   }
   int Calc() const override
@@ -135,7 +128,6 @@ class VarDeclAST : public BaseAST
 
   int Calc() const override
   {
-    assert(0);
     return 0;
   }
 };
@@ -160,7 +152,6 @@ class VarDefAST : public BaseAST
   }
   int Calc() const override
   {
-    assert(0);
     return 0;
   }
 };
@@ -176,7 +167,6 @@ class InitValAST : public BaseAST
   }
   int Calc() const override
   {
-    assert(0);
     return 0;
   }
 };
@@ -199,7 +189,7 @@ class FuncDefAST : public BaseAST
   }
   int Calc() const override
   {
-     assert(0);
+
      return 0;
   }
 
@@ -216,7 +206,7 @@ class FuncTypeAST : public BaseAST
   }
   int Calc() const override
   {
-     assert(0);
+
       return 0;
   }
 };
@@ -236,7 +226,6 @@ class BlockAST : public BaseAST
   }
   int Calc() const override
   {
-    assert(0);
     return 0;
   }
 };
@@ -252,7 +241,6 @@ class BlockItemAST : public BaseAST
   }
   int Calc() const override 
   {
-    assert(0);
     return 0;
   }
 
@@ -322,7 +310,7 @@ class StmtAST : public BaseAST
     }
     int Calc() const override
     {
-      assert(0);
+
       return 0;
     }
 };
@@ -381,7 +369,6 @@ class PrimaryExpAST : public BaseAST
             return number;
             break;
     }
-    assert(0);
     return 0;
   }
 };
@@ -736,12 +723,12 @@ class EqExpAST : public BaseAST
                 case '!':
                     return left != right;  // "!="
                 default:
-                    assert(0);
+              
                     return 0;
             }
         }
         default:
-            assert(0);
+      
             return 0;
     }
   }
@@ -849,7 +836,6 @@ class LOrExpAST : public BaseAST
       int right = landexp->Calc();
       return left || right;
     }
-    assert(0);
     return 0;
   }
 };
@@ -861,7 +847,6 @@ class ConstExpAST : public BaseAST
 
   void Dump() const override 
   {
-    assert(0);
     return;
   }
 
