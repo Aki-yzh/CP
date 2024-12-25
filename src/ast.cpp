@@ -190,10 +190,10 @@ int LValAST::Calc() const {
 // PrimaryExp ::= "(" Exp ")" | LVal | Number;
 void PrimaryExpAST::Dump() const {
   if(type==1) {
-    exp->Dump();
+    exp1_lval2->Dump();
   }
   else if(type==2) {
-    exp->Dump();
+    exp1_lval2->Dump();
   }
   else if(type==3) {
     // %0 = add 0, 233
@@ -205,10 +205,10 @@ void PrimaryExpAST::Dump() const {
 
 int PrimaryExpAST::Calc() const {
   if(type==1) {
-    return dynamic_cast<ExpBaseAST*>(exp.get())->Calc();
+    return dynamic_cast<ExpBaseAST*>(exp1_lval2.get())->Calc();
   }
   else if(type==2) {
-    return dynamic_cast<ExpBaseAST*>(exp.get())->Calc();
+    return dynamic_cast<ExpBaseAST*>(exp1_lval2.get())->Calc();
   }
   else if(type==3) {
     return number;

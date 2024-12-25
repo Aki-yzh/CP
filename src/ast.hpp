@@ -165,7 +165,7 @@ class LValAST : public ExpBaseAST {
 class PrimaryExpAST : public ExpBaseAST {
  public:
   int type;
-  std::unique_ptr<BaseAST> exp;
+  std::unique_ptr<BaseAST> exp1_lval2;
   int number;
   void Dump() const override;
   int Calc() const override;
