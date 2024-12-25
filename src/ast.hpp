@@ -1,46 +1,47 @@
 #pragma once
-#include <memory>
-#include <string>
-#include <vector>
 #include <iostream>
+#include <string>
 #include <cassert>
+#include <unordered_map>
+#include <memory>
+#include <vector>
 #include "Symbol_table.hpp"
 
 
-
-// 计数 koopa 语句的返回值 %xxx
+using namespace std;
 static int koopacnt = 0;
+
 // 计数 if 语句，用于设置 entry
 static int ifcnt = 0;
 // 当前 entry 是否已经 ret, 若为 1 的话不应再生成任何语句
 static int entry_returned = 0;
 
 // 所有 AST 的基类
-class BaseAST {
+class BaseAST 
+{
  public:
-  // 类中的type表示是第几个生成式, type=1表示最左侧第一个生成式, 依此类推.
-  // xxx1_yyy2 表示在 type 为 1 时为 xxx, 在 type 为 2 时为 yyy.
   virtual ~BaseAST() = default;
-  // 输出 Dump 到 stdout
   virtual void Dump() const = 0;
-};
-
-/************************CompUnit*************************/
-
-// CompUnit ::= FuncDef;
-class CompUnitAST : public BaseAST {
- public:
-  std::unique_ptr<BaseAST> func_def;
-  void Dump() const override
-  {
-     func_def->Dump();
-
-  }
-};
-class ExpBaseAST : public BaseAST {
- public:
   virtual int Calc() const = 0;
 };
+
+
+class CompUnitAST : public BaseAST 
+{
+ public:
+  unique_ptr<BaseAST> func_def;
+  void Dump() const override
+  {
+    func_def->Dump();
+  }
+  int Calc() const override
+  {
+    
+    return 0;
+  }
+};
+
+
 /**************************Decl***************************/
 
 // Decl ::= ConstDecl | VarDecl;
@@ -52,6 +53,11 @@ class DeclAST : public BaseAST {
   {
      const_decl1_var_decl2->Dump();
 
+  }
+  int Calc() const override
+  {
+    
+    return 0;
   }
 };
 
@@ -66,6 +72,11 @@ class ConstDeclAST : public BaseAST {
     for(auto& const_def: *const_def_list)
     const_def->Dump();
   }
+   int Calc() const override
+  {
+    
+    return 0;
+  }
 };
 
 // BType ::= "int";
@@ -75,6 +86,11 @@ class BTypeAST : public BaseAST {
   {
      assert(0);
     return;
+  }
+   int Calc() const override
+  {
+    
+    return 0;
   }
 };
 
@@ -87,9 +103,9 @@ class ConstInitValAST : public BaseAST {
       assert(0);
       return;
   }
-  int Calc() const
+  int Calc() const override
   {
-     return dynamic_cast<ExpBaseAST*>(const_exp.get())->Calc();
+     return const_exp->Calc();
   }
 };
 
@@ -104,6 +120,11 @@ class ConstDefAST : public BaseAST {
     insert_symbol(ident, SYM_TYPE_CONST,
     dynamic_cast<ConstInitValAST*>(const_init_val.get())->Calc());
   }
+   int Calc() const override
+  {
+    
+    return 0;
+  }
 };
 
 
@@ -117,6 +138,11 @@ class VarDeclAST : public BaseAST {
   {
       for(auto& var_def : *var_def_list)
         var_def->Dump();
+  }
+   int Calc() const override
+  {
+    
+    return 0;
   }
 };
 
@@ -141,6 +167,11 @@ class VarDefAST : public BaseAST {
         std::cout << query_symbol(ident).first << ident << std::endl;
       }
   }
+   int Calc() const override
+  {
+    
+    return 0;
+  }
 };
 
 // InitVal ::= Exp;
@@ -150,6 +181,11 @@ class InitValAST : public BaseAST {
   void Dump() const override
   {
       exp->Dump();
+  }
+   int Calc() const override
+  {
+    
+    return 0;
   }
 };
 
@@ -162,6 +198,11 @@ class FuncTypeAST : public BaseAST {
   {
      std::cout << type;
 
+  }
+   int Calc() const override
+  {
+    
+    return 0;
   }
 };
 
@@ -194,6 +235,11 @@ class FuncDefAST : public BaseAST {
     }
     std::cout << "}" << std::endl;
   }
+   int Calc() const override
+  {
+    
+    return 0;
+  }
 };
 
 
@@ -214,6 +260,11 @@ class BlockAST : public BaseAST {
     }
     exit_code_block();
     }
+     int Calc() const override
+  {
+    
+    return 0;
+  }
 };
 
 // BlockItem ::= Decl | Stmt;
@@ -225,8 +276,13 @@ class BlockItemAST : public BaseAST {
   {
     decl1_stmt2->Dump();
   }
+   int Calc() const override
+  {
+    
+    return 0;
+  }
 };
-class LValAST : public ExpBaseAST {
+class LValAST : public BaseAST {
  public:
   std::string ident;
   void Dump() const override
@@ -272,6 +328,11 @@ class StmtAssignAST : public BaseAST {
     std::cout << "  store %" << koopacnt-1 << ", @";
     std::cout << query_symbol(ident).first << ident << std::endl;
   }
+   int Calc() const override
+  {
+    
+    return 0;
+  }
 };
 
 //        | ";"
@@ -289,6 +350,11 @@ class StmtExpAST : public BaseAST {
       exp->Dump();
     }
   }
+   int Calc() const override
+  {
+    
+    return 0;
+  }
 };
 
 //        | Block
@@ -298,6 +364,11 @@ class StmtBlockAST : public BaseAST {
   void Dump() const override
   {
     block->Dump();
+  }
+   int Calc() const override
+  {
+    
+    return 0;
   }
 };
 
@@ -320,6 +391,11 @@ class StmtIfAST : public BaseAST {
   {
      assert(0);
   }
+   int Calc() const override
+  {
+    
+    return 0;
+  }
 };
 
 //        | "return" ";";
@@ -341,6 +417,11 @@ class StmtReturnAST : public BaseAST {
       entry_returned = 1;
     }
   }
+   int Calc() const override
+  {
+    
+    return 0;
+  }
 };
 
 /***************************Exp***************************/
@@ -348,7 +429,7 @@ class StmtReturnAST : public BaseAST {
 
 
 // Exp ::= LOrExp;
-class ExpAST : public ExpBaseAST {
+class ExpAST : public BaseAST {
  public:
   std::unique_ptr<BaseAST> lorexp;
   void Dump() const override
@@ -357,7 +438,7 @@ class ExpAST : public ExpBaseAST {
   }
   int Calc() const override
   {
-    return dynamic_cast<ExpBaseAST*>(lorexp.get())->Calc();
+    return lorexp->Calc();
   }
 };
 
@@ -365,7 +446,7 @@ class ExpAST : public ExpBaseAST {
 
 
 // PrimaryExp ::= "(" Exp ")" | LVal | Number;
-class PrimaryExpAST : public ExpBaseAST {
+class PrimaryExpAST : public BaseAST {
  public:
   int type;
   std::unique_ptr<BaseAST> exp1_lval2;
@@ -388,10 +469,10 @@ class PrimaryExpAST : public ExpBaseAST {
   int Calc() const override
   {
     if(type==1) {
-      return dynamic_cast<ExpBaseAST*>(exp1_lval2.get())->Calc();
+      return exp1_lval2->Calc();
     }
     else if(type==2) {
-      return dynamic_cast<ExpBaseAST*>(exp1_lval2.get())->Calc();
+      return exp1_lval2->Calc();
     }
     else if(type==3) {
       return number;
@@ -403,7 +484,7 @@ class PrimaryExpAST : public ExpBaseAST {
 
 // UnaryExp ::= PrimaryExp | UnaryOp UnaryExp;
 // UnaryOp ::= "+" | "-" | "!"
-class UnaryExpAST : public ExpBaseAST {
+class UnaryExpAST : public BaseAST {
  public:
   int type;
   char unaryop;
@@ -432,10 +513,10 @@ class UnaryExpAST : public ExpBaseAST {
   int Calc() const override
   {
     if(type==1) {
-      return dynamic_cast<ExpBaseAST*>(primaryexp1_unaryexp2.get())->Calc();
+      return primaryexp1_unaryexp2->Calc();
     }
     else if(type==2) {
-      int tmp = dynamic_cast<ExpBaseAST*>(primaryexp1_unaryexp2.get())->Calc();
+      int tmp = primaryexp1_unaryexp2->Calc();
       if(unaryop=='+') {
         return tmp;
       }
@@ -453,7 +534,7 @@ class UnaryExpAST : public ExpBaseAST {
 
 // MulExp ::= UnaryExp | MulExp MulOp UnaryExp;
 // MulOp ::= "*" | "/" | "%"
-class MulExpAST : public ExpBaseAST {
+class MulExpAST : public BaseAST {
  public:
   int type;
   char mulop;
@@ -492,11 +573,11 @@ class MulExpAST : public ExpBaseAST {
   int Calc() const override
   {
     if(type==1) {
-      return dynamic_cast<ExpBaseAST*>(unaryexp.get())->Calc();
+      return unaryexp->Calc();
     }
     else if(type==2) {
-      int left = dynamic_cast<ExpBaseAST*>(mulexp.get())->Calc();
-      int right = dynamic_cast<ExpBaseAST*>(unaryexp.get())->Calc();
+      int left = mulexp->Calc();
+      int right = unaryexp->Calc();
       if(mulop=='*') {
         return left * right;
       }
@@ -514,7 +595,7 @@ class MulExpAST : public ExpBaseAST {
 
 // AddExp ::= MulExp | AddExp AddOp MulExp;
 // AddOp ::= "+" | "-"
-class AddExpAST : public ExpBaseAST {
+class AddExpAST : public BaseAST {
  public:
   int type;
   char addop;
@@ -547,11 +628,11 @@ class AddExpAST : public ExpBaseAST {
   int Calc() const override
   {
     if(type==1) {
-      return dynamic_cast<ExpBaseAST*>(mulexp.get())->Calc();
+      return mulexp->Calc();
     }
     else if(type==2) {
-      int left = dynamic_cast<ExpBaseAST*>(addexp.get())->Calc();
-      int right = dynamic_cast<ExpBaseAST*>(mulexp.get())->Calc();
+      int left = addexp->Calc();
+      int right = mulexp->Calc();
       if(addop=='+') {
         return left + right;
       }
@@ -566,7 +647,7 @@ class AddExpAST : public ExpBaseAST {
 
 // RelExp ::= AddExp | RelExp RelOp AddExp;
 // RelOp ::= "<" | ">" | "<=" | ">="
-class RelExpAST : public ExpBaseAST {
+class RelExpAST : public BaseAST {
  public:
   int type;
   std::string relop;
@@ -611,11 +692,11 @@ class RelExpAST : public ExpBaseAST {
   int Calc() const override
   {
     if(type==1) {
-      return dynamic_cast<ExpBaseAST*>(addexp.get())->Calc();
+      return addexp->Calc();
     }
     else if(type==2) {
-      int left = dynamic_cast<ExpBaseAST*>(relexp.get())->Calc();
-      int right = dynamic_cast<ExpBaseAST*>(addexp.get())->Calc();
+      int left = relexp->Calc();
+      int right = addexp->Calc();
       if(relop=="<") {
         return left < right;
       }
@@ -636,7 +717,7 @@ class RelExpAST : public ExpBaseAST {
 
 // EqExp ::= RelExp | EqExp EqOp RelExp;
 // EqOp ::= "==" | "!="
-class EqExpAST : public ExpBaseAST {
+class EqExpAST : public BaseAST {
  public:
   int type;
   std::string eqop;
@@ -669,11 +750,11 @@ class EqExpAST : public ExpBaseAST {
   int Calc() const override
   {
     if(type==1) {
-      return dynamic_cast<ExpBaseAST*>(relexp.get())->Calc();
+      return relexp->Calc();
     }
     else if(type==2) {
-      int left = dynamic_cast<ExpBaseAST*>(eqexp.get())->Calc();
-      int right = dynamic_cast<ExpBaseAST*>(relexp.get())->Calc();
+      int left = eqexp->Calc();
+      int right = relexp->Calc();
       if(eqop=="==") {
         return left == right;
       }
@@ -687,7 +768,7 @@ class EqExpAST : public ExpBaseAST {
 };
 
 // LAndExp ::= EqExp | LAndExp "&&" EqExp;
-class LAndExpAST : public ExpBaseAST {
+class LAndExpAST : public BaseAST {
  public:
   int type;
   std::unique_ptr<BaseAST> landexp;
@@ -722,11 +803,11 @@ class LAndExpAST : public ExpBaseAST {
   int Calc() const override
   {
     if(type==1) {
-      return dynamic_cast<ExpBaseAST*>(eqexp.get())->Calc();
+      return eqexp->Calc();
     }
     else if(type==2) {
-      int left = dynamic_cast<ExpBaseAST*>(landexp.get())->Calc();
-      int right = dynamic_cast<ExpBaseAST*>(eqexp.get())->Calc();
+      int left = landexp->Calc();
+      int right = eqexp->Calc();
       return left && right;
     }
     assert(0);
@@ -735,7 +816,7 @@ class LAndExpAST : public ExpBaseAST {
 };
 
 // LOrExp  ::= LAndExp | LOrExp "||" LAndExp;
-class LOrExpAST : public ExpBaseAST {
+class LOrExpAST : public BaseAST {
  public:
   int type;
   std::unique_ptr<BaseAST> lorexp;
@@ -770,11 +851,11 @@ class LOrExpAST : public ExpBaseAST {
   int Calc() const override
   {
     if(type==1) {
-      return dynamic_cast<ExpBaseAST*>(landexp.get())->Calc();
+      return landexp->Calc();
     }
     else if(type==2) {
-      int left = dynamic_cast<ExpBaseAST*>(lorexp.get())->Calc();
-      int right = dynamic_cast<ExpBaseAST*>(landexp.get())->Calc();
+      int left = lorexp->Calc();
+      int right = landexp->Calc();
       return left || right;
     }
     assert(0);
@@ -783,7 +864,7 @@ class LOrExpAST : public ExpBaseAST {
 };
 
 // ConstExp ::= Exp;
-class ConstExpAST : public ExpBaseAST {
+class ConstExpAST : public BaseAST {
  public:
   std::unique_ptr<BaseAST> exp;
   void Dump() const override
@@ -793,6 +874,6 @@ class ConstExpAST : public ExpBaseAST {
   }
   int Calc() const override
   {
-    return dynamic_cast<ExpBaseAST*>(exp.get())->Calc();
+    return exp->Calc();
   }
 };
