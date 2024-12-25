@@ -38,6 +38,7 @@ using namespace std;
 %token LAND LOR
 %token <str_val> IDENT RELOP EQOP
 %token <int_val> INT_CONST
+%token <char_val> MULOP
 
 // 非终结符的类型定义
 %type <ast_val> Decl ConstDecl BType ConstDef ConstInitVal VarDecl VarDef InitVal
@@ -47,7 +48,7 @@ using namespace std;
 %type <ast_val> RelExp EqExp LAndExp LOrExp ConstExp
 %type <vec_val> ConstDefList BlockItemList VarDefList
 %type <int_val> Number
-%type <char_val> UnaryOp MulOp AddOp
+%type <char_val> UnaryOp  AddOp
 
 // 用于解决 dangling else 的优先级设置
 %precedence IFX
@@ -351,7 +352,7 @@ MulExp
     ast->unaryexp = unique_ptr<BaseAST>($1);
     $$ = ast;
   }
-  | MulExp MulOp UnaryExp {
+  | MulExp MULOP UnaryExp {
     auto ast = new MulExpAST();
     ast->type = 2;
     ast->mulexp = unique_ptr<BaseAST>($1);
@@ -361,17 +362,6 @@ MulExp
   }
   ;
 
-MulOp
-  : '*' {
-    $$ = '*';
-  }
-  | '/' {
-    $$ = '/';
-  }
-  | '%' {
-    $$ = '%';
-  }
-  ;
 
 AddExp
   : MulExp {
