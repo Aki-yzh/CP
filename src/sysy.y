@@ -34,7 +34,7 @@ using namespace std;
 }
 
 // lexer 返回的所有 token 种类的声明
-%token INT RETURN CONST
+%token INT RETURN CONST IF ELSE
 %token LAND LOR
 %token <str_val> IDENT RELOP EQOP
 %token <int_val> INT_CONST
@@ -49,6 +49,9 @@ using namespace std;
 %type <int_val> Number
 %type <char_val> UnaryOp MulOp AddOp
 
+// 用于解决 dangling else 的优先级设置
+%precedence IFX
+%precedence ELSE
 %%
 
 CompUnit
@@ -179,6 +182,7 @@ FuncDef
 FuncType
   : INT {
     auto ast = new FuncTypeAST();
+    ast->type = "i32";
     $$ = ast;
   }
   ;
@@ -220,38 +224,51 @@ BlockItem
 
 Stmt
   : LVal '=' Exp ';' {
-    auto ast = new StmtAST();
-    ast->type = 1;
-    ast->lval1_block4 = unique_ptr<BaseAST>($1);
+    auto ast = new StmtAssignAST();
+    ast->lval = unique_ptr<BaseAST>($1);
     ast->exp = unique_ptr<BaseAST>($3);
     $$ = ast;
   }
+  | ';' {
+    auto ast = new StmtExpAST();
+    ast->type = 1;
+    $$ = ast;
+  }
   | Exp ';' {
-    auto ast = new StmtAST();
+    auto ast = new StmtExpAST();
     ast->type = 2;
     ast->exp = unique_ptr<BaseAST>($1);
     $$ = ast;
   }
-  | ';' {
-    auto ast = new StmtAST();
-    ast->type = 3;
-    $$ = ast;
-  }
   | Block {
-    auto ast = new StmtAST();
-    ast->type = 4;
-    ast->lval1_block4 = unique_ptr<BaseAST>($1);
+    auto ast = new StmtBlockAST();
+    ast->block = unique_ptr<BaseAST>($1);
     $$ = ast;
   }
-  | RETURN Exp ';' {
-    auto ast = new StmtAST();
-    ast->type = 5;
-    ast->exp = unique_ptr<BaseAST>($2);
+  | IF "(" Exp ")" Stmt %prec IFX {
+    auto ast = new StmtIfAST();
+    ast->type = 1;
+    ast->exp = unique_ptr<BaseAST>($3);
+    ast->stmt_if = unique_ptr<BaseAST>($5);
+    $$ = ast;
+  }
+  | IF "(" Exp ")" Stmt ELSE Stmt {
+    auto ast = new StmtIfAST();
+    ast->type = 2;
+    ast->exp = unique_ptr<BaseAST>($3);
+    ast->stmt_if = unique_ptr<BaseAST>($5);
+    ast->stmt_else = unique_ptr<BaseAST>($7);
     $$ = ast;
   }
   | RETURN ';' {
-    auto ast = new StmtAST();
-    ast->type = 6;
+    auto ast = new StmtReturnAST();
+    ast->type = 1;
+    $$ = ast;
+  }
+  | RETURN Exp ';' {
+    auto ast = new StmtReturnAST();
+    ast->type = 2;
+    ast->exp = unique_ptr<BaseAST>($2);
     $$ = ast;
   }
   ;

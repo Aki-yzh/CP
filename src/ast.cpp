@@ -2,7 +2,12 @@
 #include <cassert>
 #include "ast.hpp"
 
+// 计数 koopa 语句的返回值 %xxx
 static int koopacnt = 0;
+// 计数 if 语句，用于设置 entry
+static int ifcnt = 0;
+// 当前 entry 是否已经 ret, 若为 1 的话不应再生成任何语句
+static int entry_returned = 0;
 
 /************************CompUnit*************************/
 
@@ -82,15 +87,28 @@ void FuncDefAST::Dump() const {
   // fun @main(): i32 {}
   std::cout << "fun @" << ident << "(): ";
   func_type->Dump();
+
   std::cout << " {" << std::endl;
   std::cout << "%entry:" << std::endl;
+  entry_returned = 0;
   block->Dump();
+  // 若函数还未返回, 补一个ret
+  // 无返回值补 ret
+  if (!entry_returned) {
+    const std::string& type = dynamic_cast<FuncTypeAST*>(func_type.get())->type;
+    if (type == "i32")
+      std::cout << "  ret 0" << std::endl;
+    else if (type == "void")
+      std::cout << "  ret" << std::endl;
+    else
+      assert(0);
+  }
   std::cout << "}" << std::endl;
 }
 
 // FuncType ::= "int";
 void FuncTypeAST::Dump() const {
-  std::cout << "i32";
+  std::cout << type;
 }
 
 /**************************Block***************************/
@@ -101,6 +119,7 @@ void BlockAST::Dump() const {
   enter_code_block();
   for(auto& block_item: *block_item_list)
   {
+    if(entry_returned) break;
     block_item->Dump();
   }
   exit_code_block();
@@ -112,36 +131,49 @@ void BlockItemAST::Dump() const {
 }
 
 // Stmt ::= LVal "=" Exp ";"
-//        | Exp ";"
+void StmtAssignAST::Dump() const {
+  exp->Dump();
+  // 存入刚刚计算出的值
+  // store %1, @x
+  const std::string& ident = dynamic_cast<LValAST*>(lval.get())->ident;
+  std::cout << "  store %" << koopacnt-1 << ", @";
+  std::cout << query_symbol(ident).first << ident << std::endl;
+}
+
 //        | ";"
-//        | Block
-//        | "return" Exp ";";
-//        | "return" ";";
-void StmtAST::Dump() const {
+//        | Exp ";"
+void StmtExpAST::Dump() const {
   if(type==1) {
-    exp->Dump();
-    // 存入刚刚计算出的值
-    // store %1, @x
-    const std::string& ident = dynamic_cast<LValAST*>(lval1_block4.get())->ident;
-    std::cout << "  store %" << koopacnt-1 << ", @";
-    std::cout << query_symbol(ident).first << ident << std::endl;
+    // do nothing
   }
   else if(type==2) {
     exp->Dump();
   }
-  else if(type==3) {
-    // do nothing
+}
+
+//        | Block
+void StmtBlockAST::Dump() const {
+  block->Dump();
+}
+
+//        | "if" "(" Exp ")" Stmt
+//        | "if" "(" Exp ")" Stmt "else" Stmt
+void StmtIfAST::Dump() const {
+  assert(0);
+}
+
+//        | "return" ";";
+//        | "return" Exp ";";
+void StmtReturnAST::Dump() const {
+  if(type==1) {
+    std::cout << "  ret" << std::endl;
+    entry_returned = 1;
   }
-  else if(type==4) {
-    lval1_block4->Dump();
-  }
-  else if(type==5) {
+  else if(type==2) {
     exp->Dump();
     // ret %0
     std::cout << "  ret %" << koopacnt-1 << std::endl;
-  }
-  else if(type==6) {
-    std::cout << "  ret" << std::endl;
+    entry_returned = 1;
   }
 }
 
