@@ -269,8 +269,8 @@ class LValAST : public BaseAST
       auto val = query_symbol(ident);
       assert(val->type != SYM_TYPE_UND);
       // %0 = add 0, 233   // %0 = load @x
-      std::string instruction = (val->type == SYM_TYPE_CONST) 
-                                ? "add 0, " + std::to_string(val->value) 
+      string instruction = (val->type == SYM_TYPE_CONST) 
+                                ? "add 0, " + to_string(val->value) 
                                 : "load @" + ident;
 
       cout << "  %" << koopacnt++ << " = " << instruction << endl;
@@ -403,21 +403,9 @@ class UnaryExpAST : public BaseAST
     primaryexp1_unaryexp2->Dump();
     if (type == 2) 
     {
-        switch (unaryop) 
-        {
-            case '-':
-                // %1 = sub 0, %0
-                cout << "  %" << koopacnt << " = sub 0, %" << (koopacnt - 1) << endl;
-                koopacnt++;
-                break;
-            case '!':
-                // %1 = eq 0, %0
-                cout << "  %" << koopacnt << " = eq 0, %" << (koopacnt - 1) << endl;
-                koopacnt++;
-                break;
-            default:
-                break;
-        }
+        cout << "  %" << koopacnt++ << " = "
+         << (unaryop == '-' ? "sub" : "eq")
+         << " 0, %" << (koopacnt - 2) << endl;
     }
   }
   int Calc() const override
@@ -477,24 +465,14 @@ class MulExpAST : public BaseAST
             int left = koopacnt - 1;
             unaryexp->Dump();
             int right = koopacnt - 1;
-            switch(mulop) 
+            string op;
+            switch(mulop)
             {
-                case '*':
-                    // %2 = mul %0, %1
-                    cout << "  %" << koopacnt << " = mul %" << left << ", %" << right << endl;
-                    koopacnt++;
-                    break;
-                case '/':
-                    // %2 = div %0, %1
-                    cout << "  %" << koopacnt << " = div %" << left << ", %" << right << endl;
-                    koopacnt++;
-                    break;
-                case '%':
-                    // %2 = mod %0, %1
-                    cout << "  %" << koopacnt << " = mod %" << left << ", %" << right << endl;
-                    koopacnt++;
-                    break;
+                case '*': op = "mul"; break;
+                case '/': op = "div"; break;
+                case '%': op = "mod"; break;
             }
+            cout << "  %" << koopacnt++ << " = " << op << " %" << left << ", %" << right << endl;
             break;
 
     }
@@ -631,7 +609,7 @@ class RelExpAST : public BaseAST
             int right = koopacnt - 1;
 
             // Map relational operators to their corresponding instructions
-            std::unordered_map<std::string, std::string> relop_map = {
+            unordered_map<string, string> relop_map = {
                 {"<", "lt"},
                 {">", "gt"},
                 {"<=", "le"},
