@@ -533,19 +533,19 @@ class AddExpAST : public BaseAST
             int left = koopacnt - 1;
             mulexp->Dump();
             int right = koopacnt - 1;
+            string op;
             switch(addop) 
             {
                 case '+':
                     // %2 = add %0, %1
-                    cout << "  %" << koopacnt << " = add %" << left << ", %" << right << endl;
-                    koopacnt++;
+                    op = "add";
                     break;
                 case '-':
                     // %2 = sub %0, %1
-                    cout << "  %" << koopacnt << " = sub %" << left << ", %" << right << endl;
-                    koopacnt++;
+                    op = "sub";
                     break;
             }
+            cout << "  %" << koopacnt++ << " = " << op << " %" << left << ", %" << right << endl;
             break;
     }
   }
@@ -639,23 +639,12 @@ class RelExpAST : public BaseAST
           {
               int left = relexp->Calc();
               int right = addexp->Calc();
-              switch(relop[0]) // Assuming relop is a string and using the first character
-              {
-                  case '<':
-                      if(relop == "<")
-                          return left < right;
-                      else if(relop == "<=")
-                          return left <= right;
-                      break;
-                  case '>':
-                      if(relop == ">")
-                          return left > right;
-                      else if(relop == ">=")
-                          return left >= right;
-                      break;
-              }
-              // 如果 relop 是多字符且未匹配任何条件
-              return 0;
+              return (relop == "<") ? (left < right) :
+                    (relop == "<=") ? (left <= right) :
+                    (relop == ">") ? (left > right) :
+                    (relop == ">=") ? (left >= right) :
+                    0; 
+              
           }
           default:
               // 未知的 type，返回 0
@@ -707,19 +696,11 @@ class EqExpAST : public BaseAST
         {
             int left = eqexp->Calc();
             int right = relexp->Calc();
-            switch(eqop[0])
-            {
-                case '=':
-                    return left == right;  // "=="
-                case '!':
-                    return left != right;  // "!="
-                default:
-                    
-                    return 0;
-            }
+            return (eqop == "==") ? (left == right) :
+                  (eqop == "!=") ? (left != right) :
+                  0; 
         }
         default:
-            
             return 0;
     }
   }
