@@ -42,17 +42,14 @@ class CompUnitAST : public BaseAST
 };
 
 
-/**************************Decl***************************/
-
-// Decl ::= ConstDecl | VarDecl;
-class DeclAST : public BaseAST {
+class DeclAST : public BaseAST 
+{
  public:
   int type;
-  std::unique_ptr<BaseAST> const_decl1_var_decl2;
+  unique_ptr<BaseAST> const_decl1_var_decl2;
   void Dump() const override
   {
      const_decl1_var_decl2->Dump();
-
   }
   int Calc() const override
   {
@@ -63,16 +60,17 @@ class DeclAST : public BaseAST {
 
 // ConstDecl ::= "const" BType ConstDefList ";";
 // ConstDefList ::= ConstDef | ConstDefList "," ConstDef;
-class ConstDeclAST : public BaseAST {
+class ConstDeclAST : public BaseAST 
+{
  public:
-  std::unique_ptr<BaseAST> b_type;
-  std::unique_ptr<std::vector<std::unique_ptr<BaseAST> > > const_def_list;
+  unique_ptr<BaseAST> b_type;
+  unique_ptr<vector<unique_ptr<BaseAST> > > const_def_list;
   void Dump() const override
   {
     for(auto& const_def: *const_def_list)
-    const_def->Dump();
+      const_def->Dump();
   }
-   int Calc() const override
+  int Calc() const override
   {
     
     return 0;
@@ -80,14 +78,14 @@ class ConstDeclAST : public BaseAST {
 };
 
 // BType ::= "int";
-class BTypeAST : public BaseAST {
+class BTypeAST : public BaseAST 
+{
  public:
   void Dump() const override
   {
-     assert(0);
     return;
   }
-   int Calc() const override
+  int Calc() const override
   {
     
     return 0;
@@ -95,13 +93,14 @@ class BTypeAST : public BaseAST {
 };
 
 // ConstInitVal ::= ConstExp;
-class ConstInitValAST : public BaseAST {
+class ConstInitValAST : public BaseAST 
+{
  public:
-  std::unique_ptr<BaseAST> const_exp;
+  unique_ptr<BaseAST> const_exp;
   void Dump() const override
   {
-      assert(0);
-      return;
+    
+    return;
   }
   int Calc() const override
   {
@@ -111,16 +110,17 @@ class ConstInitValAST : public BaseAST {
 
 
 // ConstDef ::= IDENT "=" ConstInitVal;
-class ConstDefAST : public BaseAST {
+class ConstDefAST : public BaseAST 
+{
  public:
-  std::string ident;
-  std::unique_ptr<BaseAST> const_init_val;
+  string ident;
+  unique_ptr<BaseAST> const_init_val;
   void Dump() const override
   {
-    insert_symbol(ident, SYM_TYPE_CONST,
-    dynamic_cast<ConstInitValAST*>(const_init_val.get())->Calc());
+    //===
+     insert_symbol(ident, SYM_TYPE_CONST, const_init_val->Calc());
   }
-   int Calc() const override
+  int Calc() const override
   {
     
     return 0;
