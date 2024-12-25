@@ -19,7 +19,7 @@ using namespace std;
 /* 空白符和注释 */
 WhiteSpace    [ \t\n\r]*
 LineComment   "//".*
-BlockComment "/*"([^\*]|(\*)*[^\*/])*(\*)*"*/"
+BlockComment  "/*"[^*]*\*+([^*/][^*]*\*+)*\/
 
 /* 标识符 */
 Identifier    [a-zA-Z_][a-zA-Z0-9_]*
@@ -33,7 +33,6 @@ Hexadecimal   0[xX][0-9a-fA-F]+
 RelOp         [<>]=?
 EqOp          [!=]=
 
-
 %%
 
 {WhiteSpace}    { /* 忽略, 不做任何操作 */ }
@@ -42,14 +41,14 @@ EqOp          [!=]=
 
 "int"           { return INT; }
 "return"        { return RETURN; }
-"const"         { return CONST;}
+"const"         { return CONST; }
+"if"            { return IF; }
+"else"          { return ELSE; }
 
 {RelOp}         { yylval.str_val = new string(yytext); return RELOP; }
 {EqOp}          { yylval.str_val = new string(yytext); return EQOP; }
 "&&"            { return LAND; }
 "||"            { return LOR; }
-
-
 
 {Identifier}    { yylval.str_val = new string(yytext); return IDENT; }
 
