@@ -405,17 +405,10 @@ class UnaryExpAST : public BaseAST
           case 2: 
           {
               int tmp = primaryexp1_unaryexp2->Calc();
-              switch (unaryop) 
-              {
-                  case '+':
-                      return tmp;
-                  case '-':
-                      return -tmp;
-                  case '!':
-                      return !tmp;
-                  default:
-                      return 0;
-              }
+              return (unaryop == '+') ? tmp :
+                    (unaryop == '-') ? -tmp :
+                    (unaryop == '!') ? !tmp :
+                    0; 
               break;
           }
           default:
@@ -453,24 +446,15 @@ class MulExpAST : public BaseAST
             int left = koopacnt - 1;
             unaryexp->Dump();
             int right = koopacnt - 1;
-            switch(mulop) 
+            string op;
+            switch(mulop)
             {
-                case '*':
-                    // %2 = mul %0, %1
-                    cout << "  %" << koopacnt << " = mul %" << left << ", %" << right << endl;
-                    koopacnt++;
-                    break;
-                case '/':
-                    // %2 = div %0, %1
-                    cout << "  %" << koopacnt << " = div %" << left << ", %" << right << endl;
-                    koopacnt++;
-                    break;
-                case '%':
-                    // %2 = mod %0, %1
-                    cout << "  %" << koopacnt << " = mod %" << left << ", %" << right << endl;
-                    koopacnt++;
-                    break;
+                case '*': op = "mul"; break;
+                case '/': op = "div"; break;
+                case '%': op = "mod"; break;
+                default: return;
             }
+            cout << "  %" << koopacnt++ << " = " << op << " %" << left << ", %" << right << endl;
             break;
 
     }
