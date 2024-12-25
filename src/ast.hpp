@@ -28,7 +28,7 @@ class CompUnitAST : public BaseAST
   }
   int Calc() const override
   {
-    assert(0);
+    
     return 0;
   }
 };
@@ -47,7 +47,7 @@ class DeclAST : public BaseAST
   }
   int Calc() const override
   {
-    assert(0);
+    
     return 0;
   }
 };
@@ -66,7 +66,7 @@ class ConstDeclAST : public BaseAST
   }
   int Calc() const override
   {
-    assert(0);
+    
     return 0;
   }
 };
@@ -77,12 +77,12 @@ class BTypeAST : public BaseAST
  public:
   void Dump() const override
   {
-    assert(0);
+    
     return;
   }
   int Calc() const override
   {
-    assert(0);
+    
     return 0;
   }
 };
@@ -99,7 +99,7 @@ class ConstDefAST : public BaseAST
   }
   int Calc() const override
   {
-    assert(0);
+    
     return 0;
   }
 };
@@ -111,7 +111,7 @@ class ConstInitValAST : public BaseAST
   unique_ptr<BaseAST> const_exp;
   void Dump() const override
   {
-    assert(0);
+    
     return;
   }
   int Calc() const override
@@ -135,7 +135,7 @@ class VarDeclAST : public BaseAST
 
   int Calc() const override
   {
-    assert(0);
+    
     return 0;
   }
 };
@@ -160,7 +160,7 @@ class VarDefAST : public BaseAST
   }
   int Calc() const override
   {
-    assert(0);
+    
     return 0;
   }
 };
@@ -176,7 +176,7 @@ class InitValAST : public BaseAST
   }
   int Calc() const override
   {
-    assert(0);
+    
     return 0;
   }
 };
@@ -199,7 +199,7 @@ class FuncDefAST : public BaseAST
   }
   int Calc() const override
   {
-     assert(0);
+     
      return 0;
   }
 
@@ -216,7 +216,7 @@ class FuncTypeAST : public BaseAST
   }
   int Calc() const override
   {
-     assert(0);
+     
       return 0;
   }
 };
@@ -236,7 +236,7 @@ class BlockAST : public BaseAST
   }
   int Calc() const override
   {
-    assert(0);
+    
     return 0;
   }
 };
@@ -252,7 +252,7 @@ class BlockItemAST : public BaseAST
   }
   int Calc() const override 
   {
-    assert(0);
+    
     return 0;
   }
 
@@ -322,7 +322,7 @@ class StmtAST : public BaseAST
     }
     int Calc() const override
     {
-      assert(0);
+      
       return 0;
     }
 };
@@ -381,7 +381,7 @@ class PrimaryExpAST : public BaseAST
             return number;
             break;
     }
-    assert(0);
+    
     return 0;
   }
 };
@@ -736,12 +736,12 @@ class EqExpAST : public BaseAST
                 case '!':
                     return left != right;  // "!="
                 default:
-                    assert(0);
+                    
                     return 0;
             }
         }
         default:
-            assert(0);
+            
             return 0;
     }
   }
@@ -812,45 +812,49 @@ class LOrExpAST : public BaseAST
 
   void Dump() const override 
   {
-    if(type == 1) 
+    switch(type)
     {
-      landexp->Dump();
-    }
-    else if(type == 2) 
-    {
-      lorexp->Dump();
-      int left = koopacnt - 1;
-      landexp->Dump();
-      int right = koopacnt - 1;
-      // A||B <==> (A!=0)|(B!=0)
-      // %2 = ne %0, 0
-      cout << "  %" << koopacnt << " = ne %" << left << ", 0" << endl;
-      left = koopacnt;
-      koopacnt++;
-      // %3 = ne %1, 0
-      cout << "  %" << koopacnt << " = ne %" << right << ", 0" << endl;
-      right = koopacnt;
-      koopacnt++;
-      // %4 = or %2, %3
-      cout << "  %" << koopacnt << " = or %" << left << ", %" << right << endl;
-      koopacnt++;
-    }
+        case 1:
+          landexp->Dump();
+          break;
+        case 2:
+        {
+          lorexp->Dump();
+          int left = koopacnt - 1;
+          landexp->Dump();
+          int right = koopacnt - 1;
+          // A||B <==> (A!=0)|(B!=0)
+          // %2 = ne %0, 0
+          cout << "  %" << koopacnt << " = ne %" << left << ", 0" << endl;
+          left = koopacnt;
+          koopacnt++;
+          // %3 = ne %1, 0
+          cout << "  %" << koopacnt << " = ne %" << right << ", 0" << endl;
+          right = koopacnt;
+          koopacnt++;
+          // %4 = or %2, %3
+          cout << "  %" << koopacnt++ << " = or %" << left << ", %" << right << endl;
+          break;
+        }
+      }   
   }
 
   int Calc() const override 
   {
-    if(type == 1) 
-    {
-      return landexp->Calc();
-    }
-    else if(type == 2) 
-    {
-      int left = lorexp->Calc();
-      int right = landexp->Calc();
-      return left || right;
-    }
-    assert(0);
-    return 0;
+      switch(type)
+      {
+          case 1:
+              return landexp->Calc();
+          case 2:
+          {
+              int left = lorexp->Calc();
+              int right = landexp->Calc();
+              return left || right;
+          }
+          default:
+              
+              return 0;
+      }
   }
 };
 // ConstExp ::= Exp;
@@ -861,7 +865,7 @@ class ConstExpAST : public BaseAST
 
   void Dump() const override 
   {
-    assert(0);
+    
     return;
   }
 
