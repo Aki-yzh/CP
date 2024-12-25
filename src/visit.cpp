@@ -3,6 +3,7 @@
 #include "visit.hpp"
 #include <cassert>
 #include <iostream>
+#include <vector>
 #include <unordered_map>
 
 using namespace std;
@@ -182,67 +183,35 @@ void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value)
   load2reg(binary.lhs, "t0");
   load2reg(binary.rhs, "t1");
   // 进行运算，结果存入t0
-switch (binary.op)
-{
-    case KOOPA_RBO_NOT_EQ:
-        cout << "  xor t0, t0, t1" << endl;
-        cout << "  snez t0, t0" << endl;
-        break;
-    case KOOPA_RBO_EQ:
-        cout << "  xor t0, t0, t1" << endl;
-        cout << "  seqz t0, t0" << endl;
-        break;
-    case KOOPA_RBO_GT:
-        cout << "  sgt t0, t0, t1" << endl;
-        break;
-    case KOOPA_RBO_LT:
-        cout << "  slt t0, t0, t1" << endl;
-        break;
-    case KOOPA_RBO_GE:
-        cout << "  slt t0, t0, t1" << endl;
-        cout << "  xori t0, t0, 1" << endl;
-        break;
-    case KOOPA_RBO_LE:
-        cout << "  sgt t0, t0, t1" << endl;
-        cout << "  xori t0, t0, 1" << endl;
-        break;
-    case KOOPA_RBO_ADD:
-        cout << "  add t0, t0, t1" << endl;
-        break;
-    case KOOPA_RBO_SUB:
-        cout << "  sub t0, t0, t1" << endl;
-        break;
-    case KOOPA_RBO_MUL:
-        cout << "  mul t0, t0, t1" << endl;
-        break;
-    case KOOPA_RBO_DIV:
-        cout << "  div t0, t0, t1" << endl;
-        break;
-    case KOOPA_RBO_MOD:
-        cout << "  rem t0, t0, t1" << endl;
-        break;
-    case KOOPA_RBO_AND:
-        cout << "  and t0, t0, t1" << endl;
-        break;
-    case KOOPA_RBO_OR:
-        cout << "  or t0, t0, t1" << endl;
-        break;
-    case KOOPA_RBO_XOR:
-        cout << "  xor t0, t0, t1" << endl;
-        break;
-    case KOOPA_RBO_SHL:
-        cout << "  sll t0, t0, t1" << endl;
-        break;
-    case KOOPA_RBO_SHR:
-        cout << "  srl t0, t0, t1" << endl;
-        break;
-    case KOOPA_RBO_SAR:
-        cout << "  sra t0, t0, t1" << endl;
-        break;
-    default:
-        // 未处理的操作符
-        break;
-  }
+  static const unordered_map<koopa_raw_binary_op_t, vector<string>> opInstructions = 
+  {
+      {KOOPA_RBO_NOT_EQ, {"xor t0, t0, t1", "snez t0, t0"}},
+      {KOOPA_RBO_EQ, {"xor t0, t0, t1", "seqz t0, t0"}},
+      {KOOPA_RBO_GT, {"sgt t0, t0, t1"}},
+      {KOOPA_RBO_LT, {"slt t0, t0, t1"}},
+      {KOOPA_RBO_GE, {"slt t0, t0, t1", "xori t0, t0, 1"}},
+      {KOOPA_RBO_LE, {"sgt t0, t0, t1", "xori t0, t0, 1"}},
+      {KOOPA_RBO_ADD, {"add t0, t0, t1"}},
+      {KOOPA_RBO_SUB, {"sub t0, t0, t1"}},
+      {KOOPA_RBO_MUL, {"mul t0, t0, t1"}},
+      {KOOPA_RBO_DIV, {"div t0, t0, t1"}},
+      {KOOPA_RBO_MOD, {"rem t0, t0, t1"}},
+      {KOOPA_RBO_AND, {"and t0, t0, t1"}},
+      {KOOPA_RBO_OR, {"or t0, t0, t1"}},
+      {KOOPA_RBO_XOR, {"xor t0, t0, t1"}},
+      {KOOPA_RBO_SHL, {"sll t0, t0, t1"}},
+      {KOOPA_RBO_SHR, {"srl t0, t0, t1"}},
+      {KOOPA_RBO_SAR, {"sra t0, t0, t1"}}
+  };
+
+  auto it = opInstructions.find(binary.op);
+  if (it != opInstructions.end()) 
+  {
+      for (const auto &instr : it->second)
+      {
+          cout << "  " << instr << endl;
+      }
+  } 
   // 将 t0 中的结果存入栈
   loc[value] = to_string(stack_frame_used) + "(sp)";
   stack_frame_used += 4;
