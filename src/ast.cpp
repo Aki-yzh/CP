@@ -112,41 +112,36 @@ void BlockItemAST::Dump() const {
 }
 
 // Stmt ::= LVal "=" Exp ";"
-void StmtAssignAST::Dump() const {
-  exp->Dump();
-  // 存入刚刚计算出的值
-  // store %1, @x
-  const std::string& ident = dynamic_cast<LValAST*>(lval.get())->ident;
-  std::cout << "  store %" << koopacnt-1 << ", @";
-  std::cout << query_symbol(ident).first << ident << std::endl;
-}
-
-//        | ";"
 //        | Exp ";"
-void StmtExpAST::Dump() const {
+//        | ";"
+//        | Block
+//        | "return" Exp ";";
+//        | "return" ";";
+void StmtAST::Dump() const {
   if(type==1) {
-    // do nothing
+    exp->Dump();
+    // 存入刚刚计算出的值
+    // store %1, @x
+    const std::string& ident = dynamic_cast<LValAST*>(lval1_block4.get())->ident;
+    std::cout << "  store %" << koopacnt-1 << ", @";
+    std::cout << query_symbol(ident).first << ident << std::endl;
   }
   else if(type==2) {
     exp->Dump();
   }
-}
-
-//        | Block
-void StmtBlockAST::Dump() const {
-  block->Dump();
-}
-
-//        | "return" ";";
-//        | "return" Exp ";";
-void StmtReturnAST::Dump() const {
-  if(type==1) {
-    std::cout << "  ret" << std::endl;
+  else if(type==3) {
+    // do nothing
   }
-  else if(type==2) {
+  else if(type==4) {
+    lval1_block4->Dump();
+  }
+  else if(type==5) {
     exp->Dump();
     // ret %0
     std::cout << "  ret %" << koopacnt-1 << std::endl;
+  }
+  else if(type==6) {
+    std::cout << "  ret" << std::endl;
   }
 }
 
