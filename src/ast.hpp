@@ -284,7 +284,7 @@ class BlockItemAST : public BaseAST {
 };
 
 
-
+//-----
 
 // LVal ::= IDENT;
 class LValAST : public BaseAST {
@@ -319,6 +319,8 @@ class LValAST : public BaseAST {
     return val.second->value;
   }
 };
+
+
 // Stmt ::= LVal "=" Exp ";"
 class StmtAssignAST : public BaseAST {
  public:
@@ -429,7 +431,7 @@ class StmtReturnAST : public BaseAST {
   }
 };
 
-/***************************Exp***************************/
+//-----
 
 
 
@@ -450,39 +452,42 @@ class ExpAST : public BaseAST {
 // LVal ::= IDENT;
 
 
-// PrimaryExp ::= "(" Exp ")" | LVal | Number;
-class PrimaryExpAST : public BaseAST {
+// PrimaryExp ::= "(" Exp ")" | Number;
+class PrimaryExpAST : public BaseAST 
+{
  public:
+  // type 为 1 时为 "(" Exp ")"
+  // type 为 2 时为 Number
   int type;
-  unique_ptr<BaseAST> exp1_lval2;
-  int number;
-  void Dump() const override
+  unique_ptr<BaseAST> exp;
+  int32_t number;
+
+  void Dump() const override 
   {
-    if(type==1) {
-      exp1_lval2->Dump();
-    }
-    else if(type==2) {
-      exp1_lval2->Dump();
-    }
-    else if(type==3) {
-      // %0 = add 0, 233
-      cout << "  %" << koopacnt << " = add 0, ";
-      cout<< number << endl;
-      koopacnt++;
+    switch (type) 
+    {
+      case 1:
+      case 2:
+        exp->Dump();
+        break;
+      case 3:
+        cout << "  %" << koopacnt ++ << " = add 0, " << number << endl;   
+        break;
     }
   }
   int Calc() const override
   {
-    if(type==1) {
-      return exp1_lval2->Calc();
+    switch (type) 
+    {
+          case 1:
+          case 2:
+            return exp->Calc();
+            break;
+          case 3:
+            return number;
+            break;
     }
-    else if(type==2) {
-      return exp1_lval2->Calc();
-    }
-    else if(type==3) {
-      return number;
-    }
-    assert(0);
+    
     return 0;
   }
 };

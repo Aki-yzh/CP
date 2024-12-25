@@ -366,14 +366,14 @@ PrimaryExp
   {
     auto ast = new PrimaryExpAST();
     ast->type = 1;
-    ast->exp1_lval2 = unique_ptr<BaseAST>($2);
+    ast->exp = unique_ptr<BaseAST>($2);
     $$ = ast;
   }
   | LVal 
   {
     auto ast = new PrimaryExpAST();
     ast->type = 2;
-    ast->exp1_lval2 = unique_ptr<BaseAST>($1);
+    ast->exp = unique_ptr<BaseAST>($1);
     $$ = ast;
   }
   | Number 
