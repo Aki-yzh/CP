@@ -399,52 +399,52 @@ class UnaryExpAST : public BaseAST
   unique_ptr<BaseAST> primaryexp1_unaryexp2;
 
   void Dump() const override 
-  {
-     if(type==1) 
+  { 
+    primaryexp1_unaryexp2->Dump();
+    if (type == 2) 
     {
-      primaryexp1_unaryexp2->Dump();
-    }
-    else if(type==2) 
-    {
-      primaryexp1_unaryexp2->Dump();
-      if(unaryop=='-') 
-      {
-        // %1 = sub 0, %0
-        cout << "  %" << koopacnt << " = sub 0, %" << koopacnt-1 <<endl;
-        koopacnt++;
-      }
-      else if(unaryop=='!')
-      {
-        // %1 = eq 0, %0
-        cout << "  %" << koopacnt << " = eq 0, %"<< koopacnt-1 <<endl;
-        koopacnt++;
-      }
+        switch (unaryop) 
+        {
+            case '-':
+                // %1 = sub 0, %0
+                cout << "  %" << koopacnt << " = sub 0, %" << (koopacnt - 1) << endl;
+                koopacnt++;
+                break;
+            case '!':
+                // %1 = eq 0, %0
+                cout << "  %" << koopacnt << " = eq 0, %" << (koopacnt - 1) << endl;
+                koopacnt++;
+                break;
+            default:
+                break;
+        }
     }
   }
   int Calc() const override
-    {
-    if(type==1) 
-    {
-      return primaryexp1_unaryexp2->Calc();
-    }
-    else if(type==2) 
-    {
-      int tmp = primaryexp1_unaryexp2->Calc();
-      if(unaryop=='+') 
+  {
+      switch (type) 
       {
-        return tmp;
+          case 1:
+              return primaryexp1_unaryexp2->Calc();
+          case 2: 
+          {
+              int tmp = primaryexp1_unaryexp2->Calc();
+              switch (unaryop) 
+              {
+                  case '+':
+                      return tmp;
+                  case '-':
+                      return -tmp;
+                  case '!':
+                      return !tmp;
+                  default:
+                      return 0;
+              }
+              break;
+          }
+          default:
+              return 0;
       }
-      else if(unaryop=='-') 
-      {
-        return -tmp;
-      }
-      else if(unaryop=='!') 
-      {
-        return !tmp;
-      }
-    }
-    assert(0);
-    return 0;
   }
 
 
