@@ -72,6 +72,8 @@ using namespace std;
 // $1 指代规则里第一个符号的返回值, 也就是 FuncDef 的返回值
 
 %%
+//对 ::= 右侧的每个规则都设计一种 AST,
+//格式均仿照开始给出的FuncDef实现
 
 //CompUnit      ::= FuncDef;
 CompUnit
