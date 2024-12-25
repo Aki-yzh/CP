@@ -316,8 +316,6 @@ class StmtAST : public BaseAST
             cout << "  ret %" << (koopacnt - 1) << endl;
             break;
         }
-        default:
-            break;
     }
     }
     int Calc() const override
@@ -417,17 +415,10 @@ class UnaryExpAST : public BaseAST
           case 2: 
           {
               int tmp = primaryexp1_unaryexp2->Calc();
-              switch (unaryop) 
-              {
-                  case '+':
-                      return tmp;
-                  case '-':
-                      return -tmp;
-                  case '!':
-                      return !tmp;
-                  default:
-                      return 0;
-              }
+              return (unaryop == '+') ? tmp :
+                    (unaryop == '-') ? -tmp :
+                    (unaryop == '!') ? !tmp :
+                    0; 
               break;
           }
           default:
@@ -488,20 +479,11 @@ class MulExpAST : public BaseAST
             {
                 int left = mulexp->Calc();
                 int right = unaryexp->Calc();
-                switch(mulop) 
-                {
-                    case '*':
-                        // %2 = mul %0, %1
-                        return left * right;
-                    case '/':
-                        // %2 = div %0, %1
-                        return left / right;
-                    case '%':
-                        // %2 = mod %0, %1
-                        return left % right;
-                    default:
-                        return 0;
-                }
+                // %2 = mul/div/mod %0, %1
+                return (mulop == '*') ? left * right :
+                      (mulop == '/') ? left / right :
+                      (mulop == '%') ? left % right :
+                      0; 
             }
             default:            
                 return 0;
@@ -560,18 +542,10 @@ class AddExpAST : public BaseAST
           {
               int left = addexp->Calc();
               int right = mulexp->Calc();
-              switch(addop) 
-              {
-                  case '+':
-                      // %2 = add %0, %1
-                      return left + right;
-                  case '-':
-                      // %2 = sub %0, %1
-                      return left - right;
-                  default:
-                      // 未知的 addop，返回 0
-                      return 0;
-              }
+              // %2 = add/sub %0, %1
+              return (addop == '+') ? left + right :
+                    (addop == '-') ? left - right :
+                    0; 
           }
           default:
               // 未知的 type，返回 0
@@ -810,8 +784,7 @@ class LOrExpAST : public BaseAST
               int right = landexp->Calc();
               return left || right;
           }
-          default:
-              
+          default:           
               return 0;
       }
   }
@@ -823,8 +796,7 @@ class ConstExpAST : public BaseAST
   unique_ptr<BaseAST> exp;
 
   void Dump() const override 
-  {
-    
+  { 
     return;
   }
 
