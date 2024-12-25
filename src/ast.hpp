@@ -678,7 +678,7 @@ class RelExpAST : public BaseAST
               }
               // 如果 relop 是多字符且未匹配任何条件
               return 0;
-          }          
+          }
           default:
               // 未知的 type，返回 0
               return 0;
@@ -700,52 +700,50 @@ class EqExpAST : public BaseAST
 
   void Dump() const override 
   {
-    if(type == 1) 
+    switch(type) 
     {
-      relexp->Dump();
-    }
-    else if(type == 2) 
-    {
-      eqexp->Dump();
-      int left = koopacnt - 1;
-      relexp->Dump();
-      int right = koopacnt - 1;
-      if(eqop == "==") 
-      {
-        // %2 = eq %0, %1
-        cout << "  %" << koopacnt << " = eq %" << left << ", %" << right << endl;
-        koopacnt++;
-      }
-      else if(eqop == "!=") 
-      {
-        // %2 = ne %0, %1
-        cout << "  %" << koopacnt << " = ne %" << left << ", %" << right << endl;
-        koopacnt++;
-      }
+        case 1:
+            relexp->Dump();
+            break;
+        case 2:
+            eqexp->Dump();
+            int left = koopacnt - 1;
+            relexp->Dump();
+            int right = koopacnt - 1;
+             // %2 = eq %0, %1  // %2 = ne %0, %1
+            cout << "  %" << koopacnt++ << " = " 
+                << ((eqop == "==") ? "eq" : "ne") 
+                << " %" << left << ", %" << right << endl;
+            
+            break;
     }
   }
 
   int Calc() const override 
   {
-    if(type == 1) 
+    switch(type)
     {
-      return relexp->Calc();
+        case 1:
+            return relexp->Calc();
+        case 2:
+        {
+            int left = eqexp->Calc();
+            int right = relexp->Calc();
+            switch(eqop[0])
+            {
+                case '=':
+                    return left == right;  // "=="
+                case '!':
+                    return left != right;  // "!="
+                default:
+                    assert(0);
+                    return 0;
+            }
+        }
+        default:
+            assert(0);
+            return 0;
     }
-    else if(type == 2) 
-    {
-      int left = eqexp->Calc();
-      int right = relexp->Calc();
-      if(eqop == "==") 
-      {
-        return left == right;
-      }
-      else if(eqop == "!=")
-      {
-        return left != right;
-      }
-    }
-    assert(0);
-    return 0;
   }
 };
 
@@ -759,45 +757,48 @@ class LAndExpAST : public BaseAST
 
   void Dump() const override 
   {
-    if(type == 1) 
-    {
-      eqexp->Dump();
-    }
-    else if(type == 2) 
-    {
-      landexp->Dump();
-      int left = koopacnt - 1;
-      eqexp->Dump();
-      int right = koopacnt - 1;
-      // A&&B <==> (A!=0)&(B!=0)
-      // %2 = ne %0, 0
-      cout << "  %" << koopacnt << " = ne %" << left << ", 0" << endl;
-      left = koopacnt;
-      koopacnt++;
-      // %3 = ne %1, 0
-      cout << "  %" << koopacnt << " = ne %" << right << ", 0" << endl;
-      right = koopacnt;
-      koopacnt++;
-      // %4 = and %2, %3
-      cout << "  %" << koopacnt << " = and %" << left << ", %" << right << endl;
-      koopacnt++;
-    }
+  switch(type)
+  {
+      case 1:
+          eqexp->Dump();
+          break;
+      case 2:
+      {
+        landexp->Dump();
+        int left = koopacnt - 1;
+        eqexp->Dump();
+        int right = koopacnt - 1;
+        // A&&B <==> (A!=0)&(B!=0)
+        // %2 = ne %0, 0
+        cout << "  %" << koopacnt << " = ne %" << left << ", 0" << endl;
+        left = koopacnt;
+        koopacnt++;
+        // %3 = ne %1, 0
+        cout << "  %" << koopacnt << " = ne %" << right << ", 0" << endl;
+        right = koopacnt;
+        koopacnt++;
+        // %4 = and %2, %3
+        cout << "  %" << koopacnt++ << " = and %" << left << ", %" << right << endl;
+        break;
+      }
+  }
   }
 
   int Calc() const override 
   {
-    if(type == 1)
+    switch(type)
     {
-      return eqexp->Calc();
+        case 1:
+            return eqexp->Calc();
+        case 2:
+        {
+            int left = landexp->Calc();
+            int right = eqexp->Calc();
+            return left && right;
+        }
+        default:
+            return 0;
     }
-    else if(type == 2) 
-    {
-      int left = landexp->Calc();
-      int right = eqexp->Calc();
-      return left && right;
-    }
-    assert(0);
-    return 0;
   }
 };
 
