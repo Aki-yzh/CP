@@ -492,116 +492,115 @@ class PrimaryExpAST : public BaseAST
   }
 };
 
+
+
 // UnaryExp ::= PrimaryExp | UnaryOp UnaryExp;
 // UnaryOp ::= "+" | "-" | "!"
-class UnaryExpAST : public BaseAST {
+class UnaryExpAST : public BaseAST 
+{
  public:
+  // type 为 1 时为 PrimaryExp
+  // 在 type 为 2 时 为 UnaryOp UnaryExp
   int type;
   char unaryop;
   unique_ptr<BaseAST> primaryexp1_unaryexp2;
-  void Dump() const override
-  {
-    if(type==1) {
-      primaryexp1_unaryexp2->Dump();
-    }
-    else if(type==2) {
-      primaryexp1_unaryexp2->Dump();
-      if(unaryop=='-') {
-        // %1 = sub 0, %0
-        cout << "  %" << koopacnt << " = sub 0, %";
-        cout << koopacnt-1 <<endl;
-        koopacnt++;
-      }
-      else if(unaryop=='!') {
-        // %1 = eq 0, %0
-        cout << "  %" << koopacnt << " = eq 0, %";
-        cout << koopacnt-1 <<endl;
-        koopacnt++;
-      }
+
+  void Dump() const override 
+  { 
+    primaryexp1_unaryexp2->Dump();
+    if (type == 2) 
+    {
+      if (unaryop == '-' || unaryop == '!')
+        cout << "  %" << koopacnt++ << " = "
+         << (unaryop == '-' ? "sub" : "eq")
+         << " 0, %" << (koopacnt - 2) << endl;
     }
   }
   int Calc() const override
   {
-    if(type==1) {
-      return primaryexp1_unaryexp2->Calc();
-    }
-    else if(type==2) {
-      int tmp = primaryexp1_unaryexp2->Calc();
-      if(unaryop=='+') {
-        return tmp;
+      switch (type) 
+      {
+          case 1:
+              return primaryexp1_unaryexp2->Calc();
+          case 2: 
+          {
+              int tmp = primaryexp1_unaryexp2->Calc();
+              return (unaryop == '+') ? tmp :
+                    (unaryop == '-') ? -tmp :
+                    (unaryop == '!') ? !tmp :
+                    0; 
+              break;
+          }
+          default:
+              return 0;
       }
-      else if(unaryop=='-') {
-        return -tmp;
-      }
-      else if(unaryop=='!') {
-        return !tmp;
-      }
-    }
-    assert(0);
-    return 0;
   }
+
+
 };
+
+
 
 // MulExp ::= UnaryExp | MulExp MulOp UnaryExp;
 // MulOp ::= "*" | "/" | "%"
-class MulExpAST : public BaseAST {
+// MulExp ::= UnaryExp | MulExp MulOp UnaryExp;
+// MulOp ::= "*" | "/" | "%"
+class MulExpAST : public BaseAST 
+{
  public:
   int type;
   char mulop;
   unique_ptr<BaseAST> mulexp;
   unique_ptr<BaseAST> unaryexp;
-  void Dump() const override
+
+  void Dump() const override 
   {
-    if(type==1) {
-      unaryexp->Dump();
-    }
-    else if(type==2) {
-      mulexp->Dump();
-      int left = koopacnt-1;
-      unaryexp->Dump();
-      int right = koopacnt-1;
-      if(mulop=='*') {
-        // %2 = mul %0, %1
-        cout << "  %" << koopacnt << " = mul %";
-        cout << left << ", %" << right << endl;
-        koopacnt++;
-      }
-      else if(mulop=='/') {
-        // %2 = div %0, %1
-        cout << "  %" << koopacnt << " = div %";
-        cout << left << ", %" << right << endl;
-        koopacnt++;
-      }
-      else if(mulop=='%') {
-        // %2 = mod %0, %1
-        cout << "  %" << koopacnt << " = mod %";
-        cout << left << ", %" << right << endl;
-        koopacnt++;
-      }
+    switch(type) 
+    {
+        case 1:
+            unaryexp->Dump();
+            break;
+        case 2: 
+            mulexp->Dump();
+            int left = koopacnt - 1;
+            unaryexp->Dump();
+            int right = koopacnt - 1;
+            string op;
+            switch(mulop)
+            {
+                case '*': op = "mul"; break;
+                case '/': op = "div"; break;
+                case '%': op = "mod"; break;
+                default: return;
+            }
+            cout << "  %" << koopacnt++ << " = " << op << " %" << left << ", %" << right << endl;
+            break;
+
     }
   }
-  int Calc() const override
+
+  int Calc() const override 
   {
-    if(type==1) {
-      return unaryexp->Calc();
-    }
-    else if(type==2) {
-      int left = mulexp->Calc();
-      int right = unaryexp->Calc();
-      if(mulop=='*') {
-        return left * right;
-      }
-      else if(mulop=='/') {
-        return left / right;
-      }
-      else if(mulop=='%') {
-        return left % right;
-      }
-    }
-    assert(0);
-    return 0;
+    switch(type) 
+        {
+            case 1:
+                return unaryexp->Calc();
+            case 2: 
+            {
+                int left = mulexp->Calc();
+                int right = unaryexp->Calc();
+                // %2 = mul/div/mod %0, %1
+                return (mulop == '*') ? left * right :
+                      (mulop == '/') ? left / right :
+                      (mulop == '%') ? left % right :
+                      0; 
+            }
+            default:            
+                return 0;
+        }
   }
 };
+
 
 // AddExp ::= MulExp | AddExp AddOp MulExp;
 // AddOp ::= "+" | "-"
