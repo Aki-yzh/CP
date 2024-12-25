@@ -467,62 +467,67 @@ class MulExpAST : public BaseAST
 
   void Dump() const override 
   {
-    if(type == 1)
+    switch(type) 
     {
-      unaryexp->Dump();
-    }
-    else if(type == 2) 
-    {
-      mulexp->Dump();
-      int left = koopacnt - 1;
-      unaryexp->Dump();
-      int right = koopacnt - 1;
-      if(mulop == '*') 
-      {
-        // %2 = mul %0, %1
-        cout << "  %" << koopacnt << " = mul %" << left << ", %" << right << endl;
-        koopacnt++;
-      }
-      else if(mulop == '/') 
-      {
-        // %2 = div %0, %1
-        cout << "  %" << koopacnt << " = div %" << left << ", %" << right << endl;
-        koopacnt++;
-      }
-      else if(mulop == '%') 
-      {
-        // %2 = mod %0, %1
-        cout << "  %" << koopacnt << " = mod %" << left << ", %" << right << endl;
-        koopacnt++;
-      }
+        case 1:
+            unaryexp->Dump();
+            break;
+        case 2: 
+            mulexp->Dump();
+            int left = koopacnt - 1;
+            unaryexp->Dump();
+            int right = koopacnt - 1;
+            switch(mulop) 
+            {
+                case '*':
+                    // %2 = mul %0, %1
+                    cout << "  %" << koopacnt << " = mul %" << left << ", %" << right << endl;
+                    koopacnt++;
+                    break;
+                case '/':
+                    // %2 = div %0, %1
+                    cout << "  %" << koopacnt << " = div %" << left << ", %" << right << endl;
+                    koopacnt++;
+                    break;
+                case '%':
+                    // %2 = mod %0, %1
+                    cout << "  %" << koopacnt << " = mod %" << left << ", %" << right << endl;
+                    koopacnt++;
+                    break;
+            }
+            break;
+
     }
   }
 
   int Calc() const override 
   {
-    if(type == 1) 
-    {
-      return unaryexp->Calc();
-    }
-    else if(type == 2) 
-    {
-      int left = mulexp->Calc();
-      int right = unaryexp->Calc();
-      if(mulop == '*') 
-      {
-        return left * right;
-      }
-      else if(mulop == '/') 
-      {
-        return left / right;
-      }
-      else if(mulop == '%') 
-      {
-        return left % right;
-      }
-    }
-    assert(0);
-    return 0;
+    switch(type) 
+        {
+            case 1:
+                return unaryexp->Calc();
+            case 2: 
+            {
+                int left = mulexp->Calc();
+                int right = unaryexp->Calc();
+                switch(mulop) 
+                {
+                    case '*':
+                        // %2 = mul %0, %1
+                        return left * right;
+                    case '/':
+                        // %2 = div %0, %1
+                        return left / right;
+                    case '%':
+                        // %2 = mod %0, %1
+                        return left % right;
+                    default:
+                        return 0;
+                }
+            }
+            default:            
+                return 0;
+        }
   }
 };
 
@@ -540,52 +545,60 @@ class AddExpAST : public BaseAST
 
   void Dump() const override 
   {
-    if(type == 1) 
+    switch(type) 
     {
-      mulexp->Dump();
-    }
-    else if(type == 2)
-     {
-      addexp->Dump();
-      int left = koopacnt - 1;
-      mulexp->Dump();
-      int right = koopacnt - 1;
-      if(addop == '+') 
-      {
-        // %2 = add %0, %1
-        cout << "  %" << koopacnt << " = add %" << left << ", %" << right << endl;
-        koopacnt++;
-      }
-      else if(addop == '-') 
-      {
-        // %2 = sub %0, %1
-        cout << "  %" << koopacnt << " = sub %" << left << ", %" << right << endl;
-        koopacnt++;
-      }
+        case 1:
+            mulexp->Dump();
+            break;
+        case 2:
+            addexp->Dump();
+            int left = koopacnt - 1;
+            mulexp->Dump();
+            int right = koopacnt - 1;
+            switch(addop) 
+            {
+                case '+':
+                    // %2 = add %0, %1
+                    cout << "  %" << koopacnt << " = add %" << left << ", %" << right << endl;
+                    koopacnt++;
+                    break;
+                case '-':
+                    // %2 = sub %0, %1
+                    cout << "  %" << koopacnt << " = sub %" << left << ", %" << right << endl;
+                    koopacnt++;
+                    break;
+            }
+            break;
     }
   }
 
-  int Calc() const override 
+  int Calc() const override
   {
-    if(type == 1) 
-    {
-      return mulexp->Calc();
-    }
-    else if(type == 2) 
-    {
-      int left = addexp->Calc();
-      int right = mulexp->Calc();
-      if(addop == '+') 
+      switch(type) 
       {
-        return left + right;
+          case 1:
+              return mulexp->Calc();
+          case 2: 
+          {
+              int left = addexp->Calc();
+              int right = mulexp->Calc();
+              switch(addop) 
+              {
+                  case '+':
+                      // %2 = add %0, %1
+                      return left + right;
+                  case '-':
+                      // %2 = sub %0, %1
+                      return left - right;
+                  default:
+                      // 未知的 addop，返回 0
+                      return 0;
+              }
+          }
+          default:
+              // 未知的 type，返回 0
+              return 0;
       }
-      else if(addop == '-') 
-      {
-        return left - right;
-      }
-    }
-    assert(0);
-    return 0;
   }
 };
 
