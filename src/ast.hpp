@@ -268,7 +268,7 @@ class LValAST : public BaseAST
   {
       auto val = query_symbol(ident);
       assert(val->type != SYM_TYPE_UND);
-
+      // %0 = add 0, 233   // %0 = load @x
       std::string instruction = (val->type == SYM_TYPE_CONST) 
                                 ? "add 0, " + std::to_string(val->value) 
                                 : "load @" + ident;
@@ -296,19 +296,29 @@ class StmtAST : public BaseAST
   unique_ptr<BaseAST> exp;
   void Dump() const override
   {
-      if(type==1)
-      {
-      exp->Dump();
-      // 存入刚刚计算出的值
-      // store %1, @x
-      cout << "  store %" << koopacnt-1 << ", @"<< dynamic_cast<LValAST*>(lval.get())->ident << endl;
-      }
-      else if(type==2) 
-      {
-        exp->Dump();
-        // ret %0
-        cout << "  ret %" << koopacnt-1;
-      }
+    exp->Dump();
+
+    switch (type) 
+    {
+        case 1: 
+        {
+            // 存储刚刚计算出的值
+            // store %1, @x
+            auto lval_ast = dynamic_cast<LValAST*>(lval.get());
+            assert(lval_ast && "Expected LValAST");
+            cout << "  store %" << (koopacnt - 1) << ", @" << lval_ast->ident << endl;
+            break;
+        }
+        case 2: 
+        {
+            // 返回表达式结果
+            // ret %0
+            cout << "  ret %" << (koopacnt - 1) << endl;
+            break;
+        }
+        default:
+            break;
+    }
     }
     int Calc() const override
     {
