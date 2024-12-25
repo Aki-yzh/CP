@@ -618,72 +618,71 @@ class RelExpAST : public BaseAST
   void Dump() const override
    
   {
-    if(type == 1) 
+    switch(type) 
     {
-      addexp->Dump();
-    }
-    else if(type == 2) 
-    {
-      relexp->Dump();
-      int left = koopacnt - 1;
-      addexp->Dump();
-      int right = koopacnt - 1;
-      if(relop == "<") 
-      {
-        // %2 = lt %0, %1
-        cout << "  %" << koopacnt << " = lt %" << left << ", %" << right << endl;
-        koopacnt++;
-      }
-      else if(relop == ">") 
-      {
-        // %2 = gt %0, %1
-        cout << "  %" << koopacnt << " = gt %" << left << ", %" << right << endl;
-        koopacnt++;
-      }
-      else if(relop == "<=") 
-      {
-        // %2 = le %0, %1
-        cout << "  %" << koopacnt << " = le %" << left << ", %" << right << endl;
-        koopacnt++;
-      }
-      else if(relop == ">=") 
-      {
-        // %2 = ge %0, %1
-        cout << "  %" << koopacnt << " = ge %" << left << ", %" << right << endl;
-        koopacnt++;
-      }
+        case 1:
+            addexp->Dump();
+            break;
+        case 2:
+        {
+            relexp->Dump();
+            int left = koopacnt - 1;
+            addexp->Dump();
+            int right = koopacnt - 1;
+
+            // Map relational operators to their corresponding instructions
+            std::unordered_map<std::string, std::string> relop_map = {
+                {"<", "lt"},
+                {">", "gt"},
+                {"<=", "le"},
+                {">=", "ge"}
+            };
+
+            auto it = relop_map.find(relop);
+            if (it != relop_map.end()) {
+                // %2 = <op> %0, %1
+                cout << "  %" << koopacnt << " = " << it->second 
+                    << " %" << left << ", %" << right << endl;
+                koopacnt++;
+            }
+            break;
+        }
+
     }
   }
 
-  int Calc() const override 
+  int Calc() const override
   {
-    if(type == 1) 
-    {
-      return addexp->Calc();
-    }
-    else if(type == 2) 
-    {
-      int left = relexp->Calc();
-      int right = addexp->Calc();
-      if(relop == "<") 
+      switch(type) 
       {
-        return left < right;
+          case 1:
+              return addexp->Calc();
+          case 2: 
+          {
+              int left = relexp->Calc();
+              int right = addexp->Calc();
+              switch(relop[0]) // Assuming relop is a string and using the first character
+              {
+                  case '<':
+                      if(relop == "<")
+                          return left < right;
+                      else if(relop == "<=")
+                          return left <= right;
+                      break;
+                  case '>':
+                      if(relop == ">")
+                          return left > right;
+                      else if(relop == ">=")
+                          return left >= right;
+                      break;
+              }
+              // 如果 relop 是多字符且未匹配任何条件
+              return 0;
+          }          
+          default:
+              // 未知的 type，返回 0
+              return 0;
       }
-      else if(relop == ">") 
-      {
-        return left > right;
-      }
-      else if(relop == "<=")
-      {
-        return left <= right;
-      }
-      else if(relop == ">=") 
-      {
-        return left >= right;
-      }
-    }
-    assert(0);
-    return 0;
   }
 };
 
