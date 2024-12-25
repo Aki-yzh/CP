@@ -292,24 +292,16 @@ class LValAST : public BaseAST {
   string ident;
   void Dump() const override
   {
+
+
     auto val = query_symbol(ident);
     assert(val.second->type != SYM_TYPE_UND);
 
-    if(val.second->type == SYM_TYPE_CONST)
-    {
-      // 此处有优化空间
-      // %0 = add 0, 233
-      cout << "  %" << koopacnt << " = add 0, ";
-      cout<< val.second->value << endl;
-      koopacnt++;
-    }
-    else if(val.second->type == SYM_TYPE_VAR)
-    {
-      // 从内存读取 LVal
-      // %0 = load @x
-      cout << "  %" << koopacnt << " = load @" << val.first << ident << endl;
-      koopacnt++;
-    }
+    string instruction = (val.second->type == SYM_TYPE_CONST) 
+                          ? "add 0, " + to_string(val.second->value) 
+                          : "load @" + val.first + ident;
+
+    cout << "  %" << koopacnt++ << " = " << instruction << endl;
     return;
   }
   int Calc() const override
