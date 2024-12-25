@@ -319,108 +319,66 @@ class LValAST : public BaseAST
   }
 };
 
-
-// Stmt ::= LVal "=" Exp ";"
-class StmtAssignAST : public BaseAST 
+class StmtAST : public BaseAST 
 {
  public:
+  int type;
   unique_ptr<BaseAST> lval;
   unique_ptr<BaseAST> exp;
-  void Dump() const override
-  {
-    exp->Dump();
-    // 存入刚刚计算出的值
-    // store %1, @x
-    const string& ident = dynamic_cast<LValAST*>(lval.get())->ident;
-    cout << "  store %" << koopacnt-1 << ", @"<< query_symbol(ident).first << ident << endl;
-  }
-  int Calc() const override
-  {
-    return 0;
-  }
-};
-
-//        | ";"
-//        | Exp ";"
-class StmtExpAST : public BaseAST 
-{
- public:
-  int type;
-  unique_ptr<BaseAST> exp;
-  void Dump() const override
-  {
-   if(type==2) 
-   {
-      exp->Dump();
-    }
-  }
-   int Calc() const override
-  {
-    
-    return 0;
-  }
-};
-
-//        | Block
-class StmtBlockAST : public BaseAST 
-{
- public:
   unique_ptr<BaseAST> block;
-  void Dump() const override
-  {
-    block->Dump();
-  }
-   int Calc() const override
-  {
-    
-    return 0;
-  }
-};
-
-
-class StmtIfAST : public BaseAST 
-{
- public:
-  int type;
-  unique_ptr<BaseAST> exp;
   unique_ptr<BaseAST> stmt_if;
   unique_ptr<BaseAST> stmt_else;
-  void Dump() const override
-  {
-    return;
-  }
-   int Calc() const override
-  {
-    
-    return 0;
-  }
-};
 
-//        | "return" ";";
-//        | "return" Exp ";";
-class StmtReturnAST : public BaseAST 
-{
- public:
-  int type;
-  unique_ptr<BaseAST> exp;
   void Dump() const override
   {
-    if(type==1) 
+    switch (type) 
     {
-      cout << "  ret" << endl;
-      entry_returned = 1;
-    }
-    else if(type==2) 
-    {
-      exp->Dump();
-      // ret %0
-      cout << "  ret %" << koopacnt-1 << endl;
-      entry_returned = 1;
+      case 1: // LVal '=' Exp ';'
+      {  exp->Dump();
+        const string& ident = dynamic_cast<LValAST*>(lval.get())->ident;
+        cout << "  store %" << koopacnt-1 << ", @"<< query_symbol(ident).first << ident << endl;
+        break;
+      }
+      case 2: // ';'
+        break;
+      case 3: // Exp ';'
+      {
+        exp->Dump();
+        break;
+      }
+      case 4: // Block
+      {
+        block->Dump();
+        break;
+      }
+      case 5:
+      { // IF "(" Exp ")" Stmt
+        // Add your IF statement handling here
+        break;
+      }
+      case 6:
+      { // IF "(" Exp ")" Stmt ELSE Stmt
+        // Add your IF-ELSE statement handling here
+        break;
+      }
+      case 7:
+      { // RETURN ';'
+        cout << "  ret" << endl;
+        entry_returned = 1;
+        break;
+      }
+      case 8: 
+      {// RETURN Exp ';'
+        exp->Dump();
+        cout << "  ret %" << koopacnt-1 << endl;
+        entry_returned = 1;
+        break;
+      }
     }
   }
-   int Calc() const override
+
+  int Calc() const override
   {
-    
     return 0;
   }
 };
