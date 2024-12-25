@@ -324,12 +324,10 @@ class StmtAssignAST : public BaseAST {
     // 存入刚刚计算出的值
     // store %1, @x
     const string& ident = dynamic_cast<LValAST*>(lval.get())->ident;
-    cout << "  store %" << koopacnt-1 << ", @";
-    cout << query_symbol(ident).first << ident << endl;
+    cout << "  store %" << koopacnt-1 << ", @"<< query_symbol(ident).first << ident << endl;
   }
-   int Calc() const override
+  int Calc() const override
   {
-    
     return 0;
   }
 };
@@ -342,10 +340,8 @@ class StmtExpAST : public BaseAST {
   unique_ptr<BaseAST> exp;
   void Dump() const override
   {
-    if(type==1) {
-      // do nothing
-    }
-    else if(type==2) {
+   if(type==2) 
+   {
       exp->Dump();
     }
   }
@@ -371,15 +367,7 @@ class StmtBlockAST : public BaseAST {
   }
 };
 
-//        | "if" "(" Exp ")" Stmt
-//        | "if" "(" Exp ")" Stmt "else" Stmt
-// 此处有移进/归约冲突, SysY 的语义规定了 else 必须和最近的 if 进行匹配
-// 则此处应选择发生冲突时应选择移进，即选择第二条规则
-// 在 sysy.y 中如下实现：
-// %precedence IFX
-// %precedence ELSE
-// IF "(" Exp ")" Stmt %prec IFX
-// IF "(" Exp ")" Stmt ELSE Stmt
+
 class StmtIfAST : public BaseAST {
  public:
   int type;
@@ -388,7 +376,7 @@ class StmtIfAST : public BaseAST {
   unique_ptr<BaseAST> stmt_else;
   void Dump() const override
   {
-     assert(0);
+    return;
   }
    int Calc() const override
   {
