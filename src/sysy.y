@@ -48,16 +48,16 @@ using namespace std;
 %token LAND LOR
 %token <str_val> IDENT RELOP EQOP
 %token <int_val> INT_CONST
-
+%token <char_val> MULOP
 
 // 非终结符的类型定义
 
 // lv3.3参考语法规范，新添加的有Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
 %type <ast_val> FuncDef FuncType Block Stmt Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
 %type <int_val> Number
-%type <char_val> UnaryOp AddOp MulOp
+%type <char_val> UnaryOp AddOp 
 
-//lv4语法规范
+//lv4新增语法规范
 %type <ast_val> Decl ConstDecl BType ConstDef ConstInitVal VarDecl VarDef InitVal
 %type <ast_val> BlockItem 
 %type <ast_val> LVal ConstExp
@@ -73,6 +73,7 @@ using namespace std;
 
 %%
 
+//CompUnit      ::= FuncDef;
 CompUnit
   : FuncDef 
   {
@@ -82,6 +83,7 @@ CompUnit
   }
   ;
 
+//Decl          ::= ConstDecl | VarDecl;
 Decl
   : ConstDecl 
   {
@@ -99,6 +101,7 @@ Decl
   }
   ;
 
+//ConstDecl     ::= "const" BType ConstDef {"," ConstDef} ";";
 ConstDecl
   : CONST BType ConstDefList ';' 
   {
@@ -109,6 +112,7 @@ ConstDecl
   }
   ;
 
+//BType         ::= "int";
 BType
   : INT 
   {
@@ -117,6 +121,7 @@ BType
   }
   ;
 
+//NEW,常量表(把constdecl再拆分)
 ConstDefList
   : ConstDef 
   {
@@ -132,6 +137,7 @@ ConstDefList
   }
   ;
 
+//ConstDef      ::= IDENT "=" ConstInitVal;
 ConstDef
   : IDENT '=' ConstInitVal 
   {
@@ -142,6 +148,7 @@ ConstDef
   }
   ;
 
+//ConstInitVal  ::= ConstExp;
 ConstInitVal
   : ConstExp 
   {
@@ -151,6 +158,7 @@ ConstInitVal
   }
   ;
 
+//VarDecl       ::= BType VarDef {"," VarDef} ";";
 VarDecl
   : BType VarDefList ';' 
   {
@@ -160,7 +168,7 @@ VarDecl
     $$ = ast;
   }
   ;
-
+//NEW,变量表(把vardecl再拆分)
 VarDefList
   : VarDef 
   {
@@ -175,7 +183,7 @@ VarDefList
     $$ = vec;
   }
   ;
-
+//VarDef        ::= IDENT | IDENT "=" InitVal;
 VarDef
   : IDENT 
   {
@@ -193,7 +201,7 @@ VarDef
     $$ = ast;
   }
   ;
-
+//InitVal       ::= Exp;
 InitVal
   : Exp 
   {
@@ -235,7 +243,7 @@ FuncType
     $$ = ast;
   }
   ;
-
+//Block         ::= "{" {BlockItem} "}";
 Block
   : '{' BlockItemList '}' 
   {
@@ -258,7 +266,7 @@ BlockItemList
     $$ = vec;
   }
   ;
-
+//BlockItem     ::= Decl | Stmt;
 BlockItem
   : Decl 
   {
@@ -274,6 +282,8 @@ BlockItem
     $$=ast;
   }
   ;
+
+//Stmt          ::= LVal "=" Exp ";"| "return" Exp ";";
 
 Stmt
   : LVal '=' Exp ';' 
@@ -292,7 +302,7 @@ Stmt
     $$ = ast;
   }
   ;
-
+//Exp           ::= LOrExp;
 Exp
   : LOrExp 
   {
@@ -301,7 +311,7 @@ Exp
     $$ = ast;
   }
   ;
-
+  //LVal          ::= IDENT;
 LVal
   : IDENT 
   {
@@ -310,7 +320,7 @@ LVal
     $$=ast;
   }
   ;
-
+//PrimaryExp    ::= "(" Exp ")" | LVal | Number;
 PrimaryExp
   : '(' Exp ')' 
   {
@@ -334,14 +344,14 @@ PrimaryExp
     $$ = ast;
   }
   ;
-
+//Number        ::= INT_CONST;
 Number
   : INT_CONST 
   {
     $$ = $1;
   }
   ;
-
+//UnaryExp      ::= PrimaryExp | UnaryOp UnaryExp;
 UnaryExp
   : PrimaryExp 
   {
@@ -359,7 +369,7 @@ UnaryExp
     $$ = ast;
   }
   ;
-
+//UnaryOp       ::= "+" | "-" | "!";
 UnaryOp
   : '+' 
   {
@@ -374,6 +384,7 @@ UnaryOp
     $$ = '!';
   }
   ;
+//MulExp        ::= UnaryExp | MulExp ("*" | "/" | "%") UnaryExp;
 MulExp
   : UnaryExp {
     auto ast = new MulExpAST();
@@ -381,7 +392,7 @@ MulExp
     ast->unaryexp = unique_ptr<BaseAST>($1);
     $$ = ast;
   }
-  | MulExp MulOp UnaryExp {
+  | MulExp MULOP UnaryExp {
     auto ast = new MulExpAST();
     ast->type = 2;
     ast->mulexp = unique_ptr<BaseAST>($1);
@@ -391,21 +402,8 @@ MulExp
   }
   ;
 
-MulOp
-  : '*' 
-  {
-    $$ = '*';
-  }
-  | '/' 
-  {
-    $$ = '/';
-  }
-  | '%' 
-  {
-    $$ = '%';
-  }
-  ;
 
+//AddExp        ::= MulExp | AddExp ("+" | "-") MulExp;
 AddExp
   : MulExp 
   {
@@ -435,7 +433,7 @@ AddOp
     $$ = '-';
   }
   ;
-
+//RelExp        ::= AddExp | RelExp ("<" | ">" | "<=" | ">=") AddExp;
 RelExp
   : AddExp 
   {
@@ -454,7 +452,7 @@ RelExp
     $$ = ast;
   }
   ;
-
+//EqExp         ::= RelExp | EqExp ("==" | "!=") RelExp;
 EqExp
   : RelExp 
   {
@@ -473,7 +471,7 @@ EqExp
     $$ = ast;
   }
   ;
-
+//LAndExp       ::= EqExp | LAndExp "&&" EqExp;
 LAndExp
   : EqExp 
   {
@@ -491,7 +489,7 @@ LAndExp
     $$ = ast;
   }
   ;
-
+//LOrExp        ::= LAndExp | LOrExp "||" LAndExp;
 LOrExp
   : LAndExp 
   {
@@ -509,7 +507,7 @@ LOrExp
     $$ = ast;
   }
   ;
-
+//ConstExp      ::= Exp;
 ConstExp
   : Exp 
   {

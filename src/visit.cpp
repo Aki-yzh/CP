@@ -59,8 +59,9 @@ void Visit(const koopa_raw_function_t &func)
 {
   // 执行一些其他的必要操作
   // ...
+   // 输出函数头部的汇编指令
   cout << "  .text" << endl<< "  .globl " << func->name + 1 << endl << func->name + 1 << ":" << endl;
-  // 清空
+  // 重置栈帧相关的变量
   stack_frame_length = 0;
   stack_frame_used = 0;
 
@@ -79,10 +80,11 @@ void Visit(const koopa_raw_function_t &func)
           var_cnt--;
     }
   }
+  // 每个变量占用4字节空间
   stack_frame_length = var_cnt << 2;
   // 将栈帧长度对齐到 16
   stack_frame_length = (stack_frame_length + 16 - 1) & (~(16 - 1));
-
+  //分配栈空间
   if (stack_frame_length != 0)
     cout << "  addi sp, sp, -" << stack_frame_length << endl;
 
@@ -157,11 +159,13 @@ void Visit(const koopa_raw_return_t &ret)
   cout << "  ret" << endl;
 }
 
-
+// 处理 integer 指令，加载整数常量到 a0 寄存器
 void Visit(const koopa_raw_integer_t &integer) 
 {
   cout << "  li a0, " << integer.value << endl;
 }
+
+// 处理 load 指令，将源操作数加载到 t0 寄存器，并存储结果到栈中
 void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value) 
 {
    // 将 load.src 的值放置在 t0 寄存器中
@@ -177,7 +181,8 @@ void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value)
   stack_frame_used += 4;
   cout << "  sw t0, " << loc[value] << endl;
 }
-// 访问 store 指令
+
+// 处理 store 指令，将源操作数存储到目标地址
 void Visit(const koopa_raw_store_t &store) 
 {
    // 将 store.value 的值放置在 t0 寄存器中
@@ -191,7 +196,7 @@ void Visit(const koopa_raw_store_t &store)
   }
   cout << "  sw t0, " << loc[store.dest] << endl;
 }
-// 访问 binary 指令
+// 处理 binary 指令，执行二元运算并将结果存储到栈中
 void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value) 
 {
   // 将运算数存入 t0 和 t1

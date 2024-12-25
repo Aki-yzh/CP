@@ -48,7 +48,7 @@ MulOp         [*/%]
 {EqOp}          { yylval.str_val = new string(yytext); return EQOP; }
 "&&"            { return LAND; }
 "||"            { return LOR; }
-
+{MulOp}         { yylval.char_val = yytext[0]; return MULOP; }
 
 
 {Identifier}    { yylval.str_val = new string(yytext); return IDENT; }
