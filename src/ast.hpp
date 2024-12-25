@@ -390,9 +390,10 @@ class UnaryExpAST : public BaseAST
     primaryexp1_unaryexp2->Dump();
     if (type == 2) 
     {
-       cout << "  %" << koopacnt++ << " = "
-         << (unaryop == '-' ? "sub" : "eq")
-         << " 0, %" << (koopacnt - 2) << endl;
+      if (unaryop == '-' || unaryop == '!')
+          cout << "  %" << koopacnt++ << " = "
+          << (unaryop == '-' ? "sub" : "eq")
+          << " 0, %" << (koopacnt - 2) << endl;
     }
   }
   int Calc() const override
