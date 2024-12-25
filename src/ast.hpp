@@ -361,33 +361,28 @@ class PrimaryExpAST : public BaseAST
     switch (type) 
     {
       case 1:
-        exp->Dump();
-        break;
       case 2:
         exp->Dump();
         break;
       case 3:
-        cout << "  %" << koopacnt << " = add 0, " << number << endl;
-        koopacnt++;
+        cout << "  %" << koopacnt ++ << " = add 0, " << number << endl;   
         break;
     }
   }
   int Calc() const override
   {
-     if(type==1) 
-     {
-        return exp->Calc();
-      }
-      else if(type==2) 
-      {
-        return exp->Calc();
-      }
-      else if(type==3) 
-      {
-        return number;
-      }
-      assert(0);
-      return 0;
+    switch (type) 
+    {
+          case 1:
+          case 2:
+            return exp->Calc();
+            break;
+          case 3:
+            return number;
+            break;
+    }
+    assert(0);
+    return 0;
   }
 };
 
