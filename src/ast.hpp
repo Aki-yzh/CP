@@ -602,286 +602,317 @@ class MulExpAST : public BaseAST
 };
 
 
+
 // AddExp ::= MulExp | AddExp AddOp MulExp;
 // AddOp ::= "+" | "-"
-class AddExpAST : public BaseAST {
+class AddExpAST : public BaseAST 
+{
  public:
   int type;
   char addop;
   unique_ptr<BaseAST> addexp;
   unique_ptr<BaseAST> mulexp;
-  void Dump() const override
+
+  void Dump() const override 
   {
-    if(type==1) {
-      mulexp->Dump();
-    }
-    else if(type==2) {
-      addexp->Dump();
-      int left = koopacnt-1;
-      mulexp->Dump();
-      int right = koopacnt-1;
-      if(addop=='+') {
-        // %2 = add %0, %1
-        cout << "  %" << koopacnt << " = add %";
-        cout << left << ", %" << right << endl;
-        koopacnt++;
-      }
-      else if(addop=='-') {
-        // %2 = sub %0, %1
-        cout << "  %" << koopacnt << " = sub %";
-        cout << left << ", %" << right << endl;
-        koopacnt++;
-      }
+    switch(type) 
+    {
+        case 1:
+            mulexp->Dump();
+            break;
+        case 2:
+            addexp->Dump();
+            int left = koopacnt - 1;
+            mulexp->Dump();
+            int right = koopacnt - 1;
+            string op;
+            switch(addop) 
+            {
+                case '+':
+                    // %2 = add %0, %1
+                    op = "add";
+                    break;
+                case '-':
+                    // %2 = sub %0, %1
+                    op = "sub";
+                    break;
+                default:
+                    return;
+            }
+            cout << "  %" << koopacnt++ << " = " << op << " %" << left << ", %" << right << endl;
+            break;
     }
   }
+
   int Calc() const override
   {
-    if(type==1) {
-      return mulexp->Calc();
-    }
-    else if(type==2) {
-      int left = addexp->Calc();
-      int right = mulexp->Calc();
-      if(addop=='+') {
-        return left + right;
+      switch(type) 
+      {
+          case 1:
+              return mulexp->Calc();
+          case 2: 
+          {
+              int left = addexp->Calc();
+              int right = mulexp->Calc();
+              // %2 = add/sub %0, %1
+              return (addop == '+') ? left + right :
+                    (addop == '-') ? left - right :
+                    0; 
+          }
+          default:
+              // 未知的 type，返回 0
+              return 0;
       }
-      else if(addop=='-') {
-        return left - right;
-      }
-    }
-    assert(0);
-    return 0;
   }
 };
 
+
+
+
 // RelExp ::= AddExp | RelExp RelOp AddExp;
 // RelOp ::= "<" | ">" | "<=" | ">="
-class RelExpAST : public BaseAST {
+class RelExpAST : public BaseAST 
+{
  public:
   int type;
   string relop;
   unique_ptr<BaseAST> relexp;
   unique_ptr<BaseAST> addexp;
+
   void Dump() const override
+   
   {
-     if(type==1) {
-      addexp->Dump();
-      }
-      else if(type==2) {
-        relexp->Dump();
-        int left = koopacnt-1;
-        addexp->Dump();
-        int right = koopacnt-1;
-        if(relop=="<") {
-          // %2 = lt %0, %1
-          cout << "  %" << koopacnt << " = lt %";
-          cout << left << ", %" << right << endl;
-          koopacnt++;
+    switch(type) 
+    {
+        case 1:
+            addexp->Dump();
+            break;
+        case 2:
+        {
+            relexp->Dump();
+            int left = koopacnt - 1;
+            addexp->Dump();
+            int right = koopacnt - 1;
+
+            // Map relational operators to their corresponding instructions
+            unordered_map<string, string> relop_map = {
+                {"<", "lt"},
+                {">", "gt"},
+                {"<=", "le"},
+                {">=", "ge"}
+            };
+
+            auto it = relop_map.find(relop);
+            if (it != relop_map.end()) {
+                // %2 = <op> %0, %1
+                cout << "  %" << koopacnt << " = " << it->second 
+                    << " %" << left << ", %" << right << endl;
+                koopacnt++;
+            }
+            break;
         }
-        else if(relop==">") {
-          // %2 = gt %0, %1
-          cout << "  %" << koopacnt << " = gt %";
-          cout << left << ", %" << right << endl;
-          koopacnt++;
-        }
-        else if(relop=="<=") {
-          // %2 = le %0, %1
-          cout << "  %" << koopacnt << " = le %";
-          cout << left << ", %" << right << endl;
-          koopacnt++;
-        }
-        else if(relop==">=") {
-          // %2 = ge %0, %1
-          cout << "  %" << koopacnt << " = ge %";
-          cout << left << ", %" << right << endl;
-          koopacnt++;
-        }
-      }
+
+    }
   }
+
   int Calc() const override
   {
-    if(type==1) {
-      return addexp->Calc();
-    }
-    else if(type==2) {
-      int left = relexp->Calc();
-      int right = addexp->Calc();
-      if(relop=="<") {
-        return left < right;
+      switch(type) 
+      {
+          case 1:
+              return addexp->Calc();
+          case 2: 
+          {
+              int left = relexp->Calc();
+              int right = addexp->Calc();
+              return (relop == "<") ? (left < right) :
+                    (relop == "<=") ? (left <= right) :
+                    (relop == ">") ? (left > right) :
+                    (relop == ">=") ? (left >= right) :
+                    0; 
+              
+          }
+          default:
+              // 未知的 type，返回 0
+              return 0;
       }
-      else if(relop==">") {
-        return left > right;
-      }
-      else if(relop=="<=") {
-        return left <= right;
-      }
-      else if(relop==">=") {
-        return left >= right;
-      }
-    }
-    assert(0);
-    return 0;
   }
 };
 
+
+
 // EqExp ::= RelExp | EqExp EqOp RelExp;
 // EqOp ::= "==" | "!="
-class EqExpAST : public BaseAST {
+class EqExpAST : public BaseAST 
+{
  public:
   int type;
   string eqop;
   unique_ptr<BaseAST> eqexp;
   unique_ptr<BaseAST> relexp;
-  void Dump() const override
+
+  void Dump() const override 
   {
-    if(type==1) {
-      relexp->Dump();
-    }
-    else if(type==2) {
-      eqexp->Dump();
-      int left = koopacnt-1;
-      relexp->Dump();
-      int right = koopacnt-1;
-      if(eqop=="==") {
-        // %2 = eq %0, %1
-        cout << "  %" << koopacnt << " = eq %";
-        cout << left << ", %" << right << endl;
-        koopacnt++;
-      }
-      else if(eqop=="!=") {
-        // %2 = ne %0, %1
-        cout << "  %" << koopacnt << " = ne %";
-        cout << left << ", %" << right << endl;
-        koopacnt++;
-      }
+    switch(type) 
+    {
+        case 1:
+            relexp->Dump();
+            break;
+        case 2:
+            eqexp->Dump();
+            int left = koopacnt - 1;
+            relexp->Dump();
+            int right = koopacnt - 1;
+             // %2 = eq %0, %1  // %2 = ne %0, %1
+            cout << "  %" << koopacnt++ << " = " 
+                << ((eqop == "==") ? "eq" : "ne") 
+                << " %" << left << ", %" << right << endl;
+            
+            break;
     }
   }
-  int Calc() const override
+
+  int Calc() const override 
   {
-    if(type==1) {
-      return relexp->Calc();
+    switch(type)
+    {
+        case 1:
+            return relexp->Calc();
+        case 2:
+        {
+            int left = eqexp->Calc();
+            int right = relexp->Calc();
+            return (eqop == "==") ? (left == right) :
+                  (eqop == "!=") ? (left != right) :
+                  0; 
+        }
+        default:
+            return 0;
     }
-    else if(type==2) {
-      int left = eqexp->Calc();
-      int right = relexp->Calc();
-      if(eqop=="==") {
-        return left == right;
-      }
-      else if(eqop=="!=") {
-        return left != right;
-      }
-    }
-    assert(0);
-    return 0;
   }
 };
 
 // LAndExp ::= EqExp | LAndExp "&&" EqExp;
-class LAndExpAST : public BaseAST {
+class LAndExpAST : public BaseAST 
+{
  public:
   int type;
   unique_ptr<BaseAST> landexp;
   unique_ptr<BaseAST> eqexp;
-  void Dump() const override
+
+  void Dump() const override 
   {
-    if(type==1) {
-      eqexp->Dump();
-    }
-    else if(type==2) {
-      landexp->Dump();
-      int left = koopacnt-1;
-      eqexp->Dump();
-      int right = koopacnt-1;
-      // A&&B <==> (A!=0)&(B!=0)
-      // %2 = ne %0, 0
-      cout << "  %" << koopacnt << " = ne %";
-      cout << left << ", 0" << endl;
-      left = koopacnt;
-      koopacnt++;
-      // %3 = ne %1, 0
-      cout << "  %" << koopacnt << " = ne %";
-      cout << right << ", 0" << endl;
-      right = koopacnt;
-      koopacnt++;
-      // %4 = and %2, %3
-      cout << "  %" << koopacnt << " = and %";
-      cout << left << ", %" << right << endl;
-      koopacnt++;
-    }
+  switch(type)
+  {
+      case 1:
+          eqexp->Dump();
+          break;
+      case 2:
+      {
+        landexp->Dump();
+        int left = koopacnt - 1;
+        eqexp->Dump();
+        int right = koopacnt - 1;
+        // A&&B <==> (A!=0)&(B!=0)
+        // %2 = ne %0, 0
+        cout << "  %" << koopacnt << " = ne %" << left << ", 0" << endl;
+        left = koopacnt;
+        koopacnt++;
+        // %3 = ne %1, 0
+        cout << "  %" << koopacnt << " = ne %" << right << ", 0" << endl;
+        right = koopacnt;
+        koopacnt++;
+        // %4 = and %2, %3
+        cout << "  %" << koopacnt++ << " = and %" << left << ", %" << right << endl;
+        break;
+      }
   }
-  int Calc() const override
+  }
+
+  int Calc() const override 
   {
-    if(type==1) {
-      return eqexp->Calc();
+    switch(type)
+    {
+        case 1:
+            return eqexp->Calc();
+        case 2:
+        {
+            int left = landexp->Calc();
+            int right = eqexp->Calc();
+            return left && right;
+        }
+        default:
+            return 0;
     }
-    else if(type==2) {
-      int left = landexp->Calc();
-      int right = eqexp->Calc();
-      return left && right;
-    }
-    assert(0);
-    return 0;
   }
 };
 
 // LOrExp  ::= LAndExp | LOrExp "||" LAndExp;
-class LOrExpAST : public BaseAST {
+class LOrExpAST : public BaseAST 
+{
  public:
   int type;
   unique_ptr<BaseAST> lorexp;
   unique_ptr<BaseAST> landexp;
-  void Dump() const override
+
+  void Dump() const override 
   {
-    if(type==1) {
-      landexp->Dump();
-    }
-    else if(type==2) {
-      lorexp->Dump();
-      int left = koopacnt-1;
-      landexp->Dump();
-      int right = koopacnt-1;
-      // A||B <==> (A!=0)|(B!=0)
-      // %2 = ne %0, 0
-      cout << "  %" << koopacnt << " = ne %";
-      cout << left << ", 0" << endl;
-      left = koopacnt;
-      koopacnt++;
-      // %3 = ne %1, 0
-      cout << "  %" << koopacnt << " = ne %";
-      cout << right << ", 0" << endl;
-      right = koopacnt;
-      koopacnt++;
-      // %4 = or %2, %3
-      cout << "  %" << koopacnt << " = or %";
-      cout << left << ", %" << right << endl;
-      koopacnt++;
-    }
+    switch(type)
+    {
+        case 1:
+          landexp->Dump();
+          break;
+        case 2:
+        {
+          lorexp->Dump();
+          int left = koopacnt - 1;
+          landexp->Dump();
+          int right = koopacnt - 1;
+          // A||B <==> (A!=0)|(B!=0)
+          // %2 = ne %0, 0
+          cout << "  %" << koopacnt << " = ne %" << left << ", 0" << endl;
+          left = koopacnt;
+          koopacnt++;
+          // %3 = ne %1, 0
+          cout << "  %" << koopacnt << " = ne %" << right << ", 0" << endl;
+          right = koopacnt;
+          koopacnt++;
+          // %4 = or %2, %3
+          cout << "  %" << koopacnt++ << " = or %" << left << ", %" << right << endl;
+          break;
+        }
+      }   
   }
-  int Calc() const override
+
+  int Calc() const override 
   {
-    if(type==1) {
-      return landexp->Calc();
-    }
-    else if(type==2) {
-      int left = lorexp->Calc();
-      int right = landexp->Calc();
-      return left || right;
-    }
-    assert(0);
-    return 0;
+      switch(type)
+      {
+          case 1:
+              return landexp->Calc();
+          case 2:
+          {
+              int left = lorexp->Calc();
+              int right = landexp->Calc();
+              return left || right;
+          }
+          default:           
+              return 0;
+      }
   }
 };
-
 // ConstExp ::= Exp;
-class ConstExpAST : public BaseAST {
+class ConstExpAST : public BaseAST 
+{
  public:
   unique_ptr<BaseAST> exp;
-  void Dump() const override
-  {
-    assert(0);
+
+  void Dump() const override 
+  { 
     return;
   }
-  int Calc() const override
+
+  int Calc() const override 
   {
     return exp->Calc();
   }
