@@ -76,7 +76,7 @@ void Visit(const koopa_raw_function_t &func)
     {
       auto inst = reinterpret_cast<koopa_raw_value_t>(insts.buffer[j]);
       if(inst->ty->tag == KOOPA_RTT_UNIT)
-        var_cnt--;
+          var_cnt--;
     }
   }
   stack_frame_length = var_cnt << 2;
@@ -111,16 +111,20 @@ void Visit(const koopa_raw_value_t &value)
       // 访问 integer 指令
       Visit(kind.data.integer);
       break;
-     case KOOPA_RVT_ALLOC:
+       // 访问 alloc 指令
+    case KOOPA_RVT_ALLOC:
       loc[value] = to_string(stack_frame_used) + "(sp)";
       stack_frame_used += 4;
       break;
+      // 访问 load 指令
     case KOOPA_RVT_LOAD:
       Visit(kind.data.load, value);
       break;
+       // 访问 store 指令
     case KOOPA_RVT_STORE:
       Visit(kind.data.store);
       break;
+      // 访问 binary 指令
     case KOOPA_RVT_BINARY:
       Visit(kind.data.binary, value);
       break;
@@ -135,23 +139,18 @@ void Visit(const koopa_raw_value_t &value)
   }
 }
 // new
-// 将 value 的值放置在标号为 reg 的寄存器中
-static void load2reg(const koopa_raw_value_t &value, const string &reg) 
+
+void Visit(const koopa_raw_return_t &ret) 
 {
- 
-  if (value->kind.tag == KOOPA_RVT_INTEGER) 
+  // 将返回值放置在 a0 寄存器中
+  if (ret.value->kind.tag == KOOPA_RVT_INTEGER) 
   {
-    cout << "  li " << reg << ", " << value->kind.data.integer.value << endl;
+    cout << "  li a0, " << ret.value->kind.data.integer.value << endl;
   }
   else
   {
-    cout << "  lw " << reg << ", " << loc[value] << endl;
+    cout << "  lw a0, " << loc[ret.value] << endl;
   }
-}
-void Visit(const koopa_raw_return_t &ret) 
-{
-  // 访问返回值
-  load2reg(ret.value, "a0");
   // 恢复栈帧
   if (stack_frame_length != 0)
      cout << "  addi sp, sp, " << stack_frame_length << endl;
@@ -165,7 +164,15 @@ void Visit(const koopa_raw_integer_t &integer)
 }
 void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value) 
 {
-  load2reg(load.src, "t0");
+   // 将 load.src 的值放置在 t0 寄存器中
+  if (load.src->kind.tag == KOOPA_RVT_INTEGER) 
+  {
+    cout << "  li t0, " << load.src->kind.data.integer.value << endl;
+  }
+  else
+  {
+    cout << "  lw t0, " << loc[load.src] << endl;
+  }
   loc[value] = to_string(stack_frame_used) + "(sp)";
   stack_frame_used += 4;
   cout << "  sw t0, " << loc[value] << endl;
@@ -173,15 +180,37 @@ void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value)
 // 访问 store 指令
 void Visit(const koopa_raw_store_t &store) 
 {
-  load2reg(store.value, "t0");
+   // 将 store.value 的值放置在 t0 寄存器中
+  if (store.value->kind.tag == KOOPA_RVT_INTEGER) 
+  {
+    cout << "  li t0, " << store.value->kind.data.integer.value << endl;
+  }
+  else
+  {
+    cout << "  lw t0, " << loc[store.value] << endl;
+  }
   cout << "  sw t0, " << loc[store.dest] << endl;
 }
 // 访问 binary 指令
 void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value) 
 {
   // 将运算数存入 t0 和 t1
-  load2reg(binary.lhs, "t0");
-  load2reg(binary.rhs, "t1");
+   if (binary.lhs->kind.tag == KOOPA_RVT_INTEGER) 
+  {
+    cout << "  li t0, " << binary.lhs->kind.data.integer.value << endl;
+  }
+  else
+  {
+    cout << "  lw t0, " << loc[binary.lhs] << endl;
+  }
+  if (binary.rhs->kind.tag == KOOPA_RVT_INTEGER) 
+  {
+    cout << "  li t1, " << binary.rhs->kind.data.integer.value << endl;
+  }
+  else
+  {
+    cout << "  lw t1, " << loc[binary.rhs] << endl;
+  }
   // 进行运算，结果存入t0
   static const unordered_map<koopa_raw_binary_op_t, vector<string>> opInstructions = 
   {
