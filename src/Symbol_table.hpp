@@ -2,6 +2,8 @@
 #include <string>
 #include <memory>
 #include <unordered_map>
+#include <stack>
+#include <sstream>
 
 using std::string;
 using std::shared_ptr;
@@ -27,39 +29,104 @@ using symbol_table_t = unordered_map<string, shared_ptr<symbol_value>>;
 
 namespace SymbolTableNamespace
 {
-    // 符号表
-    inline symbol_table_t symbol_table;
+    // 作用域栈
+    inline std::stack<symbol_table_t> scope_stack;
+    inline int scope_counter = 0;
 
-    // 插入符号定义, 若成功插入返回0, 否则返回-1
-    inline int insert_symbol(const string &symbol, symbol_type type, int value)
+    // 进入新的作用域
+    inline void enter_code_block()
     {
-        auto symval = std::make_shared<symbol_value>(symbol_value{ type, value });
-        auto result = symbol_table.emplace(symbol, symval);
-        return result.second ? 0 : -1;
+        scope_stack.push(symbol_table_t());
+        scope_counter++;
+    }
+
+    // 离开当前作用域
+    inline void exit_code_block()
+    {
+        if (!scope_stack.empty())
+        {
+            scope_stack.pop();
+        }
+    }
+
+    // 返回当前符号表的表号(作用域号), 格式形如 "SYM_TABLE_233_"
+    inline std::string current_code_block()
+    {
+        std::ostringstream oss;
+        oss << "SYM_TABLE_" << scope_counter << "_";
+        return oss.str();
+    }
+
+    // 插入符号定义
+    inline void insert_symbol(const string &symbol, symbol_type type, int value)
+    {
+        if (!scope_stack.empty())
+        {
+            auto &current_scope = scope_stack.top();
+            auto symval = std::make_shared<symbol_value>(symbol_value{ type, value });
+            current_scope[symbol] = symval;
+        }
     }
 
     // 确认符号定义是否存在, 若存在返回1, 否则返回0
     inline int exist_symbol(const string &symbol)
     {
-        return symbol_table.find(symbol) != symbol_table.end() ? 1 : 0;
+        std::stack<symbol_table_t> temp_stack = scope_stack;
+        while (!temp_stack.empty())
+        {
+            auto &current_scope = temp_stack.top();
+            if (current_scope.find(symbol) != current_scope.end())
+            {
+                return 1;
+            }
+            temp_stack.pop();
+        }
+        return 0;
     }
 
-    // 查询符号定义, 返回指向这个符号的值的指针. 若符号不存在，返回nullptr
-    inline shared_ptr<const symbol_value> query_symbol(const string &symbol)
+    // 查询符号定义, 返回该符号所在符号表表号和指向这个符号的值的指针.
+    // 符号表表号格式形如 "SYM_TABLE_233_"
+    // 若符号不存在, 返回的表号为-1, symbol_type为UND
+    inline std::pair<std::string, std::shared_ptr<const symbol_value>> query_symbol(const string &symbol)
     {
-        auto it = symbol_table.find(symbol);
-        if (it != symbol_table.end())
+        std::stack<symbol_table_t> temp_stack = scope_stack;
+        int temp_counter = scope_counter;
+        while (!temp_stack.empty())
         {
-            return it->second;
+            auto &current_scope = temp_stack.top();
+            auto it = current_scope.find(symbol);
+            if (it != current_scope.end())
+            {
+                std::ostringstream oss;
+                oss << "SYM_TABLE_" << temp_counter << "_";
+                return {oss.str(), it->second};
+            }
+            temp_stack.pop();
+            temp_counter--;
         }
-        return nullptr;
+        return {"-1", std::make_shared<symbol_value>(symbol_value{SYM_TYPE_UND, 0})};
     }
 }
 
 // 全局函数接口
-inline int insert_symbol(const string &symbol, symbol_type type, int value)
+inline void enter_code_block()
 {
-    return SymbolTableNamespace::insert_symbol(symbol, type, value);
+    SymbolTableNamespace::enter_code_block();
+}
+
+inline void exit_code_block()
+{
+    SymbolTableNamespace::exit_code_block();
+}
+
+inline std::string current_code_block()
+{
+    return SymbolTableNamespace::current_code_block();
+}
+
+inline void insert_symbol(const string &symbol, symbol_type type, int value)
+{
+    SymbolTableNamespace::insert_symbol(symbol, type, value);
 }
 
 inline int exist_symbol(const string &symbol)
@@ -67,7 +134,7 @@ inline int exist_symbol(const string &symbol)
     return SymbolTableNamespace::exist_symbol(symbol);
 }
 
-inline shared_ptr<const symbol_value> query_symbol(const string &symbol)
+inline std::pair<std::string, std::shared_ptr<const symbol_value>> query_symbol(const string &symbol)
 {
     return SymbolTableNamespace::query_symbol(symbol);
 }

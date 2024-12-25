@@ -2,7 +2,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "symtable.hpp"
+#include "Symbol_table.hpp"
 
 // 所有 AST 的基类
 class BaseAST {
