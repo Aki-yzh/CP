@@ -246,6 +246,7 @@ FuncType
   : INT 
   {
     auto ast = new FuncTypeAST();
+    ast->type = "i32";
     $$ = ast;
   }
   ;
