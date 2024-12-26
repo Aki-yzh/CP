@@ -43,7 +43,7 @@ namespace SymbolTableNamespace
     // 进入新的作用域
     inline void enter_code_block()
     {
-        symbol_table_stack.push({symbol_table_cnt++, symbol_table_t{}});
+        symbol_table_stack.emplace(symbol_table_cnt++, symbol_table_t{});
     }
 
     // 离开当前作用域
@@ -79,8 +79,7 @@ namespace SymbolTableNamespace
     // 插入符号定义
     inline void insert_symbol(const string &symbol, symbol_type type, int value)
     {
-        auto symval = std::make_shared<symbol_value>(symbol_value{ type, value });
-        symbol_table_stack.top().second[symbol] = symval;
+        symbol_table_stack.top().second.emplace(symbol, std::make_shared<symbol_value>(symbol_value{ type, value }));
     }
 
     // 确认符号定义是否存在, 若存在返回true, 否则返回false
