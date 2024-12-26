@@ -374,7 +374,7 @@ LVal
     $$=ast;
   }
   ;
-//PrimaryExp    ::= "(" Exp ")" | LVal | Number;
+//PrimaryExp    ::= '(' Exp ')' | LVal | Number;
 PrimaryExp
   : '(' Exp ')' 
   {
