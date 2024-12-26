@@ -6,13 +6,7 @@
 #include <vector>
 #include <optional>
 
-using std::string;
-using std::shared_ptr;
-using std::map;
-using std::stack;
-using std::vector;
-using std::pair;
-using std::optional;
+using namespace std;
 
 // 符号表中符号的类型
 enum symbol_type
@@ -55,7 +49,7 @@ namespace SymbolTableNamespace
     // 返回当前作用域的标号, 格式形如 "SYM_TABLE_233"
     inline string current_code_block()
     {
-        return "SYM_TABLE_" + std::to_string(symbol_table_stack.top().first) + "_";
+        return "SYM_TABLE_" + to_string(symbol_table_stack.top().first) + "_";
     }
 
     // 在符号表中寻找符号, 返回其所在符号表的 标号 和其本身的 iterator
@@ -68,18 +62,18 @@ namespace SymbolTableNamespace
             auto it = table.find(symbol);
             if (it != table.end())
             {
-                return std::make_pair(temp_stack.top().first, it);
+                return make_pair(temp_stack.top().first, it);
             }
             temp_stack.pop();
         }
         // 没找到
-        return std::nullopt;
+        return nullopt;
     }
 
     // 插入符号定义
     inline void insert_symbol(const string &symbol, symbol_type type, int value)
     {
-        symbol_table_stack.top().second.emplace(symbol, std::make_shared<symbol_value>(symbol_value{ type, value }));
+        symbol_table_stack.top().second.emplace(symbol, make_shared<symbol_value>(symbol_value{ type, value }));
     }
 
     // 确认符号定义是否存在, 若存在返回true, 否则返回false
@@ -95,11 +89,11 @@ namespace SymbolTableNamespace
         auto result = find_iter(symbol);
         if(result)
         {
-            return { "SYM_TABLE_" + std::to_string(result->first) + "_", result->second->second };
+            return { "SYM_TABLE_" + to_string(result->first) + "_", result->second->second };
         }
         else
         {
-            auto symval = std::make_shared<symbol_value>(symbol_value{ SYM_TYPE_UND, -1 });
+            auto symval = make_shared<symbol_value>(symbol_value{ SYM_TYPE_UND, -1 });
             return { "SYM_TABLE_-1_", symval };
         }
     }
