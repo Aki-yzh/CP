@@ -22,7 +22,7 @@ class BaseAST
  public:
   virtual ~BaseAST() = default;
   virtual void Dump() const = 0;
-  virtual int Calc() const = 0;
+  virtual int EVa() const = 0;
 };
 
 
@@ -34,7 +34,7 @@ class CompUnitAST : public BaseAST
   {
     func_def->Dump();
   }
-  int Calc() const override
+  int EVa() const override
   {
     
     return 0;
@@ -51,7 +51,7 @@ class DeclAST : public BaseAST
   {
      const_decl1_var_decl2->Dump();
   }
-  int Calc() const override
+  int EVa() const override
   {
     
     return 0;
@@ -70,7 +70,7 @@ class ConstDeclAST : public BaseAST
     for(auto& const_def: *const_def_list)
       const_def->Dump();
   }
-  int Calc() const override
+  int EVa() const override
   {
     
     return 0;
@@ -85,7 +85,7 @@ class BTypeAST : public BaseAST
   {
     return;
   }
-  int Calc() const override
+  int EVa() const override
   {
     
     return 0;
@@ -102,9 +102,9 @@ class ConstInitValAST : public BaseAST
     
     return;
   }
-  int Calc() const override
+  int EVa() const override
   {
-     return const_exp->Calc();
+     return const_exp->EVa();
   }
 };
 
@@ -118,9 +118,9 @@ class ConstDefAST : public BaseAST
   void Dump() const override
   {
     //===
-     insert_symbol(ident, SYM_TYPE_CONST, const_init_val->Calc());
+     insert_symbol(ident, SYM_TYPE_CONST, const_init_val->EVa());
   }
-  int Calc() const override
+  int EVa() const override
   {
     
     return 0;
@@ -143,7 +143,7 @@ class VarDeclAST : public BaseAST
        var_def->Dump();
   }
 
-  int Calc() const override
+  int EVa() const override
   {
     
     return 0;
@@ -172,7 +172,7 @@ class VarDefAST : public BaseAST
         cout << "  store %" << koopacnt-1 << ", @"<< query_symbol(ident).first << ident << endl;
       }
   }
-   int Calc() const override
+   int EVa() const override
   {
     
     return 0;
@@ -188,7 +188,7 @@ class InitValAST : public BaseAST
   {
       exp->Dump();
   }
-   int Calc() const override
+   int EVa() const override
   {
     
     return 0;
@@ -206,7 +206,7 @@ class FuncTypeAST : public BaseAST
      cout << type;
 
   }
-   int Calc() const override
+   int EVa() const override
   {
     
     return 0;
@@ -243,7 +243,7 @@ class FuncDefAST : public BaseAST
     }
     cout << "}" << endl;
   }
-   int Calc() const override
+   int EVa() const override
   {
     
     return 0;
@@ -264,7 +264,7 @@ class BlockAST : public BaseAST
     }
     exit_code_block();
     }
-     int Calc() const override
+     int EVa() const override
   {
     
     return 0;
@@ -282,7 +282,7 @@ class BlockItemAST : public BaseAST
   {
     decl1_stmt2->Dump();
   }
-   int Calc() const override
+   int EVa() const override
   {
     
     return 0;
@@ -311,7 +311,7 @@ class LValAST : public BaseAST
     cout << "  %" << koopacnt++ << " = " << instruction << endl;
     return;
   }
-  int Calc() const override
+  int EVa() const override
   {
     auto val = query_symbol(ident);
     assert(val.second->type == SYM_TYPE_CONST);
@@ -377,7 +377,7 @@ class StmtAST : public BaseAST
     }
   }
 
-  int Calc() const override
+  int EVa() const override
   {
     return 0;
   }
@@ -396,9 +396,9 @@ class ExpAST : public BaseAST
   {
     lorexp->Dump();
   }
-  int Calc() const override
+  int EVa() const override
   {
-    return lorexp->Calc();
+    return lorexp->EVa();
   }
 };
 
@@ -428,13 +428,13 @@ class PrimaryExpAST : public BaseAST
         break;
     }
   }
-  int Calc() const override
+  int EVa() const override
   {
     switch (type) 
     {
           case 1:
           case 2:
-            return exp->Calc();
+            return exp->EVa();
             break;
           case 3:
             return number;
@@ -469,15 +469,15 @@ class UnaryExpAST : public BaseAST
          << " 0, %" << (koopacnt - 2) << endl;
     }
   }
-  int Calc() const override
+  int EVa() const override
   {
       switch (type) 
       {
           case 1:
-              return primaryexp1_unaryexp2->Calc();
+              return primaryexp1_unaryexp2->EVa();
           case 2: 
           {
-              int tmp = primaryexp1_unaryexp2->Calc();
+              int tmp = primaryexp1_unaryexp2->EVa();
               return (unaryop == '+') ? tmp :
                     (unaryop == '-') ? -tmp :
                     (unaryop == '!') ? !tmp :
@@ -532,16 +532,16 @@ class MulExpAST : public BaseAST
     }
   }
 
-  int Calc() const override 
+  int EVa() const override 
   {
     switch(type) 
         {
             case 1:
-                return unaryexp->Calc();
+                return unaryexp->EVa();
             case 2: 
             {
-                int left = mulexp->Calc();
-                int right = unaryexp->Calc();
+                int left = mulexp->EVa();
+                int right = unaryexp->EVa();
                 // %2 = mul/div/mod %0, %1
                 return (mulop == '*') ? left * right :
                       (mulop == '/') ? left / right :
@@ -597,16 +597,16 @@ class AddExpAST : public BaseAST
     }
   }
 
-  int Calc() const override
+  int EVa() const override
   {
       switch(type) 
       {
           case 1:
-              return mulexp->Calc();
+              return mulexp->EVa();
           case 2: 
           {
-              int left = addexp->Calc();
-              int right = mulexp->Calc();
+              int left = addexp->EVa();
+              int right = mulexp->EVa();
               // %2 = add/sub %0, %1
               return (addop == '+') ? left + right :
                     (addop == '-') ? left - right :
@@ -670,16 +670,16 @@ class RelExpAST : public BaseAST
     }
   }
 
-  int Calc() const override
+  int EVa() const override
   {
       switch(type) 
       {
           case 1:
-              return addexp->Calc();
+              return addexp->EVa();
           case 2: 
           {
-              int left = relexp->Calc();
-              int right = addexp->Calc();
+              int left = relexp->EVa();
+              int right = addexp->EVa();
               return (relop == "<") ? (left < right) :
                     (relop == "<=") ? (left <= right) :
                     (relop == ">") ? (left > right) :
@@ -727,16 +727,16 @@ class EqExpAST : public BaseAST
     }
   }
 
-  int Calc() const override 
+  int EVa() const override 
   {
     switch(type)
     {
         case 1:
-            return relexp->Calc();
+            return relexp->EVa();
         case 2:
         {
-            int left = eqexp->Calc();
-            int right = relexp->Calc();
+            int left = eqexp->EVa();
+            int right = relexp->EVa();
             return (eqop == "==") ? (left == right) :
                   (eqop == "!=") ? (left != right) :
                   0; 
@@ -782,16 +782,16 @@ class LAndExpAST : public BaseAST
   }
   }
 
-  int Calc() const override 
+  int EVa() const override 
   {
     switch(type)
     {
         case 1:
-            return eqexp->Calc();
+            return eqexp->EVa();
         case 2:
         {
-            int left = landexp->Calc();
-            int right = eqexp->Calc();
+            int left = landexp->EVa();
+            int right = eqexp->EVa();
             return left && right;
         }
         default:
@@ -835,16 +835,16 @@ class LOrExpAST : public BaseAST
       }   
   }
 
-  int Calc() const override 
+  int EVa() const override 
   {
       switch(type)
       {
           case 1:
-              return landexp->Calc();
+              return landexp->EVa();
           case 2:
           {
-              int left = lorexp->Calc();
-              int right = landexp->Calc();
+              int left = lorexp->EVa();
+              int right = landexp->EVa();
               return left || right;
           }
           default:           
@@ -863,8 +863,8 @@ class ConstExpAST : public BaseAST
     return;
   }
 
-  int Calc() const override 
+  int EVa() const override 
   {
-    return exp->Calc();
+    return exp->EVa();
   }
 };
