@@ -86,8 +86,20 @@ void Visit(const koopa_raw_function_t &func)
   stack_frame_length = (stack_frame_length + 16 - 1) & (~(16 - 1));
   //分配栈空间
   if (stack_frame_length != 0)
-    cout << "  addi sp, sp, -" << stack_frame_length << endl;
-
+  {
+    if (stack_frame_length <= 2047)
+    {
+      cout << "  addi sp, sp, -" << stack_frame_length << endl;
+    }
+    else
+    {
+      int high = (stack_frame_length >> 12) & 0xFFFFF;
+      int low = stack_frame_length & 0xFFF;
+      cout << "  lui t0, " << high << endl;
+      cout << "  addi t0, t0, " << low << endl;
+      cout << "  sub sp, sp, t0" << endl;
+    }
+  }
 
   // 访问所有基本块
   Visit(func->bbs);
@@ -165,7 +177,20 @@ void Visit(const koopa_raw_return_t &ret)
   }
   // 恢复栈帧
   if (stack_frame_length != 0)
-     cout << "  addi sp, sp, " << stack_frame_length << endl;
+  {
+    if (stack_frame_length <= 2047)
+    {
+      cout << "  addi sp, sp, " << stack_frame_length << endl;
+    }
+    else
+    {
+      int high = (stack_frame_length >> 12) & 0xFFFFF;
+      int low = stack_frame_length & 0xFFF;
+      cout << "  lui t0, " << high << endl;
+      cout << "  addi t0, t0, " << low << endl;
+      cout << "  add sp, sp, t0" << endl;
+    }
+  }
   cout << "  ret" << endl;
 }
 
