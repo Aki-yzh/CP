@@ -295,7 +295,7 @@ BlockItem
   //              | Block
    //             | "if" "(" Exp ")" Stmt ["else" Stmt]
     //            | "return" [Exp] ";";
-
+//一开始忘了双引改单引号
 Stmt
  : LVal '=' Exp ';' 
  {
