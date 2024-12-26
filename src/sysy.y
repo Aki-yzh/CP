@@ -44,12 +44,12 @@ using namespace std;
 }
 
 // lexer 返回的所有 token 种类的声明
-%token INT RETURN CONST IF ELSE  WHILE BREAK CONTINUE
+%token INT RETURN CONST IF ELSE  
 %token LAND LOR
 %token <str_val> IDENT RELOP EQOP
 %token <int_val> INT_CONST
 %token <char_val> MULOP
-
+%token WHILE BREAK CONTINUE
 // 非终结符的类型定义
 
 // lv3.3参考语法规范，新添加的有Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
@@ -62,6 +62,8 @@ using namespace std;
 %type <ast_val> BlockItem 
 %type <ast_val> LVal ConstExp
 %type <vec_val> ConstDefList BlockItemList VarDefList
+
+// lv 5,6,7都是对STMT的修改
 
 // 参考网络，用于解决 dangling else 的优先级设置
 %precedence IFX
@@ -76,7 +78,7 @@ using namespace std;
 // $1 指代规则里第一个符号的返回值, 也就是 FuncDef 的返回值
 
 %%
-//对 ::= 右侧的每个规则都设计一种 AST,
+//对 ::= 右侧的每个规则都设计一种 AST,对于比较复杂的则再做一层嵌套
 //格式均仿照开始给出的FuncDef实现
 
 //CompUnit      ::= FuncDef;
@@ -95,14 +97,14 @@ Decl
   {
     auto ast = new DeclAST();
     ast->type = 1;
-    ast->const_decl1_var_decl2 = unique_ptr<BaseAST>($1);
+    ast->decl = unique_ptr<BaseAST>($1);
     $$ = ast;
   }
   | VarDecl 
   {
     auto ast = new DeclAST();
     ast->type = 2;
-    ast->const_decl1_var_decl2 = unique_ptr<BaseAST>($1);
+    ast->decl = unique_ptr<BaseAST>($1);
     $$ = ast;
   }
   ;
@@ -149,7 +151,7 @@ ConstDef
   {
     auto ast = new ConstDefAST();
     ast->ident = *unique_ptr<string>($1);
-    ast->const_init_val = unique_ptr<BaseAST>($3);
+    ast->val = unique_ptr<BaseAST>($3);
     $$ = ast;
   }
   ;
@@ -159,7 +161,7 @@ ConstInitVal
   : ConstExp 
   {
     auto ast = new ConstInitValAST();
-    ast->const_exp = unique_ptr<BaseAST>($1);
+    ast->exp = unique_ptr<BaseAST>($1);
     $$ = ast;
   }
   ;
@@ -279,13 +281,13 @@ BlockItem
   {
     auto ast=new BlockItemAST();
     ast->type = 1;
-    ast->decl1_stmt2 = unique_ptr<BaseAST>($1);
+    ast->stmt = unique_ptr<BaseAST>($1);
     $$=ast;
   }
   | Stmt {
     auto ast=new BlockItemAST();
     ast->type = 2;
-    ast->decl1_stmt2 = unique_ptr<BaseAST>($1);
+    ast->stmt = unique_ptr<BaseAST>($1);
     $$=ast;
   }
   ;
@@ -436,7 +438,7 @@ UnaryExp
   {
     auto ast = new UnaryExpAST();
     ast->type = 1;
-    ast->primaryexp1_unaryexp2 = unique_ptr<BaseAST>($1);
+    ast->exp = unique_ptr<BaseAST>($1);
     $$ = ast;
   }
   | UnaryOp UnaryExp 
@@ -444,7 +446,7 @@ UnaryExp
     auto ast = new UnaryExpAST();
     ast->type = 2;
     ast->unaryop = $1;
-    ast->primaryexp1_unaryexp2 = unique_ptr<BaseAST>($2);
+    ast->exp = unique_ptr<BaseAST>($2);
     $$ = ast;
   }
   ;

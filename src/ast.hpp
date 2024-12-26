@@ -48,15 +48,15 @@ class CompUnitAST : public BaseAST
   }
 };
 
-
+//Decl          ::= ConstDecl | VarDecl;
 class DeclAST : public BaseAST 
 {
  public:
   int type;
-  unique_ptr<BaseAST> const_decl1_var_decl2;
+  unique_ptr<BaseAST> decl;
   void Dump() const override
   {
-     const_decl1_var_decl2->Dump();
+     decl->Dump();
   }
   int EVa() const override
   {
@@ -103,7 +103,7 @@ class BTypeAST : public BaseAST
 class ConstInitValAST : public BaseAST 
 {
  public:
-  unique_ptr<BaseAST> const_exp;
+  unique_ptr<BaseAST> exp;
   void Dump() const override
   {
     
@@ -111,7 +111,7 @@ class ConstInitValAST : public BaseAST
   }
   int EVa() const override
   {
-     return const_exp->EVa();
+     return exp->EVa();
   }
 };
 
@@ -121,11 +121,11 @@ class ConstDefAST : public BaseAST
 {
  public:
   string ident;
-  unique_ptr<BaseAST> const_init_val;
+  unique_ptr<BaseAST> val;
   void Dump() const override
   {
     //===
-     insert_symbol(ident, SYM_TYPE_CONST, const_init_val->EVa());
+     insert_symbol(ident, SYM_TYPE_CONST, val->EVa());
   }
   int EVa() const override
   {
@@ -284,10 +284,10 @@ class BlockItemAST : public BaseAST
 {
  public:
   int type;
-  unique_ptr<BaseAST> decl1_stmt2;
+  unique_ptr<BaseAST> stmt;
   void Dump() const override
   {
-    decl1_stmt2->Dump();
+    stmt->Dump();
   }
    int EVa() const override
   {
@@ -557,11 +557,11 @@ class UnaryExpAST : public BaseAST
   // 在 type 为 2 时 为 UnaryOp UnaryExp
   int type;
   char unaryop;
-  unique_ptr<BaseAST> primaryexp1_unaryexp2;
+  unique_ptr<BaseAST> exp;
 
   void Dump() const override 
   { 
-    primaryexp1_unaryexp2->Dump();
+    exp->Dump();
     if (type == 2) 
     {
       if (unaryop == '-' || unaryop == '!')
@@ -575,10 +575,10 @@ class UnaryExpAST : public BaseAST
       switch (type) 
       {
           case 1:
-              return primaryexp1_unaryexp2->EVa();
+              return exp->EVa();
           case 2: 
           {
-              int tmp = primaryexp1_unaryexp2->EVa();
+              int tmp = exp->EVa();
               return (unaryop == '+') ? tmp :
                     (unaryop == '-') ? -tmp :
                     (unaryop == '!') ? !tmp :
