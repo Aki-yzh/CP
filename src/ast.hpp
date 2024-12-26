@@ -29,7 +29,7 @@ class BaseAST
  public:
   virtual ~BaseAST() = default;
   virtual void Dump() const = 0;
-  virtual int EVa() const = 0;
+  virtual int EVa() const = 0;//evaluate the value
 };
 
 
