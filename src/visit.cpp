@@ -85,21 +85,21 @@ void Visit(const koopa_raw_function_t &func)
   // 将栈帧长度对齐到 16
   stack_frame_length = (stack_frame_length + 16 - 1) & (~(16 - 1));
   //分配栈空间
-  if (stack_frame_length != 0)
+  if (stack_frame_length != 0) 
   {
-    if (stack_frame_length <= 2047)
+    if (stack_frame_length <= 2047) 
     {
-      cout << "  addi sp, sp, -" << stack_frame_length << endl;
-    }
-    else
+        cout << "  addi sp, sp, -" << stack_frame_length << endl;
+    } 
+    else 
     {
-      int high = (stack_frame_length >> 12) & 0xFFFFF;
-      int low = stack_frame_length & 0xFFF;
-      cout << "  lui t0, " << high << endl;
-      cout << "  addi t0, t0, " << low << endl;
-      cout << "  sub sp, sp, t0" << endl;
+        int high = (stack_frame_length >> 12) & 0xFFFFF;
+        int low = stack_frame_length & 0xFFF;
+        cout << "  lui t0, " << high << endl;
+        cout << "  addi t0, t0, -" << low << endl;
+        cout << "  sub sp, sp, t0" << endl;
     }
-  }
+}
 
   // 访问所有基本块
   Visit(func->bbs);
@@ -176,21 +176,21 @@ void Visit(const koopa_raw_return_t &ret)
     cout << "  lw a0, " << loc[ret.value] << endl;
   }
   // 恢复栈帧
-  if (stack_frame_length != 0)
-  {
-    if (stack_frame_length <= 2047)
+if (stack_frame_length != 0) 
+{
+    if (stack_frame_length <= 2047) 
     {
-      cout << "  addi sp, sp, " << stack_frame_length << endl;
-    }
-    else
+        cout << "  addi sp, sp, " << stack_frame_length << endl;
+    } 
+    else 
     {
-      int high = (stack_frame_length >> 12) & 0xFFFFF;
-      int low = stack_frame_length & 0xFFF;
-      cout << "  lui t0, " << high << endl;
-      cout << "  addi t0, t0, " << low << endl;
-      cout << "  add sp, sp, t0" << endl;
+        int high = (stack_frame_length >> 12) & 0xFFFFF;
+        int low = stack_frame_length & 0xFFF;
+        cout << "  lui t0, " << high << endl;
+        cout << "  addi t0, t0, " << low << endl;
+        cout << "  add sp, sp, t0" << endl;
     }
-  }
+}
   cout << "  ret" << endl;
 }
 
@@ -210,8 +210,18 @@ void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value)
   }
   else
   {
-    cout << "  lw t0, " << loc[load.src] << endl;
-  }
+    int offset = stoi(loc[load.src].substr(0, loc[load.src].find("(sp)")));
+    if (offset <= 2047 && offset >= -2048) 
+    {
+        cout << "  lw t0, " << loc[load.src] << endl;
+    } 
+    else 
+    {
+        cout << "  li t6, " << offset << endl;
+        cout << "  add t6, t6, sp" << endl;
+        cout << "  lw t0, 0(t6)" << endl;
+    }
+    }
   loc[value] = to_string(stack_frame_used) + "(sp)";
   stack_frame_used += 4;
   cout << "  sw t0, " << loc[value] << endl;
@@ -229,8 +239,19 @@ void Visit(const koopa_raw_store_t &store)
   {
     cout << "  lw t0, " << loc[store.value] << endl;
   }
-  cout << "  sw t0, " << loc[store.dest] << endl;
+  int offset = stoi(loc[store.dest].substr(0, loc[store.dest].find("(sp)")));
+    if (offset <= 2047 && offset >= -2048) 
+    {
+        cout << "  sw t0, " << loc[store.dest] << endl;
+    } 
+    else 
+    {
+        cout << "  li t6, " << offset << endl;
+        cout << "  add t6, t6, sp" << endl;
+        cout << "  sw t0, 0(t6)" << endl;
+    }
 }
+
 // 处理 binary 指令，执行二元运算并将结果存储到栈中
 void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value) 
 {
