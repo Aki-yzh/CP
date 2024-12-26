@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 #include "Symbol_table.hpp"
+#include <stack>
 
 
 using namespace std;
@@ -13,8 +14,14 @@ static int koopacnt = 0;
 
 // 计数 if 语句，用于设置 entry
 static int ifcnt = 0;
-// 当前 entry 是否已经 ret, 若为 1 的话不应再生成任何语句
+// 当前 entry 是否已经 结束, 若为 1 的话不应再生成任何语句
 static int entry_returned = 0;
+
+// 计数 while 语句，用于设置 entry
+static int whilecnt = 0;
+// 当前 while 语句的标号栈
+static stack<int> whileStack;
+
 
 // 所有 AST 的基类
 class BaseAST 
@@ -329,6 +336,7 @@ class StmtAST : public BaseAST
   unique_ptr<BaseAST> block;
   unique_ptr<BaseAST> stmt_if;
   unique_ptr<BaseAST> stmt_else;
+   unique_ptr<BaseAST> stmt_while;
 
   void Dump() const override
   {
@@ -357,10 +365,8 @@ class StmtAST : public BaseAST
       { 
         
         // IF "(" Exp ")" Stmt
-        // Add your IF statement handling here
+       
         // IF "(" Exp ")" Stmt ELSE Stmt
-        // Add your IF-ELSE statement handling here
-        
         if(entry_returned) return;
         int ifcur = ifcnt;
         ifcnt++;
@@ -408,12 +414,76 @@ class StmtAST : public BaseAST
         break;
       }
       case 7:
+      {
+         if (entry_returned) return;
+
+        int currentWhile = whilecnt++;
+        whileStack.push(currentWhile);
+
+        // 生成 while 入口跳转指令
+        cout << "  jump %WHILE_ENTRY_" << currentWhile << endl;
+        // 生成 while 入口标签
+        cout << "%WHILE_ENTRY_" << currentWhile << ":" << endl;
+
+        entry_returned = 0;
+        exp->Dump();
+
+        // 生成条件跳转指令
+        cout << "  br %" << koopacnt-1 << ", %WHILE_BODY_" << currentWhile;
+        cout << ", %WHILE_END_" << currentWhile << endl;
+
+        // 生成 while 主体标签
+        cout << "%WHILE_BODY_" << currentWhile << ":" << endl;
+        entry_returned = 0;
+        stmt_while->Dump();
+
+        if (!entry_returned) 
+        {
+            // 生成跳转回入口的指令
+            cout << "  jump %WHILE_ENTRY_" << currentWhile << endl;
+        }
+
+        // 生成 while 结束标签
+        cout << "%WHILE_END_" << currentWhile << ":" << endl;
+        entry_returned = 0;
+
+        // 恢复父 while 标号
+        whileStack.pop();
+        break;
+      }
+      case 8:
+      {
+        // BREAK ';' 
+          // jump %while_end
+        if (!whileStack.empty()) 
+        {
+          int currentWhile = whileStack.top();
+          // 生成跳转到 while 结束标签的指令
+          cout << "  jump %WHILE_END_" << currentWhile << endl;
+          entry_returned = 1;
+        }
+        break;
+      }
+      case 9:
+      {
+        //CONTINUE ';' 
+        // jump %while_entry
+        if (!whileStack.empty()) 
+        {
+            int currentWhile = whileStack.top();
+            // 生成跳转到 while 入口标签的指令
+            cout << "  jump %WHILE_ENTRY_" << currentWhile << endl;
+            entry_returned = 1;
+        }
+        break;
+      }
+      case 10:
       { // RETURN ';'
         cout << "  ret" << endl;
         entry_returned = 1;
         break;
       }
-      case 8: 
+      case 11: 
       {// RETURN Exp ';'
         exp->Dump();
         cout << "  ret %" << koopacnt-1 << endl;
@@ -834,7 +904,8 @@ class LAndExpAST : public BaseAST
       
       cout << "  store %" << koopacnt-1 << ", @"<< "STMTIF_LAND_RESULT_" << ifcur << endl;
 
-      if(!entry_returned) {
+      if(!entry_returned) 
+      {
         // jump %STMTIF_END_233
         cout << "  jump %STMTIF_END_" << ifcur << endl;
       }
@@ -845,7 +916,8 @@ class LAndExpAST : public BaseAST
 
       cout << "  store 0, @"<< "STMTIF_LAND_RESULT_" << ifcur << endl;
 
-      if(!entry_returned) {
+      if(!entry_returned) 
+      {
         // jump %STMTIF_END_233
         cout << "  jump %STMTIF_END_" << ifcur << endl;
       }

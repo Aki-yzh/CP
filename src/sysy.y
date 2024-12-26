@@ -44,7 +44,7 @@ using namespace std;
 }
 
 // lexer 返回的所有 token 种类的声明
-%token INT RETURN CONST IF ELSE
+%token INT RETURN CONST IF ELSE  WHILE BREAK CONTINUE
 %token LAND LOR
 %token <str_val> IDENT RELOP EQOP
 %token <int_val> INT_CONST
@@ -63,7 +63,7 @@ using namespace std;
 %type <ast_val> LVal ConstExp
 %type <vec_val> ConstDefList BlockItemList VarDefList
 
-// 用于解决 dangling else 的优先级设置
+// 参考网络，用于解决 dangling else 的优先级设置
 %precedence IFX
 %precedence ELSE
 
@@ -290,11 +290,14 @@ BlockItem
   }
   ;
 
-//Stmt            ::= LVal "=" Exp ";"
- //               | [Exp] ";"
-  //              | Block
-   //             | "if" "(" Exp ")" Stmt ["else" Stmt]
-    //            | "return" [Exp] ";";
+//Stmt          ::= LVal "=" Exp ";"
+  //              | [Exp] ";"
+    //            | Block
+      //          | "if" "(" Exp ")" Stmt ["else" Stmt]
+        //        | "while" "(" Exp ")" Stmt
+          //      | "break" ";"
+            //    | "continue" ";"
+              //  | "return" [Exp] ";";
 //一开始忘了双引改单引号
 Stmt
  : LVal '=' Exp ';' 
@@ -342,20 +345,42 @@ Stmt
     ast->stmt_else = unique_ptr<BaseAST>($7);
     $$ = ast;
   }
-  | RETURN ';' 
+  | WHILE '(' Exp ')' Stmt 
   {
     auto ast = new StmtAST();
     ast->type = 7;
+    ast->exp = unique_ptr<BaseAST>($3);
+    ast->stmt_while = unique_ptr<BaseAST>($5);
+    $$ = ast;
+  }
+  | BREAK ';' 
+  {
+    auto ast = new StmtAST();
+    ast->type = 8;
+    $$ = ast;
+  }
+  | CONTINUE ';' 
+  {
+    auto ast = new StmtAST();
+    ast->type = 9;
+    $$ = ast;
+  }
+  | RETURN ';' 
+  {
+    auto ast = new StmtAST();
+    ast->type = 10;
     $$ = ast;
   }
   | RETURN Exp ';' 
   {
     auto ast = new StmtAST();
-    ast->type = 8;
+    ast->type = 11;
     ast->exp = unique_ptr<BaseAST>($2);
     $$ = ast;
   }
   ;
+
+
 //Exp           ::= LOrExp;
 Exp
   : LOrExp 
