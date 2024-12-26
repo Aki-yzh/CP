@@ -1,8 +1,5 @@
 int main() {
-  int a = 1, b = 2;
-  {
-    int a = 2;
-    b = b + a;
-  }
+  int a = 1;
+  const int b = 1; 
   return b;
 }

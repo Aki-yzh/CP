@@ -1,2 +1,5 @@
 *.DS_Store
 /build
+/compiler
+/a.txt
+/hello.c
