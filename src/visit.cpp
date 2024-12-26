@@ -98,6 +98,8 @@ void Visit(const koopa_raw_basic_block_t &bb)
 {
   // 执行一些其他的必要操作
   // ...
+  if(strncmp(bb->name+1, "entry", 5))
+    cout << bb->name+1 << ":" << endl;
   // 访问所有指令
   Visit(bb->insts);
 }
@@ -133,6 +135,14 @@ void Visit(const koopa_raw_value_t &value)
     case KOOPA_RVT_RETURN:
       // 访问 return 指令
       Visit(kind.data.ret);
+      break;
+        // 访问 br 指令
+    case KOOPA_RVT_BRANCH:
+      Visit(kind.data.branch);
+      break;
+      // 访问 jump 指令
+    case KOOPA_RVT_JUMP:
+      Visit(kind.data.jump);
       break;
     default:
       // 其他类型暂时遇不到
@@ -251,6 +261,29 @@ void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value)
   stack_frame_used += 4;
   cout << "  sw t0, " << loc[value] << endl;
 }
+// 访问 br 指令
+void Visit(const koopa_raw_branch_t &branch) 
+{
+    // 将条件值加载到寄存器 t0 中
+    if (branch.cond->kind.tag == KOOPA_RVT_INTEGER) 
+    {
+        cout << "  li t0, " << branch.cond->kind.data.integer.value << endl;
+    } 
+    else 
+    {
+       
+        cout << "  lw t0, " << loc[branch.cond] << endl;
+    }
+    // 根据条件跳转到相应的基本块
+    cout << "  bnez t0, DOUBLE_JUMP_" << branch.true_bb->name + 1 << endl << "  j " << branch.false_bb->name + 1 << endl;
+    // 生成 true 分支的标签，跳转到 true 分支的基本块
+    cout << "DOUBLE_JUMP_" << branch.true_bb->name + 1 << ":" << endl << "  j " << branch.true_bb->name + 1 << endl;
 
+}
+// 访问 jump 指令
+void Visit(const koopa_raw_jump_t &jump) 
+{
+  cout << "  j " << jump.target->name+1 << endl;
+}
 // 视需求自行实现
 // ...

@@ -815,19 +815,19 @@ class LAndExpAST : public BaseAST
       // %2 = ne %0, 0
       cout << "  %" << koopacnt++ << " = ne %"<< koopacnt-2 << ", 0" << endl;
 
-      // 短路求值, 相当于一个if
-      int ifcur = ifcnt;
-      ifcnt++;
+    
+      int ifcur = ifcnt++;
+      
       // @STMTIF_LAND_RESULT_233 = alloc i32
       cout << "  @" << "STMTIF_LAND_RESULT_" << ifcur << " = alloc i32" << endl;
 
       // br %0, %then, %else
       cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur<< ", %STMTIF_ELSE_" << ifcur << endl;
 
-      // %STMTIF_THEN_233: 创建新的entry
+
       cout << "%STMTIF_THEN_" << ifcur << ":" << endl;
       entry_returned = 0;
-      // && 左侧 LAndExp 为 1, 答案为 EqExp 的值
+
       eqexp->Dump();
       // %2 = ne %0, 0
       cout << "  %" << koopacnt++ << " = ne %" << koopacnt-2 << ", 0" << endl;
@@ -839,10 +839,10 @@ class LAndExpAST : public BaseAST
         cout << "  jump %STMTIF_END_" << ifcur << endl;
       }
 
-      // %STMTIF_ELSE_233: 创建新的entry
+
       cout << "%STMTIF_ELSE_" << ifcur << ":" << endl;
       entry_returned = 0;
-      // && 左侧 LAndExp 为 0, 答案为 0
+
       cout << "  store 0, @"<< "STMTIF_LAND_RESULT_" << ifcur << endl;
 
       if(!entry_returned) {
@@ -850,7 +850,7 @@ class LAndExpAST : public BaseAST
         cout << "  jump %STMTIF_END_" << ifcur << endl;
       }
 
-      // %STMTIF_END_233: 创建新的entry
+   
       cout << "%STMTIF_END_" << ifcur << ":" << endl;
       entry_returned = 0;
       cout << "  %" << koopacnt++ << " = load @"<< "STMTIF_LAND_RESULT_" << ifcur << endl;
@@ -901,8 +901,8 @@ class LOrExpAST : public BaseAST
         
 
         // 短路求值, 相当于一个if
-        int ifcur = ifcnt;
-        ifcnt++;
+        int ifcur = ifcnt++;
+        
         // @STMTIF_LOR_RESULT_233 = alloc i32
         cout << "  @" << "STMTIF_LOR_RESULT_" << ifcur << " = alloc i32" << endl;
 
