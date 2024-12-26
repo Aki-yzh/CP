@@ -284,7 +284,8 @@ BlockItem
     ast->stmt = unique_ptr<BaseAST>($1);
     $$=ast;
   }
-  | Stmt {
+  | Stmt 
+  {
     auto ast=new BlockItemAST();
     ast->type = 2;
     ast->stmt = unique_ptr<BaseAST>($1);

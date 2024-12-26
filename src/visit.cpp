@@ -317,7 +317,6 @@ void Visit(const koopa_raw_branch_t &branch)
     } 
     else 
     {
-       
         cout << "  lw t0, " << loc[branch.cond] << endl;
     }
     // 根据条件跳转到相应的基本块
