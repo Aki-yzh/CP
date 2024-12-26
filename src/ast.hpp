@@ -319,6 +319,7 @@ class LValAST : public BaseAST
   }
 };
 
+
 class StmtAST : public BaseAST 
 {
  public:
@@ -352,13 +353,58 @@ class StmtAST : public BaseAST
         break;
       }
       case 5:
-      { // IF "(" Exp ")" Stmt
-        // Add your IF statement handling here
-        break;
-      }
       case 6:
-      { // IF "(" Exp ")" Stmt ELSE Stmt
+      { 
+        
+        // IF "(" Exp ")" Stmt
+        // Add your IF statement handling here
+        // IF "(" Exp ")" Stmt ELSE Stmt
         // Add your IF-ELSE statement handling here
+        
+        if(entry_returned) return;
+        int ifcur = ifcnt;
+        ifcnt++;
+        exp->Dump();
+        if(type==5) {
+          // br %0, %then, %end
+          cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur;
+          cout << ", %STMTIF_END_" << ifcur << endl;
+          // %STMTIF_THEN_233: 创建新的entry
+          cout << "%STMTIF_THEN_" << ifcur << ":" << endl;
+          entry_returned = 0;
+          stmt_if->Dump();
+          if(!entry_returned) {
+            // jump %STMTIF_END_233
+            cout << "  jump %STMTIF_END_" << ifcur << endl;
+          }
+          // %STMTIF_END_233: 创建新的entry
+          cout << "%STMTIF_END_" << ifcur << ":" << endl;
+          entry_returned = 0;
+        }
+        else if(type==6) {
+          // br %0, %then, %else
+          cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur;
+          cout << ", %STMTIF_ELSE_" << ifcur << endl;
+          // %STMTIF_THEN_233: 创建新的entry
+          cout << "%STMTIF_THEN_" << ifcur << ":" << endl;
+          entry_returned = 0;
+          stmt_if->Dump();
+          if(!entry_returned) {
+            // jump %STMTIF_END_233
+            cout << "  jump %STMTIF_END_" << ifcur << endl;
+          }
+          // %STMTIF_ELSE_233: 创建新的entry
+          cout << "%STMTIF_ELSE_" << ifcur << ":" << endl;
+          entry_returned = 0;
+          stmt_else->Dump();
+          if(!entry_returned) {
+            // jump %STMTIF_END_233
+            cout << "  jump %STMTIF_END_" << ifcur << endl;
+          }
+          // %STMTIF_END_233: 创建新的entry
+          cout << "%STMTIF_END_" << ifcur << ":" << endl;
+          entry_returned = 0;
+        }
         break;
       }
       case 7:
@@ -757,29 +803,63 @@ class LAndExpAST : public BaseAST
 
   void Dump() const override 
   {
-  switch(type)
-  {
-      case 1:
-          eqexp->Dump();
-          break;
-      case 2:
-      {
-        landexp->Dump();
-        int left = koopacnt - 1;
-        eqexp->Dump();
-        int right = koopacnt - 1;
-        // A&&B <==> (A!=0)&(B!=0)
-        // %2 = ne %0, 0
-        cout << "  %" << koopacnt << " = ne %" << left << ", 0" << endl;
-        left = koopacnt++;
-        // %3 = ne %1, 0
-        cout << "  %" << koopacnt << " = ne %" << right << ", 0" << endl;
-        right = koopacnt++;
-        // %4 = and %2, %3
-        cout << "  %" << koopacnt++ << " = and %" << left << ", %" << right << endl;
-        break;
+    if(type==1) {
+      eqexp->Dump();
+    }
+    else if(type==2) {
+      // A&&B <==> (A!=0)&(B!=0)
+      landexp->Dump();
+      // %2 = ne %0, 0
+      cout << "  %" << koopacnt << " = ne %";
+      cout << koopacnt-1 << ", 0" << endl;
+      koopacnt++;
+
+      // 短路求值, 相当于一个if
+      int ifcur = ifcnt;
+      ifcnt++;
+      // @STMTIF_LAND_RESULT_233 = alloc i32
+      cout << "  @" << "STMTIF_LAND_RESULT_" << ifcur << " = alloc i32" << endl;
+
+      // br %0, %then, %else
+      cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur;
+      cout << ", %STMTIF_ELSE_" << ifcur << endl;
+
+      // %STMTIF_THEN_233: 创建新的entry
+      cout << "%STMTIF_THEN_" << ifcur << ":" << endl;
+      entry_returned = 0;
+      // && 左侧 LAndExp 为 1, 答案为 EqExp 的值
+      eqexp->Dump();
+      // %2 = ne %0, 0
+      cout << "  %" << koopacnt << " = ne %";
+      cout << koopacnt-1 << ", 0" << endl;
+      koopacnt++;
+      cout << "  store %" << koopacnt-1 << ", @";
+      cout << "STMTIF_LAND_RESULT_" << ifcur << endl;
+
+      if(!entry_returned) {
+        // jump %STMTIF_END_233
+        cout << "  jump %STMTIF_END_" << ifcur << endl;
       }
-  }
+
+      // %STMTIF_ELSE_233: 创建新的entry
+      cout << "%STMTIF_ELSE_" << ifcur << ":" << endl;
+      entry_returned = 0;
+      // && 左侧 LAndExp 为 0, 答案为 0
+      cout << "  store 0, @";
+      cout << "STMTIF_LAND_RESULT_" << ifcur << endl;
+
+      if(!entry_returned) {
+        // jump %STMTIF_END_233
+        cout << "  jump %STMTIF_END_" << ifcur << endl;
+      }
+
+      // %STMTIF_END_233: 创建新的entry
+      cout << "%STMTIF_END_" << ifcur << ":" << endl;
+      entry_returned = 0;
+      cout << "  %" << koopacnt << " = load @";
+      cout << "STMTIF_LAND_RESULT_" << ifcur << endl;
+      koopacnt++;
+    }
   }
 
   int EVa() const override 
@@ -791,8 +871,9 @@ class LAndExpAST : public BaseAST
         case 2:
         {
             int left = landexp->EVa();
+            if(!left) return 0;
             int right = eqexp->EVa();
-            return left && right;
+            return (right!=0);
         }
         default:
             return 0;
@@ -810,29 +891,63 @@ class LOrExpAST : public BaseAST
 
   void Dump() const override 
   {
-    switch(type)
-    {
-        case 1:
-          landexp->Dump();
-          break;
-        case 2:
-        {
-          lorexp->Dump();
-          int left = koopacnt - 1;
-          landexp->Dump();
-          int right = koopacnt - 1;
-          // A||B <==> (A!=0)|(B!=0)
-          // %2 = ne %0, 0
-          cout << "  %" << koopacnt << " = ne %" << left << ", 0" << endl;
-          left = koopacnt++;
-          // %3 = ne %1, 0
-          cout << "  %" << koopacnt << " = ne %" << right << ", 0" << endl;
-          right = koopacnt++;
-          // %4 = or %2, %3
-          cout << "  %" << koopacnt++ << " = or %" << left << ", %" << right << endl;
-          break;
+      if(type==1) {
+        landexp->Dump();
+      }
+      else if(type==2) {
+        // A||B <==> (A!=0)|(B!=0)
+        lorexp->Dump();
+        // %2 = ne %0, 0
+        cout << "  %" << koopacnt << " = ne %";
+        cout << koopacnt-1 << ", 0" << endl;
+        koopacnt++;
+
+        // 短路求值, 相当于一个if
+        int ifcur = ifcnt;
+        ifcnt++;
+        // @STMTIF_LOR_RESULT_233 = alloc i32
+        cout << "  @" << "STMTIF_LOR_RESULT_" << ifcur << " = alloc i32" << endl;
+
+        // br %0, %then, %else
+        cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur;
+        cout << ", %STMTIF_ELSE_" << ifcur << endl;
+
+        // %STMTIF_THEN_233: 创建新的entry
+        cout << "%STMTIF_THEN_" << ifcur << ":" << endl;
+        entry_returned = 0;
+        // || 左侧 LOrExp 为 1, 答案为 1, 即左侧 LOrExp 的值
+        cout << "  store 1, @";
+        cout << "STMTIF_LOR_RESULT_" << ifcur << endl;
+
+        if(!entry_returned) {
+          // jump %STMTIF_END_233
+          cout << "  jump %STMTIF_END_" << ifcur << endl;
         }
-      }   
+
+        // %STMTIF_ELSE_233: 创建新的entry
+        cout << "%STMTIF_ELSE_" << ifcur << ":" << endl;
+        entry_returned = 0;
+        // || 左侧 LOrExp 为 0, 答案为 LAndExp 的值
+        landexp->Dump();
+        // %2 = ne %0, 0
+        cout << "  %" << koopacnt << " = ne %";
+        cout << koopacnt-1 << ", 0" << endl;
+        koopacnt++;
+        cout << "  store %" << koopacnt-1 << ", @";
+        cout << "STMTIF_LOR_RESULT_" << ifcur << endl;
+
+        if(!entry_returned) {
+          // jump %STMTIF_END_233
+          cout << "  jump %STMTIF_END_" << ifcur << endl;
+        }
+
+        // %STMTIF_END_233: 创建新的entry
+        cout << "%STMTIF_END_" << ifcur << ":" << endl;
+        entry_returned = 0;
+        cout << "  %" << koopacnt << " = load @";
+        cout << "STMTIF_LOR_RESULT_" << ifcur << endl;
+        koopacnt++;
+      }
   }
 
   int EVa() const override 
@@ -844,8 +959,9 @@ class LOrExpAST : public BaseAST
           case 2:
           {
               int left = lorexp->EVa();
+              if(left) return 1;
               int right = landexp->EVa();
-              return left || right;
+              return (right!=0);
           }
           default:           
               return 0;

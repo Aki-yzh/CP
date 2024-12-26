@@ -290,7 +290,11 @@ BlockItem
   }
   ;
 
-//Stmt          ::= LVal "=" Exp ";"| "return" Exp ";";
+//Stmt            ::= LVal "=" Exp ";"
+ //               | [Exp] ";"
+  //              | Block
+   //             | "if" "(" Exp ")" Stmt ["else" Stmt]
+    //            | "return" [Exp] ";";
 
 Stmt
  : LVal '=' Exp ';' 
