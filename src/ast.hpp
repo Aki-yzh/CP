@@ -803,16 +803,17 @@ class LAndExpAST : public BaseAST
 
   void Dump() const override 
   {
-    if(type==1) {
-      eqexp->Dump();
-    }
-    else if(type==2) {
+    switch(type)
+    {
+      case 1:
+        eqexp->Dump();
+        break;
+      case 2:
+     {
       // A&&B <==> (A!=0)&(B!=0)
       landexp->Dump();
       // %2 = ne %0, 0
-      cout << "  %" << koopacnt << " = ne %";
-      cout << koopacnt-1 << ", 0" << endl;
-      koopacnt++;
+      cout << "  %" << koopacnt++ << " = ne %"<< koopacnt-2 << ", 0" << endl;
 
       // 短路求值, 相当于一个if
       int ifcur = ifcnt;
@@ -821,8 +822,7 @@ class LAndExpAST : public BaseAST
       cout << "  @" << "STMTIF_LAND_RESULT_" << ifcur << " = alloc i32" << endl;
 
       // br %0, %then, %else
-      cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur;
-      cout << ", %STMTIF_ELSE_" << ifcur << endl;
+      cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur<< ", %STMTIF_ELSE_" << ifcur << endl;
 
       // %STMTIF_THEN_233: 创建新的entry
       cout << "%STMTIF_THEN_" << ifcur << ":" << endl;
@@ -830,11 +830,9 @@ class LAndExpAST : public BaseAST
       // && 左侧 LAndExp 为 1, 答案为 EqExp 的值
       eqexp->Dump();
       // %2 = ne %0, 0
-      cout << "  %" << koopacnt << " = ne %";
-      cout << koopacnt-1 << ", 0" << endl;
-      koopacnt++;
-      cout << "  store %" << koopacnt-1 << ", @";
-      cout << "STMTIF_LAND_RESULT_" << ifcur << endl;
+      cout << "  %" << koopacnt++ << " = ne %" << koopacnt-2 << ", 0" << endl;
+      
+      cout << "  store %" << koopacnt-1 << ", @"<< "STMTIF_LAND_RESULT_" << ifcur << endl;
 
       if(!entry_returned) {
         // jump %STMTIF_END_233
@@ -845,8 +843,7 @@ class LAndExpAST : public BaseAST
       cout << "%STMTIF_ELSE_" << ifcur << ":" << endl;
       entry_returned = 0;
       // && 左侧 LAndExp 为 0, 答案为 0
-      cout << "  store 0, @";
-      cout << "STMTIF_LAND_RESULT_" << ifcur << endl;
+      cout << "  store 0, @"<< "STMTIF_LAND_RESULT_" << ifcur << endl;
 
       if(!entry_returned) {
         // jump %STMTIF_END_233
@@ -856,12 +853,11 @@ class LAndExpAST : public BaseAST
       // %STMTIF_END_233: 创建新的entry
       cout << "%STMTIF_END_" << ifcur << ":" << endl;
       entry_returned = 0;
-      cout << "  %" << koopacnt << " = load @";
-      cout << "STMTIF_LAND_RESULT_" << ifcur << endl;
-      koopacnt++;
+      cout << "  %" << koopacnt++ << " = load @"<< "STMTIF_LAND_RESULT_" << ifcur << endl;
+      break;
     }
   }
-
+  }
   int EVa() const override 
   {
     switch(type)
@@ -891,16 +887,18 @@ class LOrExpAST : public BaseAST
 
   void Dump() const override 
   {
-      if(type==1) {
-        landexp->Dump();
-      }
-      else if(type==2) {
+      switch (type)
+      {
+      case 1:
+          landexp->Dump();
+          break;
+      case 2:
+      {
         // A||B <==> (A!=0)|(B!=0)
         lorexp->Dump();
         // %2 = ne %0, 0
-        cout << "  %" << koopacnt << " = ne %";
-        cout << koopacnt-1 << ", 0" << endl;
-        koopacnt++;
+        cout << "  %" << koopacnt++ << " = ne %"<< koopacnt-2 << ", 0" << endl;
+        
 
         // 短路求值, 相当于一个if
         int ifcur = ifcnt;
@@ -909,15 +907,13 @@ class LOrExpAST : public BaseAST
         cout << "  @" << "STMTIF_LOR_RESULT_" << ifcur << " = alloc i32" << endl;
 
         // br %0, %then, %else
-        cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur;
-        cout << ", %STMTIF_ELSE_" << ifcur << endl;
+        cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur << ", %STMTIF_ELSE_" << ifcur << endl;
 
         // %STMTIF_THEN_233: 创建新的entry
         cout << "%STMTIF_THEN_" << ifcur << ":" << endl;
         entry_returned = 0;
         // || 左侧 LOrExp 为 1, 答案为 1, 即左侧 LOrExp 的值
-        cout << "  store 1, @";
-        cout << "STMTIF_LOR_RESULT_" << ifcur << endl;
+        cout << "  store 1, @" << "STMTIF_LOR_RESULT_" << ifcur << endl;
 
         if(!entry_returned) {
           // jump %STMTIF_END_233
@@ -930,11 +926,7 @@ class LOrExpAST : public BaseAST
         // || 左侧 LOrExp 为 0, 答案为 LAndExp 的值
         landexp->Dump();
         // %2 = ne %0, 0
-        cout << "  %" << koopacnt << " = ne %";
-        cout << koopacnt-1 << ", 0" << endl;
-        koopacnt++;
-        cout << "  store %" << koopacnt-1 << ", @";
-        cout << "STMTIF_LOR_RESULT_" << ifcur << endl;
+        cout << "  %" << koopacnt++ << " = ne %"<< koopacnt-2 << ", 0" << endl << "  store %" << koopacnt-1 << ", @"<< "STMTIF_LOR_RESULT_" << ifcur << endl;
 
         if(!entry_returned) {
           // jump %STMTIF_END_233
@@ -944,10 +936,10 @@ class LOrExpAST : public BaseAST
         // %STMTIF_END_233: 创建新的entry
         cout << "%STMTIF_END_" << ifcur << ":" << endl;
         entry_returned = 0;
-        cout << "  %" << koopacnt << " = load @";
-        cout << "STMTIF_LOR_RESULT_" << ifcur << endl;
-        koopacnt++;
+        cout << "  %" << koopacnt++ << " = load @" << "STMTIF_LOR_RESULT_" << ifcur << endl;
+       break;
       }
+  }
   }
 
   int EVa() const override 
