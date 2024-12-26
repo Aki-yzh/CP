@@ -370,17 +370,10 @@ class StmtAST : public BaseAST
         int ifcur = ifcnt;
         ifcnt++;
         exp->Dump();
-
-        if(type==5) 
-        {
           // br %0, %then, %end
-          cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur << ", %STMTIF_END_" << ifcur << endl;
-        }
-        else if(type==6) 
-        {
+
           // br %0, %then, %else
-          cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur << ", %STMTIF_ELSE_" << ifcur << endl;
-        }
+        cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur << ", %" << (type == 6 ? "STMTIF_ELSE_" : "STMTIF_END_") << ifcur << endl;
         cout << "%STMTIF_THEN_" << ifcur << ":" << endl;
         entry_returned = 0;
         stmt_if->Dump();
