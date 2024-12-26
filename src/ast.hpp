@@ -363,7 +363,6 @@ class StmtAST : public BaseAST
       case 5:
       case 6:
       { 
-        
         // IF "(" Exp ")" Stmt
        
         // IF "(" Exp ")" Stmt ELSE Stmt
@@ -371,46 +370,39 @@ class StmtAST : public BaseAST
         int ifcur = ifcnt;
         ifcnt++;
         exp->Dump();
-        if(type==5) {
+
+        if(type==5) 
+        {
           // br %0, %then, %end
-          cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur;
-          cout << ", %STMTIF_END_" << ifcur << endl;
-          // %STMTIF_THEN_233: 创建新的entry
-          cout << "%STMTIF_THEN_" << ifcur << ":" << endl;
-          entry_returned = 0;
-          stmt_if->Dump();
-          if(!entry_returned) {
-            // jump %STMTIF_END_233
-            cout << "  jump %STMTIF_END_" << ifcur << endl;
-          }
-          // %STMTIF_END_233: 创建新的entry
-          cout << "%STMTIF_END_" << ifcur << ":" << endl;
-          entry_returned = 0;
+          cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur << ", %STMTIF_END_" << ifcur << endl;
         }
-        else if(type==6) {
+        else if(type==6) 
+        {
           // br %0, %then, %else
-          cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur;
-          cout << ", %STMTIF_ELSE_" << ifcur << endl;
-          // %STMTIF_THEN_233: 创建新的entry
-          cout << "%STMTIF_THEN_" << ifcur << ":" << endl;
-          entry_returned = 0;
-          stmt_if->Dump();
-          if(!entry_returned) {
-            // jump %STMTIF_END_233
-            cout << "  jump %STMTIF_END_" << ifcur << endl;
-          }
-          // %STMTIF_ELSE_233: 创建新的entry
+          cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur << ", %STMTIF_ELSE_" << ifcur << endl;
+        }
+        cout << "%STMTIF_THEN_" << ifcur << ":" << endl;
+        entry_returned = 0;
+        stmt_if->Dump();
+        if(!entry_returned) 
+        {
+        // jump %STMTIF_END_233
+        cout << "  jump %STMTIF_END_" << ifcur << endl;
+        }
+        
+        if(type==6) 
+        {
           cout << "%STMTIF_ELSE_" << ifcur << ":" << endl;
           entry_returned = 0;
           stmt_else->Dump();
-          if(!entry_returned) {
-            // jump %STMTIF_END_233
+          if(!entry_returned) 
+          {
+    
             cout << "  jump %STMTIF_END_" << ifcur << endl;
           }
-          // %STMTIF_END_233: 创建新的entry
+        }
           cout << "%STMTIF_END_" << ifcur << ":" << endl;
           entry_returned = 0;
-        }
         break;
       }
       case 7:
