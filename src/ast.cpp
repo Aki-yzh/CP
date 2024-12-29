@@ -1,0 +1,898 @@
+#include <iostream>
+#include <cassert>
+#include <unordered_map>
+#include "ast.hpp"
+
+// 计数 koopa 语句的返回值 %xxx
+static int koopacnt = 0;
+// 计数 if 语句，用于设置 entry
+static int ifcnt = 0;
+// 计数 while 语句，用于设置 entry
+static int whilecnt = 0;
+// 当前 while 语句的标号
+static int whilecur = 0;
+// 保存 while 树上的 parent 关系
+static std::unordered_map<int, int> whilepar;
+// 当前 entry 是否已经 ret/br/jump, 若为 1 的话不应再生成任何语句
+static int entry_end = 0;
+// 当前是否在声明全局变量，用于 VarDef::Dump
+static int declaring_global_var = 0;
+
+/************************CompUnit*************************/
+
+// CompUnit ::= CompUnitItemList;
+// CompUnitItemList ::= CompUnitItem | CompUnitItemList CompUnitItem;
+void CompUnitAST::Dump() const {
+  enter_code_block();
+  // 声明库函数
+  std::cout << "decl @getint(): i32\n" \
+               "decl @getch(): i32\n" \
+               "decl @getarray(*i32): i32\n" \
+               "decl @putint(i32)\n" \
+               "decl @putch(i32)\n" \
+               "decl @putarray(i32, *i32)\n" \
+               "decl @starttime()\n" \
+               "decl @stoptime()\n" << std::endl;
+  insert_symbol("getint", SYM_TYPE_FUNCINT, 0);
+  insert_symbol("getch", SYM_TYPE_FUNCINT, 0);
+  insert_symbol("getarray", SYM_TYPE_FUNCINT, 0);
+  insert_symbol("putint", SYM_TYPE_FUNCVOID, 0);
+  insert_symbol("putch", SYM_TYPE_FUNCVOID, 0);
+  insert_symbol("putarray", SYM_TYPE_FUNCVOID, 0);
+  insert_symbol("starttime", SYM_TYPE_FUNCVOID, 0);
+  insert_symbol("stoptime", SYM_TYPE_FUNCVOID, 0);
+
+  for(auto& comp_unit_item: *comp_unit_item_list) {
+    comp_unit_item->Dump();
+  }
+  exit_code_block();
+}
+
+// CompUnitItem ::= Decl | FuncDef;
+void CompUnitItemAST::Dump() const {
+  if(type==1) {
+    declaring_global_var = 1;
+    decl1_funcdef2->Dump();
+    declaring_global_var = 0;
+  }
+  else if(type==2) {
+    decl1_funcdef2->Dump();
+  }
+}
+
+/**************************Decl***************************/
+
+// Decl ::= ConstDecl | VarDecl;
+void DeclAST::Dump() const {
+  const_decl1_var_decl2->Dump();
+}
+
+// ConstDecl ::= "const" TYPE ConstDefList ";";
+// ConstDefList ::= ConstDef | ConstDefList "," ConstDef;
+void ConstDeclAST::Dump() const {
+  for(auto& const_def: *const_def_list)
+    const_def->Dump();
+}
+
+// ConstDef ::= IDENT "=" ConstInitVal;
+void ConstDefAST::Dump() const {
+  insert_symbol(ident, SYM_TYPE_CONST,
+    dynamic_cast<ConstInitValAST*>(const_init_val.get())->Calc());
+}
+
+// ConstInitVal ::= ConstExp;
+void ConstInitValAST::Dump() const {
+  assert(0);
+  return;
+}
+
+int ConstInitValAST::Calc() const {
+  return dynamic_cast<ExpBaseAST*>(const_exp.get())->Calc();
+}
+
+// VarDecl ::= TYPE VarDefList ";";
+// VarDefList ::= VarDef | VarDefList "," VarDef;
+void VarDeclAST::Dump() const {
+  for(auto& var_def : *var_def_list)
+    var_def->Dump();
+}
+
+// VarDef ::= IDENT | IDENT "=" InitVal;
+void VarDefAST::Dump() const {
+  if(declaring_global_var) { // 全局变量
+    if(type==1) {
+      // global @var = alloc i32, zeroinit
+      std::cout << "global @" << current_code_block() << ident;
+      std::cout << " = alloc i32, zeroinit" << std::endl;
+      insert_symbol(ident, SYM_TYPE_VAR, 0);
+    }
+    else if(type==2) {
+      // global @var = alloc i32, 233
+      std::cout << "global @" << current_code_block() << ident;
+      std::cout << " = alloc i32, ";
+      std::cout << dynamic_cast<InitValAST*>(init_val.get())->Calc() << std::endl;
+      insert_symbol(ident, SYM_TYPE_VAR, 0);
+    }
+    std::cout << std::endl;
+  }
+  else { // 局部变量
+    // 先 alloc 一段内存
+    // @x = alloc i32
+    std::cout << "  @" << current_code_block() << ident << " = alloc i32" << std::endl;
+    insert_symbol(ident, SYM_TYPE_VAR, 0);
+
+    if(type==2) {
+      init_val->Dump();
+      // 存入 InitVal
+      // store %1, @x
+      std::cout << "  store %" << koopacnt-1 << ", @";
+      std::cout << query_symbol(ident).first << ident << std::endl;
+    }
+  }
+}
+
+// InitVal ::= Exp;
+void InitValAST::Dump() const {
+  exp->Dump();
+}
+
+int InitValAST::Calc() const {
+  return dynamic_cast<ExpBaseAST*>(exp.get())->Calc();
+}
+
+/**************************Func***************************/
+
+// FuncDef ::= TYPE IDENT "(" FuncFParams ")" Block;
+// FuncFParams ::=  | FuncFParamList;
+// FuncFParamList ::= FuncFParam | FuncFParamList "," FuncFParam;
+void FuncDefAST::Dump() const {
+  // 插入符号
+  if (func_type == "void") {
+    insert_symbol(ident, SYM_TYPE_FUNCVOID, 0);
+  }
+  else if (func_type == "int") {
+    insert_symbol(ident, SYM_TYPE_FUNCINT, 0);
+  }
+  enter_code_block();
+
+  // fun @func(@x: i32): i32 {}
+  std::cout << "fun @" << ident << "(";
+  for(auto& func_f_param: *func_f_param_list) {
+    func_f_param->Dump();
+    std::cout << ", ";
+  }
+  // 退格擦除最后一个逗号
+  if(!func_f_param_list->empty())
+    std::cout.seekp(-2, std::cout.end);
+  std::cout << ")";
+  if (func_type == "int") {
+    std::cout << ": i32 ";
+  }
+
+  std::cout << " {" << std::endl;
+  std::cout << "%entry:" << std::endl;
+  entry_end = 0;
+
+  for(auto& func_f_param: *func_f_param_list) {
+    // 为参数再分配一份内存
+    // @SYM_TABLE_233_x = alloc i32
+    // store @x, @SYM_TABLE_233_x
+    dynamic_cast<FuncFParamAST*>(func_f_param.get())->Alloc();
+  }
+
+  block->Dump();
+  // 若函数还未返回, 补一个ret
+  // 无返回值补 ret
+  if (!entry_end) {
+    if (func_type == "int")
+      std::cout << "  ret 0" << std::endl;
+    else if (func_type == "void")
+      std::cout << "  ret" << std::endl;
+    else
+      assert(0);
+  }
+  std::cout << "}" << std::endl << std::endl;
+  exit_code_block();
+}
+
+// FuncFParam ::= TYPE IDENT;
+void FuncFParamAST::Dump() const {
+  std::cout << "@" << ident << ": i32";
+}
+
+void FuncFParamAST::Alloc() const {
+  // @SYM_TABLE_233_x = alloc i32
+  std::cout << "  @" << current_code_block() << ident << " = alloc i32" << std::endl;
+  insert_symbol(ident, SYM_TYPE_VAR, 0);
+  // store @x, @SYM_TABLE_233_x
+  std::cout << "  store @" << ident << ", @";
+  std::cout << query_symbol(ident).first << ident << std::endl;
+}
+
+/**************************Block***************************/
+
+// Block ::= "{" BlockItemList "}";
+// BlockItemList ::=  | BlockItemList BlockItem;
+void BlockAST::Dump() const {
+  enter_code_block();
+  for(auto& block_item: *block_item_list)
+  {
+    if(entry_end) break;
+    block_item->Dump();
+  }
+  exit_code_block();
+}
+
+// BlockItem ::= Decl | Stmt;
+void BlockItemAST::Dump() const {
+  decl1_stmt2->Dump();
+}
+
+// Stmt ::= LVal "=" Exp ";"
+void StmtAssignAST::Dump() const {
+  exp->Dump();
+  // 存入刚刚计算出的值
+  // store %1, @x
+  const std::string& ident = dynamic_cast<LValAST*>(lval.get())->ident;
+  std::cout << "  store %" << koopacnt-1 << ", @";
+  std::cout << query_symbol(ident).first << ident << std::endl;
+}
+
+//        | ";"
+//        | Exp ";"
+void StmtExpAST::Dump() const {
+  if(type==1) {
+    // do nothing
+  }
+  else if(type==2) {
+    exp->Dump();
+  }
+}
+
+//        | Block
+void StmtBlockAST::Dump() const {
+  block->Dump();
+}
+
+//        | "if" "(" Exp ")" Stmt
+//        | "if" "(" Exp ")" Stmt "else" Stmt
+void StmtIfAST::Dump() const {
+  if(entry_end) return;
+  int ifcur = ifcnt;
+  ifcnt++;
+  exp->Dump();
+
+  if(type==1) {
+    // br %0, %then, %end
+    std::cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur;
+    std::cout << ", %STMTIF_END_" << ifcur << std::endl;
+
+    // %STMTIF_THEN_233: 创建新的entry
+    std::cout << "%STMTIF_THEN_" << ifcur << ":" << std::endl;
+    entry_end = 0;
+    stmt_if->Dump();
+    if(!entry_end) {
+      // jump %STMTIF_END_233
+      std::cout << "  jump %STMTIF_END_" << ifcur << std::endl;
+    }
+
+    // %STMTIF_END_233: 创建新的entry
+    std::cout << "%STMTIF_END_" << ifcur << ":" << std::endl;
+    entry_end = 0;
+  }
+  else if(type==2) {
+    // br %0, %then, %else
+    std::cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur;
+    std::cout << ", %STMTIF_ELSE_" << ifcur << std::endl;
+
+    // %STMTIF_THEN_233: 创建新的entry
+    std::cout << "%STMTIF_THEN_" << ifcur << ":" << std::endl;
+    entry_end = 0;
+    stmt_if->Dump();
+    if(!entry_end) {
+      // jump %STMTIF_END_233
+      std::cout << "  jump %STMTIF_END_" << ifcur << std::endl;
+    }
+
+    // %STMTIF_ELSE_233: 创建新的entry
+    std::cout << "%STMTIF_ELSE_" << ifcur << ":" << std::endl;
+    entry_end = 0;
+    stmt_else->Dump();
+    if(!entry_end) {
+      // jump %STMTIF_END_233
+      std::cout << "  jump %STMTIF_END_" << ifcur << std::endl;
+    }
+
+    // %STMTIF_END_233: 创建新的entry
+    std::cout << "%STMTIF_END_" << ifcur << ":" << std::endl;
+    entry_end = 0;
+  }
+}
+
+//        | "while" "(" Exp ")" Stmt
+void StmtWhileAST::Dump() const {
+  if(entry_end) return;
+  int whileold = whilecur;
+  whilecur = whilecnt;
+  whilecnt++;
+  whilepar[whilecur] = whileold;
+  //   jump %while_entry
+  // %while_entry:
+  //   %cond = Exp
+  //   br %cond, %while_body, %while_end
+  // %while_body:
+  //   Stmt
+  //   jump %while_entry
+  // %while_end:
+
+  // jump %while_entry
+  std::cout << "  jump %STMTWHILE_ENTRY_" << whilecur << std::endl;
+  // %while_entry:
+  std::cout << "%STMTWHILE_ENTRY_" << whilecur << ":" << std::endl;
+  entry_end = 0;
+  exp->Dump();
+  // br %cond, %while_body, %while_end
+  std::cout << "  br %" << koopacnt-1 << ", %STMTWHILE_BODY_" << whilecur;
+  std::cout << ", %STMTWHILE_END_" << whilecur << std::endl;
+  // %while_body:
+  std::cout << "%STMTWHILE_BODY_" << whilecur << ":" << std::endl;
+  entry_end = 0;
+  stmt->Dump();
+  if(!entry_end){
+    // jump %while_entry
+    std::cout << "  jump %STMTWHILE_ENTRY_" << whilecur << std::endl;
+  }
+  // %while_end:
+  std::cout << "%STMTWHILE_END_" << whilecur << ":" << std::endl;
+  entry_end = 0;
+  whilecur = whilepar[whilecur];
+}
+
+//        | "break" ";"
+void StmtBreakAST::Dump() const {
+  // jump %while_end
+  std::cout << "  jump %STMTWHILE_END_" << whilecur << std::endl;
+  entry_end = 1;
+}
+
+//        | "continue" ";"
+void StmtContinueAST::Dump() const {
+  // jump %while_entry
+  std::cout << "  jump %STMTWHILE_ENTRY_" << whilecur << std::endl;
+  entry_end = 1;
+}
+
+//        | "return" ";";
+//        | "return" Exp ";";
+void StmtReturnAST::Dump() const {
+  if(type==1) {
+    std::cout << "  ret" << std::endl;
+    entry_end = 1;
+  }
+  else if(type==2) {
+    exp->Dump();
+    // ret %0
+    std::cout << "  ret %" << koopacnt-1 << std::endl;
+    entry_end = 1;
+  }
+}
+
+/***************************Exp***************************/
+
+// Exp ::= LOrExp;
+void ExpAST::Dump() const {
+  lorexp->Dump();
+}
+
+int ExpAST::Calc() const {
+  return dynamic_cast<ExpBaseAST*>(lorexp.get())->Calc();
+}
+
+// LVal ::= IDENT;
+// 只有 LVal 出现在表达式中时会调用该 Dump
+// 如果 LVal 作为左值出现，则在父节点读取其 ident
+void LValAST::Dump() const {
+  auto val = query_symbol(ident);
+  assert(val.second->type != SYM_TYPE_UND);
+
+  if(val.second->type == SYM_TYPE_CONST)
+  {
+    // 此处有优化空间
+    // %0 = add 0, 233
+    std::cout << "  %" << koopacnt << " = add 0, ";
+    std::cout<< val.second->value << std::endl;
+    koopacnt++;
+  }
+  else if(val.second->type == SYM_TYPE_VAR)
+  {
+    // 从内存读取 LVal
+    // %0 = load @x
+    std::cout << "  %" << koopacnt << " = load @" << val.first << ident << std::endl;
+    koopacnt++;
+  }
+  return;
+}
+
+int LValAST::Calc() const {
+  auto val = query_symbol(ident);
+  assert(val.second->type == SYM_TYPE_CONST);
+  return val.second->value;
+}
+
+// PrimaryExp ::= "(" Exp ")" | LVal | Number;
+void PrimaryExpAST::Dump() const {
+  if(type==1) {
+    exp1_lval2->Dump();
+  }
+  else if(type==2) {
+    exp1_lval2->Dump();
+  }
+  else if(type==3) {
+    // %0 = add 0, 233
+    std::cout << "  %" << koopacnt << " = add 0, ";
+    std::cout<< number << std::endl;
+    koopacnt++;
+  }
+}
+
+int PrimaryExpAST::Calc() const {
+  if(type==1) {
+    return dynamic_cast<ExpBaseAST*>(exp1_lval2.get())->Calc();
+  }
+  else if(type==2) {
+    return dynamic_cast<ExpBaseAST*>(exp1_lval2.get())->Calc();
+  }
+  else if(type==3) {
+    return number;
+  }
+  assert(0);
+  return 0;
+}
+
+// UnaryExp ::= PrimaryExp | FuncExp | UnaryOp UnaryExp;
+// UnaryOp ::= "+" | "-" | "!"
+void UnaryExpAST::Dump() const {
+  if(type==1) {
+    primaryexp1_funcexp2_unaryexp3->Dump();
+  }
+  else if(type==2) {
+    primaryexp1_funcexp2_unaryexp3->Dump();
+  }
+  else if(type==3) {
+    primaryexp1_funcexp2_unaryexp3->Dump();
+    if(unaryop=='-') {
+      // %1 = sub 0, %0
+      std::cout << "  %" << koopacnt << " = sub 0, %";
+      std::cout << koopacnt-1 <<std::endl;
+      koopacnt++;
+    }
+    else if(unaryop=='!') {
+      // %1 = eq 0, %0
+      std::cout << "  %" << koopacnt << " = eq 0, %";
+      std::cout << koopacnt-1 <<std::endl;
+      koopacnt++;
+    }
+  }
+}
+
+// FuncExp ::= IDENT "(" FuncRParams ")";
+// FuncRParams ::=  | FuncRParamList;
+// FuncRParamList ::= Exp | FuncRParamList "," Exp;
+void FuncExpAST::Dump() const {
+  auto func = query_symbol(ident);
+  // 必须为全局符号
+  assert(func.first == "SYM_TABLE_0_");
+  // 必须是函数
+  assert(func.second->type == SYM_TYPE_FUNCVOID || func.second->type == SYM_TYPE_FUNCINT);
+
+  // 计算所有的参数
+  auto vec = new std::vector<int>();
+  for(auto& exp: *func_r_param_list) {
+    exp->Dump();
+    vec->push_back(koopacnt-1);
+  }
+
+  // 如果是 int 函数，把返回值保存下来
+  if(func.second->type == SYM_TYPE_FUNCINT)
+    std::cout << "  %" << koopacnt << " = ";
+  else if(func.second->type == SYM_TYPE_FUNCVOID)
+    std::cout << "  ";
+
+  // call @half(%1, %2)
+  std::cout << "call @" << ident << "(";
+  for(int i: *vec) {
+    std::cout << "%" << i << ", ";
+  }
+
+  // 退格擦除最后一个逗号
+  if(!vec->empty())
+    std::cout.seekp(-2, std::cout.end);
+  std::cout << ")" << std::endl;
+  delete vec;
+  if(func.second->type == SYM_TYPE_FUNCINT)
+    koopacnt++;
+}
+
+int UnaryExpAST::Calc() const {
+  if(type==1) {
+    return dynamic_cast<ExpBaseAST*>(primaryexp1_funcexp2_unaryexp3.get())->Calc();
+  }
+  else if(type==3) {
+    int tmp = dynamic_cast<ExpBaseAST*>(primaryexp1_funcexp2_unaryexp3.get())->Calc();
+    if(unaryop=='+') {
+      return tmp;
+    }
+    else if(unaryop=='-') {
+      return -tmp;
+    }
+    else if(unaryop=='!') {
+      return !tmp;
+    }
+  }
+  // 如果 type == 2 则不能计算
+  assert(0);
+  return 0;
+}
+
+// MulExp ::= UnaryExp | MulExp MulOp UnaryExp;
+// MulOp ::= "*" | "/" | "%"
+void MulExpAST::Dump() const {
+  if(type==1) {
+    unaryexp->Dump();
+  }
+  else if(type==2) {
+    mulexp->Dump();
+    int left = koopacnt-1;
+    unaryexp->Dump();
+    int right = koopacnt-1;
+    if(mulop=='*') {
+      // %2 = mul %0, %1
+      std::cout << "  %" << koopacnt << " = mul %";
+      std::cout << left << ", %" << right << std::endl;
+      koopacnt++;
+    }
+    else if(mulop=='/') {
+      // %2 = div %0, %1
+      std::cout << "  %" << koopacnt << " = div %";
+      std::cout << left << ", %" << right << std::endl;
+      koopacnt++;
+    }
+    else if(mulop=='%') {
+      // %2 = mod %0, %1
+      std::cout << "  %" << koopacnt << " = mod %";
+      std::cout << left << ", %" << right << std::endl;
+      koopacnt++;
+    }
+  }
+}
+
+int MulExpAST::Calc() const {
+  if(type==1) {
+    return dynamic_cast<ExpBaseAST*>(unaryexp.get())->Calc();
+  }
+  else if(type==2) {
+    int left = dynamic_cast<ExpBaseAST*>(mulexp.get())->Calc();
+    int right = dynamic_cast<ExpBaseAST*>(unaryexp.get())->Calc();
+    if(mulop=='*') {
+      return left * right;
+    }
+    else if(mulop=='/') {
+      return left / right;
+    }
+    else if(mulop=='%') {
+      return left % right;
+    }
+  }
+  assert(0);
+  return 0;
+}
+
+// AddExp ::= MulExp | AddExp AddOp MulExp;
+// AddOp ::= "+" | "-"
+void AddExpAST::Dump() const {
+  if(type==1) {
+    mulexp->Dump();
+  }
+  else if(type==2) {
+    addexp->Dump();
+    int left = koopacnt-1;
+    mulexp->Dump();
+    int right = koopacnt-1;
+    if(addop=='+') {
+      // %2 = add %0, %1
+      std::cout << "  %" << koopacnt << " = add %";
+      std::cout << left << ", %" << right << std::endl;
+      koopacnt++;
+    }
+    else if(addop=='-') {
+      // %2 = sub %0, %1
+      std::cout << "  %" << koopacnt << " = sub %";
+      std::cout << left << ", %" << right << std::endl;
+      koopacnt++;
+    }
+  }
+}
+
+int AddExpAST::Calc() const {
+  if(type==1) {
+    return dynamic_cast<ExpBaseAST*>(mulexp.get())->Calc();
+  }
+  else if(type==2) {
+    int left = dynamic_cast<ExpBaseAST*>(addexp.get())->Calc();
+    int right = dynamic_cast<ExpBaseAST*>(mulexp.get())->Calc();
+    if(addop=='+') {
+      return left + right;
+    }
+    else if(addop=='-') {
+      return left - right;
+    }
+  }
+  assert(0);
+  return 0;
+}
+
+// RelExp ::= AddExp | RelExp RelOp AddExp;
+// RelOp ::= "<" | ">" | "<=" | ">="
+void RelExpAST::Dump() const {
+  if(type==1) {
+    addexp->Dump();
+  }
+  else if(type==2) {
+    relexp->Dump();
+    int left = koopacnt-1;
+    addexp->Dump();
+    int right = koopacnt-1;
+    if(relop=="<") {
+      // %2 = lt %0, %1
+      std::cout << "  %" << koopacnt << " = lt %";
+      std::cout << left << ", %" << right << std::endl;
+      koopacnt++;
+    }
+    else if(relop==">") {
+      // %2 = gt %0, %1
+      std::cout << "  %" << koopacnt << " = gt %";
+      std::cout << left << ", %" << right << std::endl;
+      koopacnt++;
+    }
+    else if(relop=="<=") {
+      // %2 = le %0, %1
+      std::cout << "  %" << koopacnt << " = le %";
+      std::cout << left << ", %" << right << std::endl;
+      koopacnt++;
+    }
+    else if(relop==">=") {
+      // %2 = ge %0, %1
+      std::cout << "  %" << koopacnt << " = ge %";
+      std::cout << left << ", %" << right << std::endl;
+      koopacnt++;
+    }
+  }
+}
+
+int RelExpAST::Calc() const {
+  if(type==1) {
+    return dynamic_cast<ExpBaseAST*>(addexp.get())->Calc();
+  }
+  else if(type==2) {
+    int left = dynamic_cast<ExpBaseAST*>(relexp.get())->Calc();
+    int right = dynamic_cast<ExpBaseAST*>(addexp.get())->Calc();
+    if(relop=="<") {
+      return left < right;
+    }
+    else if(relop==">") {
+      return left > right;
+    }
+    else if(relop=="<=") {
+      return left <= right;
+    }
+    else if(relop==">=") {
+      return left >= right;
+    }
+  }
+  assert(0);
+  return 0;
+}
+
+// EqExp ::= RelExp | EqExp EqOp RelExp;
+// EqOp ::= "==" | "!="
+void EqExpAST::Dump() const {
+  if(type==1) {
+    relexp->Dump();
+  }
+  else if(type==2) {
+    eqexp->Dump();
+    int left = koopacnt-1;
+    relexp->Dump();
+    int right = koopacnt-1;
+    if(eqop=="==") {
+      // %2 = eq %0, %1
+      std::cout << "  %" << koopacnt << " = eq %";
+      std::cout << left << ", %" << right << std::endl;
+      koopacnt++;
+    }
+    else if(eqop=="!=") {
+      // %2 = ne %0, %1
+      std::cout << "  %" << koopacnt << " = ne %";
+      std::cout << left << ", %" << right << std::endl;
+      koopacnt++;
+    }
+  }
+}
+
+int EqExpAST::Calc() const {
+  if(type==1) {
+    return dynamic_cast<ExpBaseAST*>(relexp.get())->Calc();
+  }
+  else if(type==2) {
+    int left = dynamic_cast<ExpBaseAST*>(eqexp.get())->Calc();
+    int right = dynamic_cast<ExpBaseAST*>(relexp.get())->Calc();
+    if(eqop=="==") {
+      return left == right;
+    }
+    else if(eqop=="!=") {
+      return left != right;
+    }
+  }
+  assert(0);
+  return 0;
+}
+
+// LAndExp ::= EqExp | LAndExp "&&" EqExp;
+void LAndExpAST::Dump() const {
+  if(type==1) {
+    eqexp->Dump();
+  }
+  else if(type==2) {
+    // A&&B <==> (A!=0)&(B!=0)
+    landexp->Dump();
+    // %2 = ne %0, 0
+    std::cout << "  %" << koopacnt << " = ne %";
+    std::cout << koopacnt-1 << ", 0" << std::endl;
+    koopacnt++;
+
+    // 短路求值, 相当于一个if
+    int ifcur = ifcnt;
+    ifcnt++;
+    // @STMTIF_LAND_RESULT_233 = alloc i32
+    std::cout << "  @" << "STMTIF_LAND_RESULT_" << ifcur << " = alloc i32" << std::endl;
+
+    // br %0, %then, %else
+    std::cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur;
+    std::cout << ", %STMTIF_ELSE_" << ifcur << std::endl;
+
+    // %STMTIF_THEN_233: 创建新的entry
+    std::cout << "%STMTIF_THEN_" << ifcur << ":" << std::endl;
+    entry_end = 0;
+    // && 左侧 LAndExp 为 1, 答案为 EqExp 的值
+    eqexp->Dump();
+    // %2 = ne %0, 0
+    std::cout << "  %" << koopacnt << " = ne %";
+    std::cout << koopacnt-1 << ", 0" << std::endl;
+    koopacnt++;
+    std::cout << "  store %" << koopacnt-1 << ", @";
+    std::cout << "STMTIF_LAND_RESULT_" << ifcur << std::endl;
+
+    if(!entry_end) {
+      // jump %STMTIF_END_233
+      std::cout << "  jump %STMTIF_END_" << ifcur << std::endl;
+    }
+
+    // %STMTIF_ELSE_233: 创建新的entry
+    std::cout << "%STMTIF_ELSE_" << ifcur << ":" << std::endl;
+    entry_end = 0;
+    // && 左侧 LAndExp 为 0, 答案为 0
+    std::cout << "  store 0, @";
+    std::cout << "STMTIF_LAND_RESULT_" << ifcur << std::endl;
+
+    if(!entry_end) {
+      // jump %STMTIF_END_233
+      std::cout << "  jump %STMTIF_END_" << ifcur << std::endl;
+    }
+
+    // %STMTIF_END_233: 创建新的entry
+    std::cout << "%STMTIF_END_" << ifcur << ":" << std::endl;
+    entry_end = 0;
+    std::cout << "  %" << koopacnt << " = load @";
+    std::cout << "STMTIF_LAND_RESULT_" << ifcur << std::endl;
+    koopacnt++;
+  }
+}
+
+int LAndExpAST::Calc() const {
+  if(type==1) {
+    return dynamic_cast<ExpBaseAST*>(eqexp.get())->Calc();
+  }
+  else if(type==2) {
+    int left = dynamic_cast<ExpBaseAST*>(landexp.get())->Calc();
+    if(!left) return 0;
+    int right = dynamic_cast<ExpBaseAST*>(eqexp.get())->Calc();
+    return (right!=0);
+  }
+  assert(0);
+  return 0;
+}
+
+// LOrExp  ::= LAndExp | LOrExp "||" LAndExp;
+void LOrExpAST::Dump() const {
+  if(type==1) {
+    landexp->Dump();
+  }
+  else if(type==2) {
+    // A||B <==> (A!=0)|(B!=0)
+    lorexp->Dump();
+    // %2 = ne %0, 0
+    std::cout << "  %" << koopacnt << " = ne %";
+    std::cout << koopacnt-1 << ", 0" << std::endl;
+    koopacnt++;
+
+    // 短路求值, 相当于一个if
+    int ifcur = ifcnt;
+    ifcnt++;
+    // @STMTIF_LOR_RESULT_233 = alloc i32
+    std::cout << "  @" << "STMTIF_LOR_RESULT_" << ifcur << " = alloc i32" << std::endl;
+
+    // br %0, %then, %else
+    std::cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur;
+    std::cout << ", %STMTIF_ELSE_" << ifcur << std::endl;
+
+    // %STMTIF_THEN_233: 创建新的entry
+    std::cout << "%STMTIF_THEN_" << ifcur << ":" << std::endl;
+    entry_end = 0;
+    // || 左侧 LOrExp 为 1, 答案为 1, 即左侧 LOrExp 的值
+    std::cout << "  store 1, @";
+    std::cout << "STMTIF_LOR_RESULT_" << ifcur << std::endl;
+
+    if(!entry_end) {
+      // jump %STMTIF_END_233
+      std::cout << "  jump %STMTIF_END_" << ifcur << std::endl;
+    }
+
+    // %STMTIF_ELSE_233: 创建新的entry
+    std::cout << "%STMTIF_ELSE_" << ifcur << ":" << std::endl;
+    entry_end = 0;
+    // || 左侧 LOrExp 为 0, 答案为 LAndExp 的值
+    landexp->Dump();
+    // %2 = ne %0, 0
+    std::cout << "  %" << koopacnt << " = ne %";
+    std::cout << koopacnt-1 << ", 0" << std::endl;
+    koopacnt++;
+    std::cout << "  store %" << koopacnt-1 << ", @";
+    std::cout << "STMTIF_LOR_RESULT_" << ifcur << std::endl;
+
+    if(!entry_end) {
+      // jump %STMTIF_END_233
+      std::cout << "  jump %STMTIF_END_" << ifcur << std::endl;
+    }
+
+    // %STMTIF_END_233: 创建新的entry
+    std::cout << "%STMTIF_END_" << ifcur << ":" << std::endl;
+    entry_end = 0;
+    std::cout << "  %" << koopacnt << " = load @";
+    std::cout << "STMTIF_LOR_RESULT_" << ifcur << std::endl;
+    koopacnt++;
+  }
+}
+
+int LOrExpAST::Calc() const {
+  if(type==1) {
+    return dynamic_cast<ExpBaseAST*>(landexp.get())->Calc();
+  }
+  else if(type==2) {
+    int left = dynamic_cast<ExpBaseAST*>(lorexp.get())->Calc();
+    if(left) return 1;
+    int right = dynamic_cast<ExpBaseAST*>(landexp.get())->Calc();
+    return (right!=0);
+  }
+  assert(0);
+  return 0;
+}
+
+// ConstExp ::= Exp;
+void ConstExpAST::Dump() const {
+  assert(0);
+  return;
+}
+
+int ConstExpAST::Calc() const {
+  return dynamic_cast<ExpBaseAST*>(exp.get())->Calc();
+}
