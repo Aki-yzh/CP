@@ -456,11 +456,11 @@ void Visit(const koopa_raw_call_t &call, const koopa_raw_value_t &value)
       }
     }
     else {
-      if (value->kind.tag == KOOPA_RVT_INTEGER) {
-        cout << "  li " << "t0" << ", " << value->kind.data.integer.value << endl;
+      if (arg->kind.tag == KOOPA_RVT_INTEGER) {
+        cout << "  li " << "t0" << ", " << arg->kind.data.integer.value << endl;
       }
-      else if (value->kind.tag == KOOPA_RVT_FUNC_ARG_REF) {
-        const auto& index = value->kind.data.func_arg_ref.index;
+      else if (arg->kind.tag == KOOPA_RVT_FUNC_ARG_REF) {
+        const auto& index = arg->kind.data.func_arg_ref.index;
         if (index < 8) {
           cout << "  mv " << "t0" << ", a" << index << endl;
         }
@@ -471,7 +471,7 @@ void Visit(const koopa_raw_call_t &call, const koopa_raw_value_t &value)
         }
       }
       else {
-        cout << "  li t6, " << loc[value] << endl;
+        cout << "  li t6, " << loc[arg] << endl;
         cout << "  add t6, t6, sp" << endl;
         cout << "  lw " << "t0" << ", 0(t6)" << endl;
       }
