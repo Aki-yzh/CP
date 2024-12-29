@@ -50,6 +50,7 @@ using namespace std;
 %token <int_val> INT_CONST
 %token <char_val> MULOP
 %token WHILE BREAK CONTINUE
+%token VOID
 // 非终结符的类型定义
 
 // lv3.3参考语法规范，新添加的有Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
@@ -64,11 +65,16 @@ using namespace std;
 %type <vec_val> ConstDefList BlockItemList VarDefList
 
 // lv 5,6,7都是对STMT的修改
+//lv8
+
+%type <ast_val> CompUnitItem FuncFParam  FuncExp
+%type <vec_val> CompUnitItemList
+%type <vec_val> FuncFParams FuncFParamList FuncRParams FuncRParamList
 
 // 参考网络，用于解决 dangling else 的优先级设置
 %precedence IFX
 %precedence ELSE
-
+ 
 
 
 // 开始符, CompUnit ::= FuncDef, 大括号后声明了解析完成后 parser 要做的事情
@@ -78,18 +84,40 @@ using namespace std;
 // $1 指代规则里第一个符号的返回值, 也就是 FuncDef 的返回值
 
 %%
-//对 ::= 右侧的每个规则都设计一种 AST,对于比较复杂的则再做一层嵌套
+//对 ::= 右侧的每个规则都设计一种 AST,对于比较复杂的则再做一层嵌套, 在 parse 到对应规则时, 构造对应的 AST.
 //格式均仿照开始给出的FuncDef实现
 
 //CompUnit      ::= FuncDef;
 CompUnit
-  : FuncDef 
+  : CompUnitItemList 
   {
     auto comp_unit = make_unique<CompUnitAST>();
-    comp_unit->func_def = unique_ptr<BaseAST>($1);
+    comp_unit->comp_unit_item_list = unique_ptr<vector<unique_ptr<BaseAST> > >($1);
     ast = move(comp_unit);
   }
   ;
+CompUnitItemList
+  : CompUnitItem 
+  {
+    auto vec = new vector<unique_ptr<BaseAST> >();
+    vec->push_back(unique_ptr<BaseAST>($1));
+    $$ = vec;
+  }
+  | CompUnitItemList CompUnitItem 
+  {
+    auto vec = $1;
+    vec->push_back(unique_ptr<BaseAST>($2));
+    $$ = vec;
+  }
+  ;
+CompUnitItem
+  : FuncDef 
+  {
+    auto ast=new CompUnitItemAST();
+    ast->func_def = unique_ptr<BaseAST>($1);
+    $$=ast;
+  }
+  ;  
 
 //Decl          ::= ConstDecl | VarDecl;
 Decl
@@ -233,25 +261,68 @@ InitVal
 // 这种写法会省下很多内存管理的负担
 
 FuncDef
-  : FuncType IDENT '(' ')' Block 
+  : FuncType IDENT '(' FuncFParams ')' Block 
   {
     auto ast = new FuncDefAST();
     ast->func_type = unique_ptr<BaseAST>($1);
     ast->ident = *unique_ptr<string>($2);
-    ast->block = unique_ptr<BaseAST>($5);
+    ast->func_f_param_list = unique_ptr<vector<unique_ptr<BaseAST> > >($4);
+    ast->block = unique_ptr<BaseAST>($6);
     $$ = ast;
   }
   ;
+
 // 同上, 不再解释
 //FuncType    ::= "int";
-FuncType
-  : INT 
+FuncType 
+  : VOID 
   {
     auto ast = new FuncTypeAST();
-    ast->type = "i32";
+    ast->type = "void";
+    $$ = ast;
+  }
+  | INT 
+  {
+    auto ast = new FuncTypeAST();
+    ast->type = "int";
     $$ = ast;
   }
   ;
+
+FuncFParams
+  : 
+  {
+    auto vec = new vector<unique_ptr<BaseAST> >();
+    $$ = vec;
+  }
+  | FuncFParamList {
+    $$ = $1;
+  }
+  ;
+FuncFParamList
+  : FuncFParam 
+  {
+    auto vec = new vector<unique_ptr<BaseAST> >();
+    vec->push_back(unique_ptr<BaseAST>($1));
+    $$ = vec;
+  }
+  | FuncFParamList ',' FuncFParam 
+  {
+    auto vec = $1;
+    vec->push_back(unique_ptr<BaseAST>($3));
+    $$ = vec;
+  }
+  ;
+FuncFParam
+  : BType IDENT 
+  {
+    auto ast = new FuncFParamAST();
+    ast->b_type = unique_ptr<BaseAST>($1);
+    ast->ident = *unique_ptr<string>($2);
+    $$ = ast;
+  }
+  ;
+
 //Block         ::= "{" {BlockItem} "}";
 Block
   : '{' BlockItemList '}' 
@@ -442,10 +513,17 @@ UnaryExp
     ast->exp = unique_ptr<BaseAST>($1);
     $$ = ast;
   }
-  | UnaryOp UnaryExp 
+  | FuncExp 
   {
     auto ast = new UnaryExpAST();
     ast->type = 2;
+    ast->exp = unique_ptr<BaseAST>($1);
+    $$ = ast;
+  }
+  | UnaryOp UnaryExp 
+  {
+    auto ast = new UnaryExpAST();
+    ast->type = 3;
     ast->unaryop = $1;
     ast->exp = unique_ptr<BaseAST>($2);
     $$ = ast;
@@ -464,6 +542,35 @@ UnaryOp
   | '!' 
   {
     $$ = '!';
+  }
+  ;
+  FuncExp
+  : IDENT '(' FuncRParams ')' {
+    auto ast = new FuncExpAST();
+    ast->ident = *unique_ptr<string>($1);
+    ast->func_r_param_list = unique_ptr<vector<unique_ptr<BaseAST> > >($3);
+    $$ = ast;
+  }
+  ;
+FuncRParams
+  : {
+    auto vec = new vector<unique_ptr<BaseAST> >();
+    $$ = vec;
+  }
+  | FuncRParamList {
+    $$ = $1;
+  }
+  ;
+FuncRParamList
+  : Exp {
+    auto vec = new vector<unique_ptr<BaseAST> >();
+    vec->push_back(unique_ptr<BaseAST>($1));
+    $$ = vec;
+  }
+  | FuncRParamList ',' Exp {
+    auto vec = $1;
+    vec->push_back(unique_ptr<BaseAST>($3));
+    $$ = vec;
   }
   ;
 //MulExp        ::= UnaryExp | MulExp ("*" | "/" | "%") UnaryExp;

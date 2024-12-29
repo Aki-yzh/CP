@@ -1,8 +1,10 @@
+int half(int x) {
+  return x / 2;
+}
+
+void f() {}
+
 int main() {
-  int i = 0, pow = 1;
-  while (i < 7) {
-    pow = pow * 2;
-    i = i + 1;
-  }
-  return pow;
+  f();
+  return half(10);
 }

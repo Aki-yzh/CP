@@ -10,15 +10,15 @@
 
 
 using namespace std;
-static int koopacnt = 0;
 
+static int koopacnt = 0;
 // 计数 if 语句，用于设置 entry
 static int ifcnt = 0;
 // 当前 entry 是否已经 结束, 若为 1 的话不应再生成任何语句
 static int entry_returned = 0;
-
 // 计数 while 语句，用于设置 entry
 static int whilecnt = 0;
+
 // 当前 while 语句的标号栈
 static stack<int> whileStack;
 
@@ -32,8 +32,46 @@ class BaseAST
   virtual int EVa() const = 0;//evaluate the value
 };
 
+// CompUnit ::= CompUnitItemList;
+// CompUnitItemList ::= CompUnitItem | CompUnitItemList CompUnitItem;
 
-class CompUnitAST : public BaseAST 
+class CompUnitAST : public BaseAST {
+ public:
+  unique_ptr<vector<unique_ptr<BaseAST> > > comp_unit_item_list;
+  void Dump() const override
+  {
+      enter_code_block();
+        // 声明库函数
+      cout << "decl @getint(): i32\n" \
+                  "decl @getch(): i32\n" \
+                  "decl @getarray(*i32): i32\n" \
+                  "decl @putint(i32)\n" \
+                  "decl @putch(i32)\n" \
+                  "decl @putarray(i32, *i32)\n" \
+                  "decl @starttime()\n" \
+                  "decl @stoptime()\n" << endl;
+      insert_symbol("getint", SYM_TYPE_FUNCINT, 0);
+      insert_symbol("getch", SYM_TYPE_FUNCINT, 0);
+      insert_symbol("getarray", SYM_TYPE_FUNCINT, 0);
+      insert_symbol("putint", SYM_TYPE_FUNCVOID, 0);
+      insert_symbol("putch", SYM_TYPE_FUNCVOID, 0);
+      insert_symbol("putarray", SYM_TYPE_FUNCVOID, 0);
+      insert_symbol("starttime", SYM_TYPE_FUNCVOID, 0);
+      insert_symbol("stoptime", SYM_TYPE_FUNCVOID, 0);
+      for(auto& comp_unit_item: *comp_unit_item_list) {
+        comp_unit_item->Dump();
+        cout << endl;
+      }
+      exit_code_block();
+  }
+  int EVa() const override
+  {
+    return 0;
+  }
+};
+
+
+class  CompUnitItemAST : public BaseAST 
 {
  public:
   unique_ptr<BaseAST> func_def;
@@ -203,15 +241,19 @@ class InitValAST : public BaseAST
 };
 
 
-// FuncType ::= "int";
+// FuncType ::= "void" | "int";
 class FuncTypeAST : public BaseAST 
 {
  public:
   string type;
   void Dump() const override
   {
-     cout << type;
-
+        if(type == "void") {
+        // do nothing
+      }
+      else if(type == "int") {
+        cout << ": i32";
+      }
   }
    int EVa() const override
   {
@@ -219,29 +261,125 @@ class FuncTypeAST : public BaseAST
     return 0;
   }
 };
+// FuncFParam ::= BType IDENT;
+class FuncFParamAST : public BaseAST {
+ public:
+  unique_ptr<BaseAST> b_type;
+  string ident;
+  void Dump() const override
+  {
 
-// FuncDef ::= FuncType IDENT "(" ")" Block;
+    cout << "@" << ident << ": i32";
+  }
+  
+  void Alloc() const
+  {
+      // @SYM_TABLE_233_x = alloc i32
+    cout << "  @" << current_code_block() << ident << " = alloc i32" << endl;
+    insert_symbol(ident, SYM_TYPE_VAR, 0);
+    // store @x, @SYM_TABLE_233_x
+    cout << "  store @" << ident << ", @";
+    cout << query_symbol(ident).first << ident << endl;
+  }
+  int EVa() const override
+  {
+    
+    return 0;
+  }
+};
+class FuncExpAST : public BaseAST {
+ public:
+  string ident;
+  unique_ptr<vector<unique_ptr<BaseAST> > > func_r_param_list;
+  void Dump() const override
+  {
+      auto func = query_symbol(ident);
+    // 必须为全局符号
+    assert(func.first == "SYM_TABLE_0_");
+    // 必须是函数
+    assert(func.second->type == SYM_TYPE_FUNCVOID || func.second->type == SYM_TYPE_FUNCINT);
+    // 计算所有的参数
+    auto vec = new vector<int>();
+    for(auto& exp: *func_r_param_list) {
+      exp->Dump();
+      vec->push_back(koopacnt-1);
+    }
+    // 如果是 int 函数，把返回值保存下来
+    if(func.second->type == SYM_TYPE_FUNCINT)
+      cout << "  %" << koopacnt << " = ";
+    else if(func.second->type == SYM_TYPE_FUNCVOID)
+      cout << "  ";
+    // call @half(%1, %2)
+    cout << "call @" << ident << "(";
+    for(int i: *vec) {
+      cout << "%" << i << ", ";
+    }
+    // 退格擦除最后一个逗号
+    if(!vec->empty())
+      cout.seekp(-2, cout.end);
+    cout << ")" << endl;
+    delete vec;
+    if(func.second->type == SYM_TYPE_FUNCINT)
+      koopacnt++;
+  }
+  int EVa() const override
+  {
+    
+    return 0;
+  }
+};
+
+// FuncDef ::= FuncType IDENT "(" FuncFParams ")" Block;
+// FuncFParams ::=  | FuncFParamList;
+// FuncFParamList ::= FuncFParam | FuncFParamList "," FuncFParam;
+
 class FuncDefAST : public BaseAST 
 {
  public:
   unique_ptr<BaseAST> func_type;
   string ident;
   unique_ptr<BaseAST> block;
+  unique_ptr<vector<unique_ptr<BaseAST> > > func_f_param_list;
   void Dump() const override
   {
-    // fun @main(): i32 {}
-    cout << "fun @" << ident << "(): ";
+    // 插入符号
+      const string& type = dynamic_cast<FuncTypeAST*>(func_type.get())->type;
+      if (type == "void") {
+        insert_symbol(ident, SYM_TYPE_FUNCVOID, 0);
+      }
+      else if (type == "int") {
+        insert_symbol(ident, SYM_TYPE_FUNCINT, 0);
+      }
+      enter_code_block();
+      // fun @func(@x: i32): i32 {}
+      cout << "fun @" << ident << "(";
+      for(auto& func_f_param: *func_f_param_list) {
+        func_f_param->Dump();
+        cout << ", ";
+      }
+      // 退格擦除最后一个逗号
+      if(!func_f_param_list->empty())
+        cout.seekp(-2, cout.end);
+      cout << ")";
     func_type->Dump();
 
     cout << " {" << endl<< "%entry:" << endl;
     entry_returned = 0;
+
+      for(auto& func_f_param: *func_f_param_list) 
+      {
+      // 为参数再分配一份内存
+      // @SYM_TABLE_233_x = alloc i32
+      // store @x, @SYM_TABLE_233_x
+      dynamic_cast<FuncFParamAST*>(func_f_param.get())->Alloc();
+    }
     block->Dump();
     // 若函数还未返回, 补一个ret
     // 无返回值补 ret
     if (!entry_returned) 
     {
-      const string& type = dynamic_cast<FuncTypeAST*>(func_type.get())->type;
-      if (type == "i32")
+    
+      if (type == "int")
         cout << "  ret 0" << endl;
       else if (type == "void")
         cout << "  ret" << endl;
@@ -249,6 +387,7 @@ class FuncDefAST : public BaseAST
         assert(0);
     }
     cout << "}" << endl;
+    exit_code_block();
   }
    int EVa() const override
   {
@@ -548,7 +687,7 @@ class PrimaryExpAST : public BaseAST
 
 
 
-// UnaryExp ::= PrimaryExp | UnaryOp UnaryExp;
+// UnaryExp ::= PrimaryExp | FuncExp | UnaryOp UnaryExp;
 // UnaryOp ::= "+" | "-" | "!"
 class UnaryExpAST : public BaseAST 
 {
@@ -562,7 +701,7 @@ class UnaryExpAST : public BaseAST
   void Dump() const override 
   { 
     exp->Dump();
-    if (type == 2) 
+    if (type == 3) 
     {
       if (unaryop == '-' || unaryop == '!')
         cout << "  %" << koopacnt++ << " = "
@@ -575,8 +714,9 @@ class UnaryExpAST : public BaseAST
       switch (type) 
       {
           case 1:
+          case 2:
               return exp->EVa();
-          case 2: 
+          case 3: 
           {
               int tmp = exp->EVa();
               return (unaryop == '+') ? tmp :
