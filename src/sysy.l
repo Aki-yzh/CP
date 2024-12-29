@@ -19,7 +19,7 @@ using namespace std;
 /* 空白符和注释 */
 WhiteSpace    [ \t\n\r]*
 LineComment   "//".*
-BlockComment  "/*"[^*]*\*+([^*/][^*]*\*+)*\/
+BlockComment "/*"([^\*]|(\*)*[^\*/])*(\*)*"*/"
 
 /* 标识符 */
 Identifier    [a-zA-Z_][a-zA-Z0-9_]*
@@ -32,6 +32,9 @@ Hexadecimal   0[xX][0-9a-fA-F]+
 /* 比较运算符 */
 RelOp         [<>]=?
 EqOp          [!=]=
+MulOp         [*/%] 
+
+
 
 %%
 
@@ -39,20 +42,28 @@ EqOp          [!=]=
 {LineComment}   { /* 忽略, 不做任何操作 */ }
 {BlockComment}  { /* 忽略, 不做任何操作 */ }
 
-"void"          { yylval.str_val = new string(yytext); return TYPE; }
-"int"           { yylval.str_val = new string(yytext); return TYPE; }
+
 "return"        { return RETURN; }
-"const"         { return CONST; }
+"const"         { return CONST;}
 "if"            { return IF; }
 "else"          { return ELSE; }
 "while"         { return WHILE; }
 "break"         { return BREAK; }
 "continue"      { return CONTINUE; }
 
+"void"          { yylval.str_val = new string(yytext); return Type; }
+"int"           { yylval.str_val = new string(yytext); return Type; }
+
 {RelOp}         { yylval.str_val = new string(yytext); return RELOP; }
 {EqOp}          { yylval.str_val = new string(yytext); return EQOP; }
+
+
+
 "&&"            { return LAND; }
 "||"            { return LOR; }
+{MulOp}         { yylval.char_val = yytext[0]; return MULOP; } 
+
+
 
 {Identifier}    { yylval.str_val = new string(yytext); return IDENT; }
 
