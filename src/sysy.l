@@ -42,8 +42,7 @@ MulOp         [*/%]
 {LineComment}   { /* 忽略, 不做任何操作 */ }
 {BlockComment}  { /* 忽略, 不做任何操作 */ }
 
-"void"          { return VOID; }
-"int"           { return INT; }
+
 "return"        { return RETURN; }
 "const"         { return CONST;}
 "if"            { return IF; }
@@ -52,9 +51,14 @@ MulOp         [*/%]
 "break"         { return BREAK; }
 "continue"      { return CONTINUE; }
 
+"void"          { yylval.str_val = new string(yytext); return Type; }
+"int"           { yylval.str_val = new string(yytext); return Type; }
 
 {RelOp}         { yylval.str_val = new string(yytext); return RELOP; }
 {EqOp}          { yylval.str_val = new string(yytext); return EQOP; }
+
+
+
 "&&"            { return LAND; }
 "||"            { return LOR; }
 {MulOp}         { yylval.char_val = yytext[0]; return MULOP; } 

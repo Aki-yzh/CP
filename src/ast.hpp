@@ -61,7 +61,7 @@ class CompUnitAST : public BaseAST {
       insert_symbol("stoptime", SYM_TYPE_FUNCVOID, 0);
       for(auto& comp_unit_item: *comp_unit_item_list) {
         comp_unit_item->Dump();
-        cout << endl;
+        
       }
       exit_code_block();
   }
@@ -118,7 +118,7 @@ class DeclAST : public BaseAST
 class ConstDeclAST : public BaseAST 
 {
  public:
-  unique_ptr<BaseAST> b_type;
+  string b_type;
   unique_ptr<vector<unique_ptr<BaseAST> > > const_def_list;
   void Dump() const override
   {
@@ -132,20 +132,7 @@ class ConstDeclAST : public BaseAST
   }
 };
 
-// BType ::= "int";
-class BTypeAST : public BaseAST 
-{
- public:
-  void Dump() const override
-  {
-    return;
-  }
-  int EVa() const override
-  {
-    
-    return 0;
-  }
-};
+
 
 // ConstInitVal ::= ConstExp;
 class ConstInitValAST : public BaseAST 
@@ -190,7 +177,7 @@ class ConstDefAST : public BaseAST
 class VarDeclAST : public BaseAST 
 {
  public:
-  unique_ptr<BaseAST> b_type;
+  string b_type;
   unique_ptr<vector<unique_ptr<BaseAST> > > var_def_list;
   void Dump() const override
   {
@@ -291,7 +278,7 @@ class FuncTypeAST : public BaseAST
 // FuncFParam ::= BType IDENT;
 class FuncFParamAST : public BaseAST {
  public:
-  unique_ptr<BaseAST> b_type;
+  string b_type;
   string ident;
   void Dump() const override
   {
@@ -363,18 +350,18 @@ class FuncExpAST : public BaseAST {
 class FuncDefAST : public BaseAST 
 {
  public:
-  unique_ptr<BaseAST> func_type;
+  string func_type;
   string ident;
   unique_ptr<BaseAST> block;
   unique_ptr<vector<unique_ptr<BaseAST> > > func_f_param_list;
   void Dump() const override
   {
     // 插入符号
-      const string& type = dynamic_cast<FuncTypeAST*>(func_type.get())->type;
-      if (type == "void") {
+  
+      if (func_type == "void") {
         insert_symbol(ident, SYM_TYPE_FUNCVOID, 0);
       }
-      else if (type == "int") {
+      else if (func_type == "int") {
         insert_symbol(ident, SYM_TYPE_FUNCINT, 0);
       }
       enter_code_block();
@@ -388,7 +375,10 @@ class FuncDefAST : public BaseAST
       if(!func_f_param_list->empty())
         cout.seekp(-2, cout.end);
       cout << ")";
-    func_type->Dump();
+      if (func_type == "int") 
+      {
+        cout << ": i32 ";
+      }
 
     cout << " {" << endl<< "%entry:" << endl;
     entry_returned = 0;
@@ -406,14 +396,14 @@ class FuncDefAST : public BaseAST
     if (!entry_returned) 
     {
     
-      if (type == "int")
+      if (func_type == "int")
         cout << "  ret 0" << endl;
-      else if (type == "void")
+      else if (func_type == "void")
         cout << "  ret" << endl;
       else
         assert(0);
     }
-    cout << "}" << endl;
+    cout << "}" << endl<<endl;
     exit_code_block();
   }
    int EVa() const override

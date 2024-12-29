@@ -51,15 +51,18 @@ using namespace std;
 %token <char_val> MULOP
 %token WHILE BREAK CONTINUE
 %token VOID
+
+// Btype和functiontype有冲突
+%token <str_val> Type
 // 非终结符的类型定义
 
 // lv3.3参考语法规范，新添加的有Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
-%type <ast_val> FuncDef FuncType Block Stmt Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
+%type <ast_val> FuncDef Block Stmt Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
 %type <int_val> Number
 %type <char_val> UnaryOp AddOp 
 
 //lv4新增语法规范
-%type <ast_val> Decl ConstDecl BType ConstDef ConstInitVal VarDecl VarDef InitVal
+%type <ast_val> Decl ConstDecl  ConstDef ConstInitVal VarDecl VarDef InitVal
 %type <ast_val> BlockItem 
 %type <ast_val> LVal ConstExp
 %type <vec_val> ConstDefList BlockItemList VarDefList
@@ -70,6 +73,8 @@ using namespace std;
 %type <ast_val> CompUnitItem FuncFParam  FuncExp
 %type <vec_val> CompUnitItemList
 %type <vec_val> FuncFParams FuncFParamList FuncRParams FuncRParamList
+
+
 
 // 参考网络，用于解决 dangling else 的优先级设置
 %precedence IFX
@@ -147,23 +152,15 @@ Decl
 
 //ConstDecl     ::= "const" BType ConstDef {"," ConstDef} ";";
 ConstDecl
-  : CONST BType ConstDefList ';' 
+  : CONST Type ConstDefList ';' 
   {
     auto ast = new ConstDeclAST();
-    ast->b_type = unique_ptr<BaseAST>($2);
+    ast->b_type = *unique_ptr<string>($2);
     ast->const_def_list = unique_ptr<vector<unique_ptr<BaseAST> > >($3);
     $$ = ast;
   }
   ;
 
-//BType         ::= "int";
-BType
-  : INT 
-  {
-    auto ast = new BTypeAST();
-    $$ = ast;
-  }
-  ;
 
 //NEW,常量表(把constdecl再拆分)
 ConstDefList
@@ -204,10 +201,10 @@ ConstInitVal
 
 //VarDecl       ::= BType VarDef {"," VarDef} ";";
 VarDecl
-  : BType VarDefList ';' 
+  : Type VarDefList ';' 
   {
     auto ast = new VarDeclAST();
-    ast->b_type = unique_ptr<BaseAST>($1);
+    ast->b_type = *unique_ptr<string>($1);
     ast->var_def_list = unique_ptr<vector<unique_ptr<BaseAST> > >($2);
     $$ = ast;
   }
@@ -269,10 +266,10 @@ InitVal
 // 这种写法会省下很多内存管理的负担
 
 FuncDef
-  : FuncType IDENT '(' FuncFParams ')' Block 
+  : Type IDENT '(' FuncFParams ')' Block 
   {
     auto ast = new FuncDefAST();
-    ast->func_type = unique_ptr<BaseAST>($1);
+    ast->func_type = *unique_ptr<string>($1);
     ast->ident = *unique_ptr<string>($2);
     ast->func_f_param_list = unique_ptr<vector<unique_ptr<BaseAST> > >($4);
     ast->block = unique_ptr<BaseAST>($6);
@@ -281,21 +278,7 @@ FuncDef
   ;
 
 // 同上, 不再解释
-//FuncType    ::= "int";
-FuncType 
-  : VOID 
-  {
-    auto ast = new FuncTypeAST();
-    ast->type = "void";
-    $$ = ast;
-  }
-  | INT 
-  {
-    auto ast = new FuncTypeAST();
-    ast->type = "int";
-    $$ = ast;
-  }
-  ;
+
 
 FuncFParams
   : 
@@ -322,10 +305,10 @@ FuncFParamList
   }
   ;
 FuncFParam
-  : BType IDENT 
+  : Type IDENT 
   {
     auto ast = new FuncFParamAST();
-    ast->b_type = unique_ptr<BaseAST>($1);
+    ast->b_type = *unique_ptr<string>($1);
     ast->ident = *unique_ptr<string>($2);
     $$ = ast;
   }
