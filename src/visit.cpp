@@ -15,6 +15,9 @@ static int stack_frame_length = 0;
 // 已经使用的栈帧长度
 static int stack_frame_used = 0;
 
+// 当前正在访问的函数有没有保存ra
+static int saved_ra = 0;
+
 // 访问 raw program
 void Visit(const koopa_raw_program_t &program) 
 {
@@ -59,29 +62,43 @@ void Visit(const koopa_raw_function_t &func)
 {
   // 执行一些其他的必要操作
   // ...
+  // 忽略函数声明
+  if(func->bbs.len == 0)
+    return;
    // 输出函数头部的汇编指令
   cout << "  .text" << endl<< "  .globl " << func->name + 1 << endl << func->name + 1 << ":" << endl;
   // 重置栈帧相关的变量
   stack_frame_length = 0;
   stack_frame_used = 0;
 
-  // 计算栈帧长度
-  int var_cnt = 0;
 
+  // 计算栈帧长度需要的值
+  // 局部变量个数
+  int local_var = 0;
+  // 是否需要为 ra 分配栈空间
+  int return_addr = 0;
+  // 需要为传参预留几个变量的栈空间
+  int arg_var = 0;
+  
   // 遍历基本块
   for (size_t i = 0; i < func->bbs.len; ++i)
   {
     const auto& insts = reinterpret_cast<koopa_raw_basic_block_t>(func->bbs.buffer[i])->insts;
-    var_cnt += insts.len;
+     local_var += insts.len;
     for (size_t j = 0; j < insts.len; ++j)
     {
       auto inst = reinterpret_cast<koopa_raw_value_t>(insts.buffer[j]);
       if(inst->ty->tag == KOOPA_RTT_UNIT)
-          var_cnt--;
+          local_var--;
+      if(inst->kind.tag == KOOPA_RVT_CALL)
+      {
+        return_addr = 1;
+        arg_var = max(arg_var, max(0, int(inst->kind.data.call.args.len) - 8));
+      }
     }
   }
   // 每个变量占用4字节空间
-  stack_frame_length = var_cnt << 2;
+  stack_frame_length = (local_var + return_addr + arg_var) << 2;
   // 将栈帧长度对齐到 16
   stack_frame_length = (stack_frame_length + 16 - 1) & (~(16 - 1));
   //分配栈空间
@@ -100,9 +117,19 @@ void Visit(const koopa_raw_function_t &func)
         cout << "  sub sp, sp, t0" << endl;
     }
 }
-
+  
+  if(return_addr) {
+    cout << "  li t0, " << stack_frame_length - 4 << endl;
+    cout << "  add t0, t0, sp" << endl;
+    cout << "  sw ra, 0(t0)" << endl;
+    saved_ra = 1;
+  }
+  else {
+    saved_ra = 0;
+  }
   // 访问所有基本块
   Visit(func->bbs);
+  cout << endl;
 }
 
 // 访问基本块
@@ -156,6 +183,9 @@ void Visit(const koopa_raw_value_t &value)
     case KOOPA_RVT_JUMP:
       Visit(kind.data.jump);
       break;
+    case KOOPA_RVT_CALL:
+      Visit(kind.data.call, value);
+      break;
     default:
       // 其他类型暂时遇不到
       assert(false);
@@ -166,14 +196,34 @@ void Visit(const koopa_raw_value_t &value)
 
 void Visit(const koopa_raw_return_t &ret) 
 {
+   if(ret.value != nullptr){
   // 将返回值放置在 a0 寄存器中
   if (ret.value->kind.tag == KOOPA_RVT_INTEGER) 
   {
     cout << "  li a0, " << ret.value->kind.data.integer.value << endl;
   }
+  else if (ret.value->kind.tag == KOOPA_RVT_FUNC_ARG_REF) 
+  {
+    // 函数参数
+    const auto& index = ret.value->kind.data.func_arg_ref.index;
+    if (index < 8) {
+      cout << "  mv " << "a0" << ", a" << index << endl;
+    }
+    else {
+      cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
+      cout << "  add t6, t6, sp" << endl;
+      cout << "  lw " << "a0" << ", 0(t6)" << endl;
+    }
+  }
   else
   {
     cout << "  lw a0, " << loc[ret.value] << endl;
+  }
+   }
+  if (saved_ra) {
+    cout << "  li t0, " << stack_frame_length - 4 << endl;
+    cout << "  add t0, t0, sp" << endl;
+    cout << "  lw ra, 0(t0)" << endl;
   }
   // 恢复栈帧
 if (stack_frame_length != 0) 
@@ -208,6 +258,19 @@ void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value)
   {
     cout << "  li t0, " << load.src->kind.data.integer.value << endl;
   }
+  else if (load.src->kind.tag == KOOPA_RVT_FUNC_ARG_REF) 
+  {
+    // 函数参数
+    const auto& index = load.src->kind.data.func_arg_ref.index;
+    if (index < 8) {
+      cout << "  mv " << "t0" << ", a" << index << endl;
+    }
+    else {
+      cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
+      cout << "  add t6, t6, sp" << endl;
+      cout << "  lw " << "t0"  << ", 0(t6)" << endl;
+    }
+  }
   else
   {
     int offset = stoi(loc[load.src].substr(0, loc[load.src].find("(sp)")));
@@ -222,9 +285,10 @@ void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value)
         cout << "  lw t0, 0(t6)" << endl;
     }
     }
-  loc[value] = to_string(stack_frame_used) + "(sp)";
-  stack_frame_used += 4;
-  cout << "  sw t0, " << loc[value] << endl;
+    if(value->ty->tag != KOOPA_RTT_UNIT) {
+      loc[value] = to_string(stack_frame_used) + "(sp)";
+      stack_frame_used += 4;
+      cout << "  sw t0, " << loc[value] << endl;}
 }
 
 // 处理 store 指令，将源操作数存储到目标地址
@@ -234,6 +298,19 @@ void Visit(const koopa_raw_store_t &store)
   if (store.value->kind.tag == KOOPA_RVT_INTEGER) 
   {
     cout << "  li t0, " << store.value->kind.data.integer.value << endl;
+  }
+  else if (store.value->kind.tag == KOOPA_RVT_FUNC_ARG_REF) 
+  {
+    // 函数参数
+    const auto& index = store.value->kind.data.func_arg_ref.index;
+    if (index < 8) {
+      cout << "  mv " << "t0" << ", a" << index << endl;
+    }
+    else {
+      cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
+      cout << "  add t6, t6, sp" << endl;
+      cout << "  lw " << "t0" << ", 0(t6)" << endl;
+    }
   }
   else
   {
@@ -303,9 +380,10 @@ void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value)
       }
   } 
   // 将 t0 中的结果存入栈
-  loc[value] = to_string(stack_frame_used) + "(sp)";
-  stack_frame_used += 4;
-  cout << "  sw t0, " << loc[value] << endl;
+    if(value->ty->tag != KOOPA_RTT_UNIT) {
+        loc[value] = to_string(stack_frame_used) + "(sp)";
+        stack_frame_used += 4;
+        cout << "  sw t0, " << loc[value] << endl;}
 }
 // 访问 br 指令
 void Visit(const koopa_raw_branch_t &branch) 
@@ -315,6 +393,19 @@ void Visit(const koopa_raw_branch_t &branch)
     {
         cout << "  li t0, " << branch.cond->kind.data.integer.value << endl;
     } 
+    else if (branch.cond->kind.tag == KOOPA_RVT_FUNC_ARG_REF) 
+    {
+      // 函数参数
+      const auto& index = branch.cond->kind.data.func_arg_ref.index;
+      if (index < 8) {
+        cout << "  mv " << "t0" << ", a" << index << endl;
+      }
+      else {
+        cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
+        cout << "  add t6, t6, sp" << endl;
+        cout << "  lw " << "t0" << ", 0(t6)" << endl;
+      }
+    }
     else 
     {
         cout << "  lw t0, " << loc[branch.cond] << endl;
@@ -332,3 +423,69 @@ void Visit(const koopa_raw_jump_t &jump)
 }
 // 视需求自行实现
 // ...
+
+
+
+// 访问 call 指令
+void Visit(const koopa_raw_call_t &call, const koopa_raw_value_t &value) 
+{
+  // 处理参数
+  for (size_t i = 0; i < call.args.len; ++i) {
+    auto arg = reinterpret_cast<koopa_raw_value_t>(call.args.buffer[i]);
+    if (i < 8) 
+    {
+      string reg = "a" + to_string(i);
+      if (arg->kind.tag == KOOPA_RVT_INTEGER) {
+        cout << "  li " << reg << ", " << arg->kind.data.integer.value << endl;
+      }
+      else if (arg->kind.tag == KOOPA_RVT_FUNC_ARG_REF) {
+        const auto& index = arg->kind.data.func_arg_ref.index;
+        if (index < 8) {
+          cout << "  mv " << reg << ", a" << index << endl;
+        }
+        else {
+          cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
+          cout << "  add t6, t6, sp" << endl;
+          cout << "  lw " << reg << ", 0(t6)" << endl;
+        }
+      }
+      else {
+        cout << "  li t6, " << loc[arg] << endl;
+        cout << "  add t6, t6, sp" << endl;
+        cout << "  lw " << reg << ", 0(t6)" << endl;
+      }
+    }
+    else {
+      if (value->kind.tag == KOOPA_RVT_INTEGER) {
+        cout << "  li " << "t0" << ", " << value->kind.data.integer.value << endl;
+      }
+      else if (value->kind.tag == KOOPA_RVT_FUNC_ARG_REF) {
+        const auto& index = value->kind.data.func_arg_ref.index;
+        if (index < 8) {
+          cout << "  mv " << "t0" << ", a" << index << endl;
+        }
+        else {
+          cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
+          cout << "  add t6, t6, sp" << endl;
+          cout << "  lw " << "t0" << ", 0(t6)" << endl;
+        }
+      }
+      else {
+        cout << "  li t6, " << loc[value] << endl;
+        cout << "  add t6, t6, sp" << endl;
+        cout << "  lw " << "t0" << ", 0(t6)" << endl;
+      }
+      cout << "  li t6, " << (i - 8) * 4 << endl;
+      cout << "  add t6, t6, sp" << endl;
+      cout << "  sw t0, 0(t6)" << endl;
+    }
+  }
+  // call half
+  cout << "  call " << call.callee->name+1 << endl;
+  // 若有返回值则将 a0 中的结果存入栈
+  if(value->ty->tag != KOOPA_RTT_UNIT) {
+    loc[value] = to_string(stack_frame_used) + "(sp)";
+    stack_frame_used += 4;
+    cout << "  sw t0, " << loc[value] << endl;
+  }
+}
