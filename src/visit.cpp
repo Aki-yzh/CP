@@ -186,6 +186,10 @@ void Visit(const koopa_raw_value_t &value)
     case KOOPA_RVT_CALL:
       Visit(kind.data.call, value);
       break;
+    case KOOPA_RVT_GLOBAL_ALLOC:
+      // 访问 global alloc 指令
+      Visit(value->kind.data.global_alloc, value);
+      break;
     default:
       // 其他类型暂时遇不到
       assert(false);
@@ -456,7 +460,8 @@ void Visit(const koopa_raw_call_t &call, const koopa_raw_value_t &value)
       }
     }
     else {
-      if (arg->kind.tag == KOOPA_RVT_INTEGER) {
+      if (arg->kind.tag == KOOPA_RVT_INTEGER) 
+      {
         cout << "  li " << "t0" << ", " << arg->kind.data.integer.value << endl;
       }
       else if (arg->kind.tag == KOOPA_RVT_FUNC_ARG_REF) {
@@ -488,4 +493,20 @@ void Visit(const koopa_raw_call_t &call, const koopa_raw_value_t &value)
     stack_frame_used += 4;
     cout << "  sw t0, " << loc[value] << endl;
   }
+}
+
+// 访问 global alloc 指令
+void Visit(const koopa_raw_global_alloc_t &global_alloc, const koopa_raw_value_t &value) {
+  cout << "  .data" << endl;
+  cout << "  .globl " << value->name+1 << endl;
+  cout << value->name+1 << ":" << endl;
+  if (global_alloc.init->kind.tag == KOOPA_RVT_ZERO_INIT) {
+    // 初始化为 0
+    cout << "  .zero 4" << endl;
+  }
+  else if (global_alloc.init->kind.tag == KOOPA_RVT_INTEGER) {
+    // 初始化为 int
+    cout << "  .word " << global_alloc.init->kind.data.integer.value << endl;
+  }
+  cout << endl;
 }

@@ -31,3 +31,5 @@ void Visit(const koopa_raw_jump_t &jump);
 
 // 访问 call 指令
 void Visit(const koopa_raw_call_t &call, const koopa_raw_value_t &value);
+// 访问 global alloc 指令
+void Visit(const koopa_raw_global_alloc_t &global_alloc, const koopa_raw_value_t &value);
