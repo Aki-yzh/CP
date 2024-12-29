@@ -21,7 +21,8 @@ static int whilecnt = 0;
 
 // 当前 while 语句的标号栈
 static stack<int> whileStack;
-
+// 当前是否在声明全局变量，用于 VarDef::Dump
+static int declaring_global_var = 0;
 
 // 所有 AST 的基类
 class BaseAST 
@@ -70,14 +71,23 @@ class CompUnitAST : public BaseAST {
   }
 };
 
-
+// CompUnitItem ::= Decl | FuncDef;
 class  CompUnitItemAST : public BaseAST 
 {
  public:
+  int type;
   unique_ptr<BaseAST> func_def;
   void Dump() const override
   {
-    func_def->Dump();
+    if(type==1) 
+    {
+      declaring_global_var = 1;
+      func_def->Dump();
+      declaring_global_var = 0;
+    }
+    else if(type==2) {
+      func_def->Dump();
+    }
   }
   int EVa() const override
   {
@@ -204,18 +214,35 @@ class VarDefAST : public BaseAST
   unique_ptr<BaseAST> init_val;
   void Dump() const override
   {
-        // 先 alloc 一段内存
+       if(declaring_global_var) { // 全局变量
+      if(type==1) {
+        // global @var = alloc i32, zeroinit
+        cout << "global @" << current_code_block() << ident;
+        cout << " = alloc i32, zeroinit" << endl;
+        insert_symbol(ident, SYM_TYPE_VAR, 0);
+      }
+      else if(type==2) {
+        // global @var = alloc i32, 233
+        cout << "global @" << current_code_block() << ident;
+        cout << " = alloc i32, ";
+        cout<<init_val->EVa() << endl;
+        insert_symbol(ident, SYM_TYPE_VAR, 0);
+      }
+      cout << endl;
+    }
+    else { // 局部变量
+      // 先 alloc 一段内存
       // @x = alloc i32
       cout << "  @" << current_code_block() << ident << " = alloc i32" << endl;
       insert_symbol(ident, SYM_TYPE_VAR, 0);
-
-      if(type==2) 
-      {
-        init_val->Dump();
-        // 存入 InitVal
-        // store %1, @x
-        cout << "  store %" << koopacnt-1 << ", @"<< query_symbol(ident).first << ident << endl;
-      }
+      if(type==2) {
+      init_val->Dump();
+      // 存入 InitVal
+      // store %1, @x
+      cout << "  store %" << koopacnt-1 << ", @";
+      cout << query_symbol(ident).first << ident << endl;
+    }
+  }
   }
    int EVa() const override
   {
@@ -233,7 +260,7 @@ class InitValAST : public BaseAST
   {
       exp->Dump();
   }
-   int EVa() const override
+  int EVa() const override
   {
     
     return 0;

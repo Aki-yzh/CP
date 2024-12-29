@@ -111,13 +111,21 @@ CompUnitItemList
   }
   ;
 CompUnitItem
-  : FuncDef 
+  : Decl 
   {
-    auto ast=new CompUnitItemAST();
+    auto ast = new CompUnitItemAST();
+    ast->type = 1;
     ast->func_def = unique_ptr<BaseAST>($1);
     $$=ast;
   }
-  ;  
+  | FuncDef 
+  {
+    auto ast = new CompUnitItemAST();
+    ast->type = 2;
+    ast->func_def = unique_ptr<BaseAST>($1);
+    $$=ast;
+  }
+  ;
 
 //Decl          ::= ConstDecl | VarDecl;
 Decl
