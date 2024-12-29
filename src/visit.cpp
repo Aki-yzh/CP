@@ -156,13 +156,6 @@ void Visit(const koopa_raw_value_t &value)
     case KOOPA_RVT_JUMP:
       Visit(kind.data.jump);
       break;
-    case KOOPA_RVT_GLOBAL_ALLOC:
-      // 访问 global alloc 指令
-      Visit(value->kind.data.global_alloc, value);
-      break;
-    case KOOPA_RVT_CALL:
-      Visit(kind.data.call, value);
-      break;
     default:
       // 其他类型暂时遇不到
       assert(false);
@@ -339,14 +332,3 @@ void Visit(const koopa_raw_jump_t &jump)
 }
 // 视需求自行实现
 // ...
-// 访问 call 指令
-void Visit(const koopa_raw_call_t &call, const koopa_raw_value_t &value)
-{
-  return;
-}
-
-// 访问 global alloc 指令
-void Visit(const koopa_raw_global_alloc_t &global_alloc, const koopa_raw_value_t &value)
-{
-  return;
-}
