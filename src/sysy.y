@@ -286,7 +286,8 @@ FuncFParams
     auto vec = new vector<unique_ptr<BaseAST> >();
     $$ = vec;
   }
-  | FuncFParamList {
+  | FuncFParamList 
+  {
     $$ = $1;
   }
   ;
@@ -536,7 +537,8 @@ UnaryOp
   }
   ;
   FuncExp
-  : IDENT '(' FuncRParams ')' {
+  : IDENT '(' FuncRParams ')' 
+  {
     auto ast = new FuncExpAST();
     ast->ident = *unique_ptr<string>($1);
     ast->func_r_param_list = unique_ptr<vector<unique_ptr<BaseAST> > >($3);
@@ -544,21 +546,25 @@ UnaryOp
   }
   ;
 FuncRParams
-  : {
+  : 
+  {
     auto vec = new vector<unique_ptr<BaseAST> >();
     $$ = vec;
   }
-  | FuncRParamList {
+  | FuncRParamList 
+  {
     $$ = $1;
   }
   ;
 FuncRParamList
-  : Exp {
+  : Exp 
+  {
     auto vec = new vector<unique_ptr<BaseAST> >();
     vec->push_back(unique_ptr<BaseAST>($1));
     $$ = vec;
   }
-  | FuncRParamList ',' Exp {
+  | FuncRParamList ',' Exp 
+  {
     auto vec = $1;
     vec->push_back(unique_ptr<BaseAST>($3));
     $$ = vec;
@@ -566,13 +572,15 @@ FuncRParamList
   ;
 //MulExp        ::= UnaryExp | MulExp ("*" | "/" | "%") UnaryExp;
 MulExp
-  : UnaryExp {
+  : UnaryExp 
+  {
     auto ast = new MulExpAST();
     ast->type = 1;
     ast->unaryexp = unique_ptr<BaseAST>($1);
     $$ = ast;
   }
-  | MulExp MULOP UnaryExp {
+  | MulExp MULOP UnaryExp 
+  {
     auto ast = new MulExpAST();
     ast->type = 2;
     ast->mulexp = unique_ptr<BaseAST>($1);

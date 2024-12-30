@@ -8,7 +8,7 @@
 #include <fstream>
 #include <cstring>
 #include "koopa.h"
-#include "visit.hpp"
+#include "visitraw.hpp"
 using namespace std;
 
 // 声明 lexer 的输入, 以及 parser 函数
