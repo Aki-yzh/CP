@@ -268,6 +268,10 @@ void Visit(const koopa_raw_return_t &ret)
     {
       cout << "  li a0, " << ret.value->kind.data.integer.value << endl;
     }
+    else 
+    {
+      cout << "  li t6, " << loc[ret.value] << endl<< "  add t6, t6, sp" << endl << "  lw a0, 0(t6)" << endl;
+    }
   }
   // 恢复 ra 寄存器
   if (saved_ra) 
@@ -284,15 +288,20 @@ void Visit(const koopa_raw_return_t &ret)
 
 
 // 处理 load 指令，将源操作数加载到 t0 寄存器，并存储结果到栈中
-void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value) {
+void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value) 
+{
   load2reg(load.src, "t0");
+
   // 若有返回值则保存到栈里
-  if(value->ty->tag != KOOPA_RTT_UNIT) {
+  if(value->ty->tag != KOOPA_RTT_UNIT) 
+  {
     loc[value] = stack_frame_used;
     stack_frame_used += 4;
     save2mem(value, "t0");
   }
 }
+
+
 // 处理 store 指令，将源操作数存储到目标地址
 void Visit(const koopa_raw_store_t &store) 
 {
