@@ -267,14 +267,9 @@ void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value)
     case KOOPA_RVT_FUNC_ARG_REF:
       {
         const auto& index = load.src->kind.data.func_arg_ref.index;
-        if (index < 8) 
-        {
-          cout << "  mv t0, a" << index << endl;
-        } 
-        else 
-        {
-         cout << "  lw t0, " << stack_frame.length + (index - 8) * 4 << "(sp)\n";
-        }
+        cout << (index < 8 
+                ? "  mv t0, a" + to_string(index) 
+                : "  lw t0, " + to_string(stack_frame.length + (index - 8) * 4) + "(sp)") << "\n";
       }
       break;
     case KOOPA_RVT_GLOBAL_ALLOC:
@@ -292,15 +287,9 @@ void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value)
         stack_frame.loc[value] = to_string(stack_frame.used);
         stack_frame.used += 4;
         
-        if (value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
-        {
-            cout << "  la t6, " << value->name + 1 << endl
-                 << "  sw t0, 0(t6)\n";
-        } 
-        else 
-        {
-            cout << "  sw t0, " << stack_frame.loc[value] << "(sp)\n";
-        }
+        cout << (value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC
+        ? "  la t6, " + string(value->name + 1) + "\n  sw t0, 0(t6)"
+        : "  sw t0, " + stack_frame.loc[value] + "(sp)") << "\n";
     }
 }
 
