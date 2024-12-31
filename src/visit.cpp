@@ -8,14 +8,15 @@
 
 using namespace std;
 
-// 类型为 koopa_raw_value 的有返回值的语句的存储位置
-static unordered_map<koopa_raw_value_t, string> loc;
+
 
 // 栈帧信息结构体
 struct StackFrame {
     int length; // 栈帧长度
     int used;   // 已经使用的栈帧长度
     bool saved_ra; // 当前正在访问的函数有没有保存ra
+    // 类型为 koopa_raw_value 的有返回值的语句的存储位置
+    unordered_map<koopa_raw_value_t, string> loc;
     StackFrame() : length(0), used(0), saved_ra(false) {}
 };
 
@@ -155,7 +156,7 @@ void Visit(const koopa_raw_value_t &value)
       break;
        // 访问 alloc 指令
     case KOOPA_RVT_ALLOC:
-      loc[value] = to_string(stack_frame.used);
+      stack_frame.loc[value] = to_string(stack_frame.used);
       stack_frame.used += 4;
       break;
       // 访问 load 指令
@@ -221,7 +222,7 @@ void Visit(const koopa_raw_return_t &ret)
     }
     else 
     {
-      cout << "  li t6, " << loc[ret.value] << endl<< "  add t6, t6, sp" << endl << "  lw a0, 0(t6)" << endl;
+      cout << "  li t6, " << stack_frame.loc[ret.value] << endl<< "  add t6, t6, sp" << endl << "  lw a0, 0(t6)" << endl;
     }
   }
   // 恢复 ra 寄存器
@@ -288,14 +289,14 @@ void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value)
       cout << "  la t6, " << load.src->name+1 << endl << "  lw t0, 0(t6)" << endl;
       break;
     default:
-      cout << "  li t6, " << loc[load.src] << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
+      cout << "  li t6, " << stack_frame.loc[load.src] << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
       break;
   }
 
   // 若有返回值则保存到栈里
   if (value->ty->tag != KOOPA_RTT_UNIT) 
   {
-    loc[value] = to_string(stack_frame.used);
+    stack_frame.loc[value] = to_string(stack_frame.used);
     stack_frame.used += 4;
     if (value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
     {
@@ -303,7 +304,7 @@ void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value)
     } 
     else 
     {
-      cout << "  li t6, " << loc[value] << endl << "  add t6, t6, sp" << endl << "  sw t0, 0(t6)" << endl;
+      cout << "  li t6, " << stack_frame.loc[value] << endl << "  add t6, t6, sp" << endl << "  sw t0, 0(t6)" << endl;
     }
   }
 }
@@ -334,7 +335,7 @@ void Visit(const koopa_raw_store_t &store)
       cout << "  la t6, " << store.value->name+1 << endl << "  lw t0, 0(t6)" << endl;
       break;
     default:
-      cout << "  li t6, " << loc[store.value] << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
+      cout << "  li t6, " << stack_frame.loc[store.value] << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
       break;
   }
 
@@ -345,7 +346,7 @@ void Visit(const koopa_raw_store_t &store)
       cout << "  la t6, " << store.dest->name+1 << endl << "  sw t0, 0(t6)" << endl;
       break;
     default:
-      cout << "  li t6, " << loc[store.dest] << endl << "  add t6, t6, sp" << endl << "  sw t0, 0(t6)" << endl;
+      cout << "  li t6, " << stack_frame.loc[store.dest] << endl << "  add t6, t6, sp" << endl << "  sw t0, 0(t6)" << endl;
       break;
   }
 
@@ -378,7 +379,7 @@ void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value)
       cout << "  la t6, " << binary.lhs->name+1 << endl << "  lw t0, 0(t6)" << endl;
       break;
     default:
-      cout << "  li t6, " << loc[binary.lhs] << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
+      cout << "  li t6, " << stack_frame.loc[binary.lhs] << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
       break;
   }
 
@@ -405,7 +406,7 @@ void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value)
       cout << "  la t6, " << binary.rhs->name+1 << endl << "  lw t1, 0(t6)" << endl;
       break;
     default:
-      cout << "  li t6, " << loc[binary.rhs] << endl << "  add t6, t6, sp" << endl << "  lw t1, 0(t6)" << endl;
+      cout << "  li t6, " << stack_frame.loc[binary.rhs] << endl << "  add t6, t6, sp" << endl << "  lw t1, 0(t6)" << endl;
       break;
   }
 
@@ -444,7 +445,7 @@ void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value)
     // 若有返回值则将 a0 中的结果存入栈
   if(value->ty->tag != KOOPA_RTT_UNIT) 
   {
-    loc[value] = to_string(stack_frame.used);
+    stack_frame.loc[value] = to_string(stack_frame.used);
     stack_frame.used += 4;
     if (value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
     {
@@ -452,7 +453,7 @@ void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value)
     } 
     else 
     {
-      cout << "  li t6, " << loc[value] << endl << "  add t6, t6, sp" << endl << "  sw t0, 0(t6)" << endl;
+      cout << "  li t6, " << stack_frame.loc[value] << endl << "  add t6, t6, sp" << endl << "  sw t0, 0(t6)" << endl;
     }
   }
 }
@@ -483,7 +484,7 @@ void Visit(const koopa_raw_branch_t &branch)
             cout << "  la t6, " << branch.cond->name+1 << endl << "  lw t0, 0(t6)" << endl;
             break;
         default:
-            cout << "  li t6, " << loc[branch.cond] << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
+            cout << "  li t6, " << stack_frame.loc[branch.cond] << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
             break;
     }
 
@@ -525,7 +526,7 @@ void Visit(const koopa_raw_call_t &call, const koopa_raw_value_t &value)
         cout << "  la t6, " << arg->name+1 << endl << "  lw " << reg << ", 0(t6)" << endl;
         break;
       default:
-        cout << "  li t6, " << loc[arg] << endl << "  add t6, t6, sp" << endl << "  lw " << reg << ", 0(t6)" << endl;
+        cout << "  li t6, " << stack_frame.loc[arg] << endl << "  add t6, t6, sp" << endl << "  lw " << reg << ", 0(t6)" << endl;
         break;
     }
     if (i >= 8) 
@@ -540,7 +541,7 @@ void Visit(const koopa_raw_call_t &call, const koopa_raw_value_t &value)
   // 若有返回值则将 a0 中的结果存入栈
   if (value->ty->tag != KOOPA_RTT_UNIT) 
   {
-    loc[value] = to_string(stack_frame.used);
+    stack_frame.loc[value] = to_string(stack_frame.used);
     stack_frame.used += 4;
     if (value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
     {
@@ -548,7 +549,7 @@ void Visit(const koopa_raw_call_t &call, const koopa_raw_value_t &value)
     } 
     else 
     {
-      cout << "  li t6, " << loc[value] << endl << "  add t6, t6, sp" << endl << "  sw a0, 0(t6)" << endl;
+      cout << "  li t6, " << stack_frame.loc[value] << endl << "  add t6, t6, sp" << endl << "  sw a0, 0(t6)" << endl;
     }
   }
 }
