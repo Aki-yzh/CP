@@ -568,30 +568,30 @@ class StmtAST : public BaseAST
         whileStack.push(currentWhile);
 
         // 生成 while 入口跳转指令
-        cout << "  jump %WHILE_ENTRY_" << currentWhile << endl;
+        cout << "  jump %we_" << currentWhile << endl;
         // 生成 while 入口标签
-        cout << "%WHILE_ENTRY_" << currentWhile << ":" << endl;
+        cout << "%we_" << currentWhile << ":" << endl;
 
         entry_returned = 0;
         exp->Dump();
 
         // 生成条件跳转指令
-        cout << "  br %" << koopacnt-1 << ", %WHILE_BODY_" << currentWhile;
-        cout << ", %WHILE_END_" << currentWhile << endl;
+        cout << "  br %" << koopacnt-1 << ", %wb_" << currentWhile;
+        cout << ", %we_" << currentWhile << endl;
 
         // 生成 while 主体标签
-        cout << "%WHILE_BODY_" << currentWhile << ":" << endl;
+        cout << "%wb_" << currentWhile << ":" << endl;
         entry_returned = 0;
         stmt_while->Dump();
 
         if (!entry_returned) 
         {
             // 生成跳转回入口的指令
-            cout << "  jump %WHILE_ENTRY_" << currentWhile << endl;
+            cout << "  jump %we_" << currentWhile << endl;
         }
 
         // 生成 while 结束标签
-        cout << "%WHILE_END_" << currentWhile << ":" << endl;
+        cout << "%we_" << currentWhile << ":" << endl;
         entry_returned = 0;
 
         // 恢复父 while 标号
@@ -606,7 +606,7 @@ class StmtAST : public BaseAST
         {
           int currentWhile = whileStack.top();
           // 生成跳转到 while 结束标签的指令
-          cout << "  jump %WHILE_END_" << currentWhile << endl;
+          cout << "  jump %we_" << currentWhile << endl;
           entry_returned = 1;
         }
         break;
@@ -619,7 +619,7 @@ class StmtAST : public BaseAST
         {
             int currentWhile = whileStack.top();
             // 生成跳转到 while 入口标签的指令
-            cout << "  jump %WHILE_ENTRY_" << currentWhile << endl;
+            cout << "  jump %we_" << currentWhile << endl;
             entry_returned = 1;
         }
         break;
@@ -1036,8 +1036,8 @@ class LAndExpAST : public BaseAST
     
       int ifcur = ifcnt++;
       
-      // @STMTIF_LAND_RESULT_233 = alloc i32
-      cout << "  @" << "STMTIF_LAND_RESULT_" << ifcur << " = alloc i32" << endl;
+      // @LAR_233 = alloc i32
+      cout << "  @" << "LAR_" << ifcur << " = alloc i32" << endl;
 
       // br %0, %then, %else
       cout << "  br %" << koopacnt-1 << ", %IT_" << ifcur<< ", %IEL_" << ifcur << endl;
@@ -1050,7 +1050,7 @@ class LAndExpAST : public BaseAST
       // %2 = ne %0, 0
       cout << "  %" << koopacnt++ << " = ne %" << koopacnt-2 << ", 0" << endl;
       
-      cout << "  store %" << koopacnt-1 << ", @"<< "STMTIF_LAND_RESULT_" << ifcur << endl;
+      cout << "  store %" << koopacnt-1 << ", @"<< "LAR_" << ifcur << endl;
 
       if(!entry_returned) 
       {
@@ -1062,7 +1062,7 @@ class LAndExpAST : public BaseAST
       cout << "%IEL_" << ifcur << ":" << endl;
       entry_returned = 0;
 
-      cout << "  store 0, @"<< "STMTIF_LAND_RESULT_" << ifcur << endl;
+      cout << "  store 0, @"<< "LAR_" << ifcur << endl;
 
       if(!entry_returned) 
       {
@@ -1073,7 +1073,7 @@ class LAndExpAST : public BaseAST
    
       cout << "%IED_" << ifcur << ":" << endl;
       entry_returned = 0;
-      cout << "  %" << koopacnt++ << " = load @"<< "STMTIF_LAND_RESULT_" << ifcur << endl;
+      cout << "  %" << koopacnt++ << " = load @"<< "LAR_" << ifcur << endl;
       break;
     }
   }
@@ -1123,8 +1123,8 @@ class LOrExpAST : public BaseAST
         // 短路求值, 相当于一个if
         int ifcur = ifcnt++;
         
-        // @STMTIF_LOR_RESULT_233 = alloc i32
-        cout << "  @" << "STMTIF_LOR_RESULT_" << ifcur << " = alloc i32" << endl;
+        // @LOR_233 = alloc i32
+        cout << "  @" << "LOR_" << ifcur << " = alloc i32" << endl;
 
         // br %0, %then, %else
         cout << "  br %" << koopacnt-1 << ", %IT_" << ifcur << ", %IEL_" << ifcur << endl;
@@ -1133,9 +1133,10 @@ class LOrExpAST : public BaseAST
         cout << "%IT_" << ifcur << ":" << endl;
         entry_returned = 0;
         // || 左侧 LOrExp 为 1, 答案为 1, 即左侧 LOrExp 的值
-        cout << "  store 1, @" << "STMTIF_LOR_RESULT_" << ifcur << endl;
+        cout << "  store 1, @" << "LOR_" << ifcur << endl;
 
-        if(!entry_returned) {
+        if(!entry_returned) 
+        {
           // jump %IED_233
           cout << "  jump %IED_" << ifcur << endl;
         }
@@ -1146,9 +1147,10 @@ class LOrExpAST : public BaseAST
         // || 左侧 LOrExp 为 0, 答案为 LAndExp 的值
         landexp->Dump();
         // %2 = ne %0, 0
-        cout << "  %" << koopacnt++ << " = ne %"<< koopacnt-2 << ", 0" << endl << "  store %" << koopacnt-1 << ", @"<< "STMTIF_LOR_RESULT_" << ifcur << endl;
+        cout << "  %" << koopacnt++ << " = ne %"<< koopacnt-2 << ", 0" << endl << "  store %" << koopacnt-1 << ", @"<< "LOR_" << ifcur << endl;
 
-        if(!entry_returned) {
+        if(!entry_returned) 
+        {
           // jump %IED_233
           cout << "  jump %IED_" << ifcur << endl;
         }
@@ -1156,7 +1158,7 @@ class LOrExpAST : public BaseAST
         // %IED_233: 创建新的entry
         cout << "%IED_" << ifcur << ":" << endl;
         entry_returned = 0;
-        cout << "  %" << koopacnt++ << " = load @" << "STMTIF_LOR_RESULT_" << ifcur << endl;
+        cout << "  %" << koopacnt++ << " = load @" << "LOR_" << ifcur << endl;
        break;
       }
   }
