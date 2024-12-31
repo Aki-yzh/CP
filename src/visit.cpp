@@ -267,12 +267,6 @@ void Visit(const koopa_raw_return_t &ret)
     {
       cout << "  li a0, " << ret.value->kind.data.integer.value << endl;
     }
-
-    else if (ret.value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
-    {
-      cout << "  la t6, " << ret.value->name+1 << endl;
-      cout << "  lw a0, 0(t6)" << endl;
-    }
     else 
     {
       cout << "  li t6, " << loc[ret.value] << endl;
