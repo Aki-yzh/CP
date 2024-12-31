@@ -48,10 +48,10 @@ namespace SymbolTableNamespace
         symbol_table_stack.pop();
     }
 
-    // 返回当前作用域的标号, 格式形如 "sbtb_233"
+    // 返回当前作用域的标号, 格式形如 "SYM_TABLE_233"
     inline string current_code_block()
     {
-        return "sbtb_" + to_string(symbol_table_stack.top().first) + "_";
+        return "SYM_TABLE_" + to_string(symbol_table_stack.top().first) + "_";
     }
 
     // 在符号表栈中寻找符号, 返回其所在符号表的 标号 和其本身的 iterator
@@ -91,12 +91,12 @@ namespace SymbolTableNamespace
         auto result = find_iter(symbol);
         if(result)
         {
-            return { "sbtb_" + to_string(result->first) + "_", result->second->second };
+            return { "SYM_TABLE_" + to_string(result->first) + "_", result->second->second };
         }
         else
         {
             auto symval = make_shared<symbol_value>(symbol_value{ SYM_TYPE_UND, -1 });
-            return { "sbtb_-1_", symval };
+            return { "SYM_TABLE_-1_", symval };
         }
     }
 }
