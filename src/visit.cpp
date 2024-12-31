@@ -263,21 +263,11 @@ void Visit(const koopa_raw_return_t &ret)
 {
   // 返回值存入 a0
   if(ret.value != nullptr) {
-    if (ret.value->kind.tag == KOOPA_RVT_INTEGER) {
+    if (ret.value->kind.tag == KOOPA_RVT_INTEGER) 
+    {
       cout << "  li a0, " << ret.value->kind.data.integer.value << endl;
     }
-    else if (ret.value->kind.tag == KOOPA_RVT_FUNC_ARG_REF) 
-    {
-      const auto& index = ret.value->kind.data.func_arg_ref.index;
-      if (index < 8) 
-      {
-        cout << "  mv a0, a" << index << endl;
-      }
-      else 
-      {
-        cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw a0, 0(t6)" << endl;
-      }
-    }
+
     else if (ret.value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
     {
       cout << "  la t6, " << ret.value->name+1 << endl;
