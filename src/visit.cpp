@@ -230,6 +230,28 @@ void Visit(const koopa_raw_return_t &ret)
   }
   cout << "  ret" << endl;
 }
+// 访问 global alloc 指令
+void Visit(const koopa_raw_global_alloc_t &global_alloc, const koopa_raw_value_t &value) 
+{
+ cout << "  .data" <<endl << "  .globl " << value->name + 1 <<endl << value->name + 1 << ":" <<endl;
+  switch (global_alloc.init->kind.tag) 
+  {
+    case KOOPA_RVT_ZERO_INIT:
+      // 初始化为 0
+     cout << "  .zero 4" <<endl;
+     break;
+    case KOOPA_RVT_INTEGER:
+      // 初始化为 int
+     cout << "  .word " << global_alloc.init->kind.data.integer.value <<endl;
+     break;
+    default:
+      // 处理其他可能的初始化类型
+     cerr << "Unsupported initialization type" <<endl;
+     break;
+  }
+
+ cout <<endl;
+}
 
 //---
 
@@ -304,17 +326,16 @@ void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value)
     } 
     else 
     {
-      cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
-      cout << "  add t6, t6, sp" << endl;
-      cout << "  lw t0, 0(t6)" << endl;
+      cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
     }
   } 
-
+  else if (load.src->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
+  {
+    cout << "  la t6, " << load.src->name+1 << endl << "  lw t0, 0(t6)" << endl;
+  } 
   else 
   {
-    cout << "  li t6, " << loc[load.src] << endl;
-    cout << "  add t6, t6, sp" << endl;
-    cout << "  lw t0, 0(t6)" << endl;
+    cout << "  li t6, " << loc[load.src] << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
   }
 
   // 若有返回值则保存到栈里
@@ -330,7 +351,38 @@ void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value)
 // 处理 store 指令，将源操作数存储到目标地址
 void Visit(const koopa_raw_store_t &store) 
 {
-  load2reg(store.value, "t0");
+  // 将源操作数加载到 t0 寄存器
+  if (store.value->kind.tag == KOOPA_RVT_INTEGER) 
+  {
+    cout << "  li t0, " << store.value->kind.data.integer.value << endl;
+  } 
+  else if (store.value->kind.tag == KOOPA_RVT_FUNC_ARG_REF) 
+  {
+    const auto& index = store.value->kind.data.func_arg_ref.index;
+    if (index < 8) 
+    {
+      cout << "  mv t0, a" << index << endl;
+    } 
+    else 
+    {
+      cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
+      cout << "  add t6, t6, sp" << endl;
+      cout << "  lw t0, 0(t6)" << endl;
+    }
+  } 
+  else if (store.value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
+  {
+    cout << "  la t6, " << store.value->name+1 << endl;
+    cout << "  lw t0, 0(t6)" << endl;
+  } 
+  else 
+  {
+    cout << "  li t6, " << loc[store.value] << endl;
+    cout << "  add t6, t6, sp" << endl;
+    cout << "  lw t0, 0(t6)" << endl;
+  }
+
+  // 将 t0 中的值存储到目标地址
   save2mem(store.dest, "t0");
 }
 
@@ -383,7 +435,36 @@ void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value)
 void Visit(const koopa_raw_branch_t &branch) 
 {
     // 将条件值加载到寄存器 t0 中
-    load2reg(branch.cond, "t0");
+    if (branch.cond->kind.tag == KOOPA_RVT_INTEGER) 
+    {
+        cout << "  li t0, " << branch.cond->kind.data.integer.value << endl;
+    } 
+    else if (branch.cond->kind.tag == KOOPA_RVT_FUNC_ARG_REF) 
+    {
+        const auto& index = branch.cond->kind.data.func_arg_ref.index;
+        if (index < 8) 
+        {
+            cout << "  mv t0, a" << index << endl;
+        } 
+        else 
+        {
+            cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
+            cout << "  add t6, t6, sp" << endl;
+            cout << "  lw t0, 0(t6)" << endl;
+        }
+    } 
+    else if (branch.cond->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
+    {
+        cout << "  la t6, " << branch.cond->name+1 << endl;
+        cout << "  lw t0, 0(t6)" << endl;
+    }
+    else 
+    {
+       
+        cout << "  li t6, " << loc[branch.cond] << endl;
+        cout << "  add t6, t6, sp" << endl;
+        cout << "  lw t0, 0(t6)" << endl;
+    }
 
     // 根据条件跳转到相应的基本块
     cout << "  bnez t0, DOUBLE_JUMP_" << branch.true_bb->name + 1 << endl << "  j " << branch.false_bb->name + 1 << endl;
@@ -399,21 +480,7 @@ void Visit(const koopa_raw_branch_t &branch)
 
 
 
-// 访问 global alloc 指令
-void Visit(const koopa_raw_global_alloc_t &global_alloc, const koopa_raw_value_t &value) {
-  std::cout << "  .data" << std::endl;
-  std::cout << "  .globl " << value->name+1 << std::endl;
-  std::cout << value->name+1 << ":" << std::endl;
-  if (global_alloc.init->kind.tag == KOOPA_RVT_ZERO_INIT) {
-    // 初始化为 0
-    std::cout << "  .zero 4" << std::endl;
-  }
-  else if (global_alloc.init->kind.tag == KOOPA_RVT_INTEGER) {
-    // 初始化为 int
-    std::cout << "  .word " << global_alloc.init->kind.data.integer.value << std::endl;
-  }
-  std::cout << std::endl;
-}
+
 
 // 访问 call 指令
 void Visit(const koopa_raw_call_t &call, const koopa_raw_value_t &value) {
