@@ -10,13 +10,19 @@ using namespace std;
 
 // 类型为 koopa_raw_value 的有返回值的语句的存储位置
 static unordered_map<koopa_raw_value_t, int> loc;
-// 栈帧长度
-static int stack_frame_length = 0;
-// 已经使用的栈帧长度
-static int stack_frame_used = 0;
 
-// 当前正在访问的函数有没有保存ra
-bool saved_ra = 0;
+// 栈帧信息结构体
+struct StackFrame {
+    int length; // 栈帧长度
+    int used;   // 已经使用的栈帧长度
+    bool saved_ra; // 当前正在访问的函数有没有保存ra
+
+    StackFrame() : length(0), used(0), saved_ra(false) {}
+};
+
+static StackFrame stack_frame;
+
+
 
 // 访问 raw program
 void Visit(const koopa_raw_program_t &program) 
@@ -69,8 +75,7 @@ void Visit(const koopa_raw_function_t &func)
    // 输出函数头部的汇编指令
   cout << "  .text" << endl<< "  .globl " << func->name + 1 << endl << func->name + 1 << ":" << endl;
   // 重置栈帧相关的变量
-  stack_frame_length = 0;
-  stack_frame_used = 0;
+  stack_frame = StackFrame();
 
 
   // 计算栈帧长度需要的值
@@ -100,26 +105,26 @@ void Visit(const koopa_raw_function_t &func)
     }
   }
   // 每个变量占用4字节空间
-  stack_frame_length = (var_cnt + return_addr + arg_var) << 2;
+  stack_frame.length = (var_cnt + return_addr + arg_var) << 2;
   // 将栈帧长度对齐到 16
-  stack_frame_length = (stack_frame_length + 16 - 1) & (~(16 - 1));
-  stack_frame_used = arg_var<<2;
+  stack_frame.length = (stack_frame.length + 16 - 1) & (~(16 - 1));
+  stack_frame.used = arg_var<<2;
   //分配栈空间
 
 
-  if (stack_frame_length != 0) 
+  if (stack_frame.length != 0) 
   {
-    cout << "  li t0, " << -stack_frame_length << endl << "  add sp, sp, t0" << endl;
+    cout << "  li t0, " << -stack_frame.length << endl << "  add sp, sp, t0" << endl;
   }
 
   if(return_addr)
    {
-    cout << "  li t0, " << stack_frame_length - 4 << endl << "  add t0, t0, sp" << endl << "  sw ra, 0(t0)" << endl;
-    saved_ra = 1;
+    cout << "  li t0, " << stack_frame.length - 4 << endl << "  add t0, t0, sp" << endl << "  sw ra, 0(t0)" << endl;
+    stack_frame.saved_ra = true;
   }
   else 
   {
-    saved_ra = 0;
+    stack_frame.saved_ra = false;
   }
 
   // 访问所有基本块
@@ -151,8 +156,8 @@ void Visit(const koopa_raw_value_t &value)
       break;
        // 访问 alloc 指令
     case KOOPA_RVT_ALLOC:
-      loc[value] = stack_frame_used;
-      stack_frame_used += 4;
+      loc[value] = stack_frame.used;
+      stack_frame.used += 4;
       break;
       // 访问 load 指令
     case KOOPA_RVT_LOAD:
@@ -221,14 +226,14 @@ void Visit(const koopa_raw_return_t &ret)
     }
   }
   // 恢复 ra 寄存器
-  if (saved_ra) 
+  if (stack_frame.saved_ra) 
   {
-    cout << "  li t0, " << stack_frame_length - 4 << endl << "  add t0, t0, sp" << endl << "  lw ra, 0(t0)" << endl;
+    cout << "  li t0, " << stack_frame.length - 4 << endl << "  add t0, t0, sp" << endl << "  lw ra, 0(t0)" << endl;
   }
   // 恢复栈帧
-  if (stack_frame_length != 0) 
+  if (stack_frame.length != 0) 
   {
-    cout << "  li t0, " << stack_frame_length << endl << "  add sp, sp, t0" << endl;
+    cout << "  li t0, " << stack_frame.length << endl << "  add sp, sp, t0" << endl;
   }
   cout << "  ret" << endl;
 }
@@ -276,7 +281,7 @@ void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value)
         } 
         else 
         {
-          cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
+          cout << "  li t6, " << stack_frame.length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
         }
       }
       break;
@@ -291,8 +296,8 @@ void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value)
   // 若有返回值则保存到栈里
   if (value->ty->tag != KOOPA_RTT_UNIT) 
   {
-    loc[value] = stack_frame_used;
-    stack_frame_used += 4;
+    loc[value] = stack_frame.used;
+    stack_frame.used += 4;
     if (value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
     {
       cout << "  la t6, " << value->name+1 << endl << "  sw t0, 0(t6)" << endl;
@@ -322,7 +327,7 @@ void Visit(const koopa_raw_store_t &store)
         } 
         else 
         {
-          cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
+          cout << "  li t6, " << stack_frame.length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
         }
       }
       break;
@@ -366,7 +371,7 @@ void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value)
         } 
         else 
         {
-          cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
+          cout << "  li t6, " << stack_frame.length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
         }
       }
       break;
@@ -393,7 +398,7 @@ void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value)
         } 
         else 
         {
-          cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw t1, 0(t6)" << endl;
+          cout << "  li t6, " << stack_frame.length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw t1, 0(t6)" << endl;
         }
       }
       break;
@@ -440,8 +445,8 @@ void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value)
     // 若有返回值则将 a0 中的结果存入栈
   if(value->ty->tag != KOOPA_RTT_UNIT) 
   {
-    loc[value] = stack_frame_used;
-    stack_frame_used += 4;
+    loc[value] = stack_frame.used;
+    stack_frame.used += 4;
     if (value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
     {
       cout << "  la t6, " << value->name+1 << endl << "  sw t0, 0(t6)" << endl;
@@ -471,7 +476,7 @@ void Visit(const koopa_raw_branch_t &branch)
                 } 
                 else 
                 {
-                    cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
+                    cout << "  li t6, " << stack_frame.length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
                 }
             }
             break;
@@ -513,7 +518,7 @@ void Visit(const koopa_raw_call_t &call, const koopa_raw_value_t &value)
           } 
           else 
           {
-            cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw " << reg << ", 0(t6)" << endl;
+            cout << "  li t6, " << stack_frame.length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw " << reg << ", 0(t6)" << endl;
           }
         }
         break;
@@ -536,8 +541,8 @@ void Visit(const koopa_raw_call_t &call, const koopa_raw_value_t &value)
   // 若有返回值则将 a0 中的结果存入栈
   if (value->ty->tag != KOOPA_RTT_UNIT) 
   {
-    loc[value] = stack_frame_used;
-    stack_frame_used += 4;
+    loc[value] = stack_frame.used;
+    stack_frame.used += 4;
     if (value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
     {
       cout << "  la t6, " << value->name+1 << endl << "  sw a0, 0(t6)" << endl;
