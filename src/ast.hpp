@@ -265,10 +265,12 @@ class FuncTypeAST : public BaseAST
   string type;
   void Dump() const override
   {
-        if(type == "void") {
+      if(type == "void") 
+      {
         // do nothing
       }
-      else if(type == "int") {
+      else if(type == "int")
+      {
         cout << ": i32";
       }
   }
@@ -279,7 +281,8 @@ class FuncTypeAST : public BaseAST
   }
 };
 // FuncFParam ::= BType IDENT;
-class FuncFParamAST : public BaseAST {
+class FuncFParamAST : public BaseAST 
+{
  public:
   string b_type;
   string ident;
@@ -305,45 +308,52 @@ class FuncFParamAST : public BaseAST {
   }
 };
 class FuncExpAST : public BaseAST {
- public:
-  string ident;
-  unique_ptr<vector<unique_ptr<BaseAST> > > func_r_param_list;
-  void Dump() const override
-  {
-      auto func = query_symbol(ident);
-    // 必须为全局符号
-    assert(func.first == "sbtb_0_");
-    // 必须是函数
-    assert(func.second->type == SYM_TYPE_FUNCVOID || func.second->type == SYM_TYPE_FUNCINT);
-    // 计算所有的参数
-    auto vec = new vector<int>();
-    for(auto& exp: *func_r_param_list) {
-      exp->Dump();
-      vec->push_back(koopacnt-1);
-    }
-    // 如果是 int 函数，把返回值保存下来
-    if(func.second->type == SYM_TYPE_FUNCINT)
-      cout << "  %" << koopacnt << " = ";
-    else if(func.second->type == SYM_TYPE_FUNCVOID)
-      cout << "  ";
-    // call @half(%1, %2)
-    cout << "call @" << ident << "(";
-    for(int i: *vec) {
-      cout << "%" << i << ", ";
-    }
-    // 退格擦除最后一个逗号
-    if(!vec->empty())
-      cout.seekp(-2, cout.end);
-    cout << ")" << endl;
-    delete vec;
-    if(func.second->type == SYM_TYPE_FUNCINT)
-      koopacnt++;
-  }
-  int EVa() const override
-  {
+public:
+    string ident;
+    unique_ptr<vector<unique_ptr<BaseAST>>> func_r_param_list;
     
-    return 0;
-  }
+    void Dump() const override {
+        auto func = query_symbol(ident);
+        // 必须为全局符号
+        assert(func.first == "sbtb_0_");
+        // 必须是函数
+        assert(func.second->type == SYM_TYPE_FUNCVOID || func.second->type == SYM_TYPE_FUNCINT);
+        
+        // 计算所有的参数
+        vector<int> params;
+        params.reserve(func_r_param_list->size());
+        
+        for(const auto& exp : *func_r_param_list) {
+            exp->Dump();
+            params.push_back(koopacnt-1);
+        }
+
+        // 输出函数调用
+        // 如果是 int 函数，把返回值保存下来
+        if(func.second->type == SYM_TYPE_FUNCINT) {
+            cout << "  %" << koopacnt << " = ";
+        } else {
+            cout << "  ";
+        }
+        
+        // call @half(%1, %2)
+        cout << "call @" << ident << "(";
+        
+        // 输出参数列表
+        for(size_t i = 0; i < params.size(); ++i) {
+            cout << "%" << params[i];
+            if(i < params.size() - 1) cout << ", ";
+        }
+        cout << ")\n";
+
+        if(func.second->type == SYM_TYPE_FUNCINT) {
+            koopacnt++;
+        }
+    }
+    
+    int EVa() const override {
+        return 0;
+    }
 };
 
 // FuncDef ::= FuncType IDENT "(" FuncFParams ")" Block;
