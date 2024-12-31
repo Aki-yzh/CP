@@ -305,14 +305,10 @@ void Visit(const koopa_raw_store_t &store)
         case KOOPA_RVT_FUNC_ARG_REF: 
         {
             const auto& index = store.value->kind.data.func_arg_ref.index;
-            if (index < 8) 
-            {
-                cout << "  mv t0, a" << index << "\n"; 
-            } 
-            else 
-            {
-                cout << "  lw t0, " << stack_frame.length + (index - 8) * 4 << "(sp)\n";
-            }
+            cout << (index < 8 
+                          ? "  mv t0, a" + to_string(index)
+                          : "  lw t0, " + to_string(stack_frame.length + (index - 8) * 4) + "(sp)") << "\n";
+            
             break;
         }
             
@@ -326,13 +322,9 @@ void Visit(const koopa_raw_store_t &store)
     }
 
     // 存储 t0 到目标地址
-    if (store.dest->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
-    {
-        cout << "  la t6, " << store.dest->name + 1 << "\n"
-             << "  sw t0, 0(t6)\n";
-    } else {
-        cout << "  sw t0, " << stack_frame.loc[store.dest] << "(sp)\n";
-    }
+    cout << (store.dest->kind.tag == KOOPA_RVT_GLOBAL_ALLOC
+        ? "  la t6, " + string(store.dest->name + 1) + "\n  sw t0, 0(t6)"
+        : "  sw t0, " + stack_frame.loc[store.dest] + "(sp)") << "\n";
 }
 
 // 处理 binary 指令，执行二元运算并将结果存储到栈中
