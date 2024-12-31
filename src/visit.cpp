@@ -64,72 +64,63 @@ void Visit(const koopa_raw_slice_t &slice)
 }
 
 //--------
-// 访问函数
 void Visit(const koopa_raw_function_t &func) 
 {
-    // 忽略函数声明
-  if(func->bbs.len == 0)
-    return;
-  // 执行一些其他的必要操作
-  // ...
-   // 输出函数头部的汇编指令
-  cout << "  .text" << endl<< "  .globl " << func->name + 1 << endl << func->name + 1 << ":" << endl;
-  // 重置栈帧相关的变量
-  stack_frame = StackFrame();
+    if(func->bbs.len == 0) return;
 
+    cout << "  .text" << endl
+         << "  .globl " << func->name + 1 << endl 
+         << func->name + 1 << ":" << endl;
 
-  // 计算栈帧长度需要的值
-  // 局部变量个数
-  int var_cnt = 0;
-  // 是否需要为 ra 分配栈空间
-  bool return_addr = 0;
-  // 需要为传参预留几个变量的栈空间
-  int arg_var = 0;
+    stack_frame = StackFrame();
+    
+    // 计算栈帧需求
+    int locals = 0;        // 局部变量空间
+    bool need_ra = false;  // 返回地址标记
+    int args = 0;         // 参数空间
 
-
-  // 遍历基本块
-  for (size_t i = 0; i < func->bbs.len; ++i)
-  {
-    const auto& insts = reinterpret_cast<koopa_raw_basic_block_t>(func->bbs.buffer[i])->insts;
-    var_cnt += insts.len;
-    for (size_t j = 0; j < insts.len; ++j)
-    {
-      auto inst = reinterpret_cast<koopa_raw_value_t>(insts.buffer[j]);
-      if(inst->ty->tag == KOOPA_RTT_UNIT)
-        var_cnt--;
-      if(inst->kind.tag == KOOPA_RVT_CALL)
-      {
-        return_addr = 1;
-        arg_var = max(arg_var, max(0, int(inst->kind.data.call.args.len) - 8));
-      }
+    // 遍历统计栈空间
+    for (size_t i = 0; i < func->bbs.len; ++i) {
+        const auto& bb = reinterpret_cast<koopa_raw_basic_block_t>(func->bbs.buffer[i]);
+        for (size_t j = 0; j < bb->insts.len; ++j) {
+            auto inst = reinterpret_cast<koopa_raw_value_t>(bb->insts.buffer[j]);
+            
+            // 统计非unit指令
+            if (inst->ty->tag != KOOPA_RTT_UNIT) {
+                locals++;
+            }
+            
+            // 处理函数调用
+            if (inst->kind.tag == KOOPA_RVT_CALL) {
+                need_ra = true;
+                args = max(args, max(0, int(inst->kind.data.call.args.len) - 8));
+            }
+        }
     }
-  }
-  // 每个变量占用4字节空间
-  stack_frame.length = (var_cnt + return_addr + arg_var) << 2;
-  // 将栈帧长度对齐到 16
-  stack_frame.length = (stack_frame.length + 16 - 1) & (~(16 - 1));
-  stack_frame.used = arg_var<<2;
-  //分配栈空间
 
+    // 计算栈帧大小
+    stack_frame.length = (locals + need_ra + args) << 2;  // *4
+    stack_frame.length = (stack_frame.length + 15) & ~15; // 16字节对齐
+    stack_frame.used = args << 2;
 
-  if (stack_frame.length != 0) 
-  {
-    cout << "  li t0, " << -stack_frame.length << endl << "  add sp, sp, t0" << endl;
-  }
+    // 分配栈空间
+    if (stack_frame.length > 0) {
+        cout << "  li t0, " << -stack_frame.length << endl
+             << "  add sp, sp, t0" << endl;
+    }
 
-  if(return_addr)
-   {
-    cout << "  li t0, " << stack_frame.length - 4 << endl << "  add t0, t0, sp" << endl << "  sw ra, 0(t0)" << endl;
-    stack_frame.saved_ra = true;
-  }
-  else 
-  {
-    stack_frame.saved_ra = false;
-  }
+    // 保存返回地址
+    if (need_ra) {
+        cout << "  li t0, " << stack_frame.length - 4 << endl
+             << "  add t0, t0, sp" << endl
+             << "  sw ra, 0(t0)" << endl;
+        stack_frame.saved_ra = true;
+    } else {
+        stack_frame.saved_ra = false;
+    }
 
-  // 访问所有基本块
-  Visit(func->bbs);
-  cout << endl;
+    Visit(func->bbs);
+    cout << endl;
 }
 
 // 访问基本块
