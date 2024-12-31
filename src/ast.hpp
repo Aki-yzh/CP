@@ -1036,8 +1036,8 @@ class LAndExpAST : public BaseAST
     
       int ifcur = ifcnt++;
       
-      // @ILAR_233 = alloc i32
-      cout << "  @" << "ILAR_" << ifcur << " = alloc i32" << endl;
+      // @LAR_233 = alloc i32
+      cout << "  @" << "LAR_" << ifcur << " = alloc i32" << endl;
 
       // br %0, %then, %else
       cout << "  br %" << koopacnt-1 << ", %IT_" << ifcur<< ", %IEL_" << ifcur << endl;
@@ -1050,7 +1050,7 @@ class LAndExpAST : public BaseAST
       // %2 = ne %0, 0
       cout << "  %" << koopacnt++ << " = ne %" << koopacnt-2 << ", 0" << endl;
       
-      cout << "  store %" << koopacnt-1 << ", @"<< "ILAR_" << ifcur << endl;
+      cout << "  store %" << koopacnt-1 << ", @"<< "LAR_" << ifcur << endl;
 
       if(!entry_returned) 
       {
@@ -1062,7 +1062,7 @@ class LAndExpAST : public BaseAST
       cout << "%IEL_" << ifcur << ":" << endl;
       entry_returned = 0;
 
-      cout << "  store 0, @"<< "ILAR_" << ifcur << endl;
+      cout << "  store 0, @"<< "LAR_" << ifcur << endl;
 
       if(!entry_returned) 
       {
@@ -1073,7 +1073,7 @@ class LAndExpAST : public BaseAST
    
       cout << "%IED_" << ifcur << ":" << endl;
       entry_returned = 0;
-      cout << "  %" << koopacnt++ << " = load @"<< "ILAR_" << ifcur << endl;
+      cout << "  %" << koopacnt++ << " = load @"<< "LAR_" << ifcur << endl;
       break;
     }
   }
