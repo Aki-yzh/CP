@@ -315,13 +315,8 @@ public:
     
     void Dump() const override 
     {
-        auto func = query_symbol(ident);
-        // 必须为全局符号
-        assert(func.first == "sbtb_0_");
-        // 必须是函数
-        assert(func.second->type == SYM_TYPE_FUNCVOID || func.second->type == SYM_TYPE_FUNCINT);
-        
-        // 计算所有的参数
+        auto func = query_symbol(ident);    
+      // 计算所有的参数
         vector<int> params;
         params.reserve(func_r_param_list->size());
         
@@ -479,8 +474,6 @@ class LValAST : public BaseAST
 
 
     auto val = query_symbol(ident);
-    assert(val.second->type != SYM_TYPE_UND);
-
     string instruction = (val.second->type == SYM_TYPE_CONST) 
                           ? "add 0, " + to_string(val.second->value) 
                           : "load @" + val.first + ident;
@@ -491,7 +484,6 @@ class LValAST : public BaseAST
   int EVa() const override
   {
     auto val = query_symbol(ident);
-    assert(val.second->type == SYM_TYPE_CONST);
     return val.second->value;
   }
 };
