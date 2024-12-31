@@ -1123,8 +1123,8 @@ class LOrExpAST : public BaseAST
         // 短路求值, 相当于一个if
         int ifcur = ifcnt++;
         
-        // @STMTIF_LOR_RESULT_233 = alloc i32
-        cout << "  @" << "STMTIF_LOR_RESULT_" << ifcur << " = alloc i32" << endl;
+        // @ILOR_233 = alloc i32
+        cout << "  @" << "ILOR_" << ifcur << " = alloc i32" << endl;
 
         // br %0, %then, %else
         cout << "  br %" << koopacnt-1 << ", %IT_" << ifcur << ", %IEL_" << ifcur << endl;
@@ -1133,7 +1133,7 @@ class LOrExpAST : public BaseAST
         cout << "%IT_" << ifcur << ":" << endl;
         entry_returned = 0;
         // || 左侧 LOrExp 为 1, 答案为 1, 即左侧 LOrExp 的值
-        cout << "  store 1, @" << "STMTIF_LOR_RESULT_" << ifcur << endl;
+        cout << "  store 1, @" << "ILOR_" << ifcur << endl;
 
         if(!entry_returned) {
           // jump %IED_233
@@ -1146,7 +1146,7 @@ class LOrExpAST : public BaseAST
         // || 左侧 LOrExp 为 0, 答案为 LAndExp 的值
         landexp->Dump();
         // %2 = ne %0, 0
-        cout << "  %" << koopacnt++ << " = ne %"<< koopacnt-2 << ", 0" << endl << "  store %" << koopacnt-1 << ", @"<< "STMTIF_LOR_RESULT_" << ifcur << endl;
+        cout << "  %" << koopacnt++ << " = ne %"<< koopacnt-2 << ", 0" << endl << "  store %" << koopacnt-1 << ", @"<< "ILOR_" << ifcur << endl;
 
         if(!entry_returned) {
           // jump %IED_233
@@ -1156,7 +1156,7 @@ class LOrExpAST : public BaseAST
         // %IED_233: 创建新的entry
         cout << "%IED_" << ifcur << ":" << endl;
         entry_returned = 0;
-        cout << "  %" << koopacnt++ << " = load @" << "STMTIF_LOR_RESULT_" << ifcur << endl;
+        cout << "  %" << koopacnt++ << " = load @" << "ILOR_" << ifcur << endl;
        break;
       }
   }
