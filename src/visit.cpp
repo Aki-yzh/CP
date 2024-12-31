@@ -199,14 +199,15 @@ void Visit(const koopa_raw_jump_t &jump)
 // 访问 return 指令
 void Visit(const koopa_raw_return_t &ret) 
 {
-    constexpr int WORD_SIZE = 4;
-    
     // 处理返回值
-    if(ret.value) {
-        if (ret.value->kind.tag == KOOPA_RVT_INTEGER) {
+    if(ret.value) 
+    {
+        if (ret.value->kind.tag == KOOPA_RVT_INTEGER) 
+        {
             cout << "  li a0, " << ret.value->kind.data.integer.value;
-        } else {
-            // 优化内存访问 - 直接计算偏移
+        } 
+        else 
+        {
             auto offset = atoi(stack_frame.loc[ret.value].c_str());
             cout << "  lw a0, " << offset << "(sp)";
         }
@@ -218,7 +219,7 @@ void Visit(const koopa_raw_return_t &ret)
     {
         if (stack_frame.saved_ra) 
         {
-            cout << "  lw ra, " << (stack_frame.length - WORD_SIZE) << "(sp)\n";
+            cout << "  lw ra, " << (stack_frame.length - 4) << "(sp)\n";
         }
         cout << "  addi sp, sp, " << stack_frame.length;
     }
