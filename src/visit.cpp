@@ -207,6 +207,7 @@ void Visit(const koopa_raw_jump_t &jump)
 {
   cout << "  j " << jump.target->name+1 << endl;
 }
+
 // 访问 return 指令
 void Visit(const koopa_raw_return_t &ret) 
 {
@@ -234,6 +235,7 @@ void Visit(const koopa_raw_return_t &ret)
   }
   cout << "  ret" << endl;
 }
+
 // 访问 global alloc 指令
 void Visit(const koopa_raw_global_alloc_t &global_alloc, const koopa_raw_value_t &value) 
 {
@@ -487,42 +489,40 @@ void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value)
 void Visit(const koopa_raw_branch_t &branch) 
 {
     // 将条件值加载到寄存器 t0 中
-    if (branch.cond->kind.tag == KOOPA_RVT_INTEGER) 
+    switch (branch.cond->kind.tag) 
     {
-        cout << "  li t0, " << branch.cond->kind.data.integer.value << endl;
-    } 
-    else if (branch.cond->kind.tag == KOOPA_RVT_FUNC_ARG_REF) 
-    {
-        const auto& index = branch.cond->kind.data.func_arg_ref.index;
-        if (index < 8) 
-        {
-            cout << "  mv t0, a" << index << endl;
-        } 
-        else 
-        {
-            cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
+        case KOOPA_RVT_INTEGER:
+            cout << "  li t0, " << branch.cond->kind.data.integer.value << endl;
+            break;
+        case KOOPA_RVT_FUNC_ARG_REF:
+            {
+                const auto& index = branch.cond->kind.data.func_arg_ref.index;
+                if (index < 8) 
+                {
+                    cout << "  mv t0, a" << index << endl;
+                } 
+                else 
+                {
+                    cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
+                    cout << "  add t6, t6, sp" << endl;
+                    cout << "  lw t0, 0(t6)" << endl;
+                }
+            }
+            break;
+        case KOOPA_RVT_GLOBAL_ALLOC:
+            cout << "  la t6, " << branch.cond->name+1 << endl;
+            cout << "  lw t0, 0(t6)" << endl;
+            break;
+        default:
+            cout << "  li t6, " << loc[branch.cond] << endl;
             cout << "  add t6, t6, sp" << endl;
             cout << "  lw t0, 0(t6)" << endl;
-        }
-    } 
-    else if (branch.cond->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
-    {
-        cout << "  la t6, " << branch.cond->name+1 << endl;
-        cout << "  lw t0, 0(t6)" << endl;
-    }
-    else 
-    {
-       
-        cout << "  li t6, " << loc[branch.cond] << endl;
-        cout << "  add t6, t6, sp" << endl;
-        cout << "  lw t0, 0(t6)" << endl;
+            break;
     }
 
     // 根据条件跳转到相应的基本块
-    cout << "  bnez t0, DOUBLE_JUMP_" << branch.true_bb->name + 1 << endl << "  j " << branch.false_bb->name + 1 << endl;
-    // 生成 true 分支的标签，跳转到 true 分支的基本块
-    cout << "DOUBLE_JUMP_" << branch.true_bb->name + 1 << ":" << endl << "  j " << branch.true_bb->name + 1 << endl;
-
+    cout << "  bnez t0, " << branch.true_bb->name + 1 << endl;
+    cout << "  j " << branch.false_bb->name + 1 << endl;
 }
 
 // 视需求自行实现
