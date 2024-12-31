@@ -331,59 +331,48 @@ void Visit(const koopa_raw_store_t &store)
 void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value) 
 {
   // 将运算数存入 t0 和 t1
-  // 处理 binary.lhs
-  switch (binary.lhs->kind.tag) 
-  {
-    case KOOPA_RVT_INTEGER:
-      cout << "  li t0, " << binary.lhs->kind.data.integer.value << endl;
-      break;
-    case KOOPA_RVT_FUNC_ARG_REF:
-      {
-        const auto& index = binary.lhs->kind.data.func_arg_ref.index;
-        if (index < 8) 
+    // 处理 binary.lhs
+    switch (binary.lhs->kind.tag) 
+    {
+        case KOOPA_RVT_INTEGER:
+            cout << "  li t0, " << binary.lhs->kind.data.integer.value << "\n";
+            break;
+        case KOOPA_RVT_FUNC_ARG_REF: 
         {
-          cout << "  mv t0, a" << index << endl;
-        } 
-        else 
-        {
-          cout << "  li t6, " << stack_frame.length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
+            const auto& index = binary.lhs->kind.data.func_arg_ref.index;
+            cout << (index < 8 
+                ? "  mv t0, a" + to_string(index)
+                : "  lw t0, " + to_string(stack_frame.length + (index - 8) * 4) + "(sp)") << "\n";
+            break;
         }
-      }
-      break;
-    case KOOPA_RVT_GLOBAL_ALLOC:
-      cout << "  la t6, " << binary.lhs->name+1 << endl << "  lw t0, 0(t6)" << endl;
-      break;
-    default:
-      cout << "  li t6, " << stack_frame.loc[binary.lhs] << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
-      break;
-  }
+        case KOOPA_RVT_GLOBAL_ALLOC:
+            cout << "  la t6, " << binary.lhs->name + 1 << "\n  lw t0, 0(t6)\n";
+            break;
+        default:
+            cout << "  lw t0, " << stack_frame.loc[binary.lhs] << "(sp)\n";
+    }
 
-  // 处理 binary.rhs
-  switch (binary.rhs->kind.tag) 
-  {
-    case KOOPA_RVT_INTEGER:
-      cout << "  li t1, " << binary.rhs->kind.data.integer.value << endl;
-      break;
-    case KOOPA_RVT_FUNC_ARG_REF:
-      {
-        const auto& index = binary.rhs->kind.data.func_arg_ref.index;
-        if (index < 8) 
+    // 处理 binary.rhs
+    switch (binary.rhs->kind.tag) 
+    {
+        case KOOPA_RVT_INTEGER:
+            cout << "  li t1, " << binary.rhs->kind.data.integer.value << "\n";
+            break;
+        case KOOPA_RVT_FUNC_ARG_REF: 
         {
-          cout << "  mv t1, a" << index << endl;
-        } 
-        else 
-        {
-          cout << "  li t6, " << stack_frame.length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw t1, 0(t6)" << endl;
+            const auto& index = binary.rhs->kind.data.func_arg_ref.index;
+            cout << (index < 8 
+                ? "  mv t1, a" + to_string(index)
+                : "  lw t1, " + to_string(stack_frame.length + (index - 8) * 4) + "(sp)") << "\n";
+            break;
         }
-      }
-      break;
-    case KOOPA_RVT_GLOBAL_ALLOC:
-      cout << "  la t6, " << binary.rhs->name+1 << endl << "  lw t1, 0(t6)" << endl;
-      break;
-    default:
-      cout << "  li t6, " << stack_frame.loc[binary.rhs] << endl << "  add t6, t6, sp" << endl << "  lw t1, 0(t6)" << endl;
-      break;
-  }
+        case KOOPA_RVT_GLOBAL_ALLOC:
+            cout << "  la t6, " << binary.rhs->name + 1 << "\n  lw t1, 0(t6)\n";
+            break;
+        default:
+            cout << "  lw t1, " << stack_frame.loc[binary.rhs] << "(sp)\n";
+    }
+
 
   // 进行运算，结果存入t0
   static const unordered_map<koopa_raw_binary_op_t, vector<string>> opInstructions = 
@@ -417,19 +406,14 @@ void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value)
   } 
   // 将 t0 中的结果存入栈
   // 若有返回值则将 t0 中的结果存入栈
-    // 若有返回值则将 a0 中的结果存入栈
+     // 存储结果
   if(value->ty->tag != KOOPA_RTT_UNIT) 
   {
-    stack_frame.loc[value] = to_string(stack_frame.used);
-    stack_frame.used += 4;
-    if (value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
-    {
-      cout << "  la t6, " << value->name+1 << endl << "  sw t0, 0(t6)" << endl;
-    } 
-    else 
-    {
-      cout << "  li t6, " << stack_frame.loc[value] << endl << "  add t6, t6, sp" << endl << "  sw t0, 0(t6)" << endl;
-    }
+      stack_frame.loc[value] = to_string(stack_frame.used);
+      stack_frame.used += 4;
+      cout << (value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC
+          ? "  la t6, " + string(value->name + 1) + "\n  sw t0, 0(t6)"
+          : "  sw t0, " + stack_frame.loc[value] + "(sp)") << "\n";
   }
 }
 
