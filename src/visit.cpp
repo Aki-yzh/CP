@@ -255,6 +255,7 @@ void Visit(const koopa_raw_global_alloc_t &global_alloc, const koopa_raw_value_t
 //---
 
 // 处理 load 指令，将源操作数加载到 t0 寄存器，并存储结果到栈中
+// 处理 load 指令，将源操作数加载到 t0 寄存器，并存储结果到栈中
 void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value) 
 {
   // 将源操作数加载到 t0 寄存器
@@ -272,32 +273,35 @@ void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value)
         } 
         else 
         {
-          cout << "  li t6, " << stack_frame.length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
+         cout << "  lw t0, " << stack_frame.length + (index - 8) * 4 << "(sp)\n";
         }
       }
       break;
     case KOOPA_RVT_GLOBAL_ALLOC:
-      cout << "  la t6, " << load.src->name+1 << endl << "  lw t0, 0(t6)" << endl;
+       cout << "  la t6, " << load.src->name + 1 << endl
+                 << "  lw t0, 0(t6)\n";
       break;
     default:
-      cout << "  li t6, " << stack_frame.loc[load.src] << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
+      cout << "  lw t0, " << stack_frame.loc[load.src] << "(sp)\n";
       break;
   }
 
-  // 若有返回值则保存到栈里
-  if (value->ty->tag != KOOPA_RTT_UNIT) 
-  {
-    stack_frame.loc[value] = to_string(stack_frame.used);
-    stack_frame.used += 4;
-    if (value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
+    // 若有返回值则保存到栈里
+    if (value->ty->tag != KOOPA_RTT_UNIT) 
     {
-      cout << "  la t6, " << value->name+1 << endl << "  sw t0, 0(t6)" << endl;
-    } 
-    else 
-    {
-      cout << "  li t6, " << stack_frame.loc[value] << endl << "  add t6, t6, sp" << endl << "  sw t0, 0(t6)" << endl;
+        stack_frame.loc[value] = to_string(stack_frame.used);
+        stack_frame.used += 4;
+        
+        if (value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
+        {
+            cout << "  la t6, " << value->name + 1 << endl
+                 << "  sw t0, 0(t6)\n";
+        } 
+        else 
+        {
+            cout << "  sw t0, " << stack_frame.loc[value] << "(sp)\n";
+        }
     }
-  }
 }
 
 // 处理 store 指令，将源操作数存储到目标地址
