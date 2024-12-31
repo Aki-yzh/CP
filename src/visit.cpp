@@ -76,42 +76,44 @@ void Visit(const koopa_raw_function_t &func)
     stack_frame = StackFrame();
     
     // 计算栈空间需求
-    constexpr int WORD_SIZE = 4;
-    constexpr int MAX_REG_ARGS = 8;
-    int locals = 0;
-    bool need_ra = false;
-    int max_args = 0;
+   
+    int locals = 0; // 局部变量空间
+    bool need_ra = false;// 返回地址标记
+    int max_args = 0; // 参数空间
 
     // 遍历统计
-    for (size_t i = 0; i < func->bbs.len; ++i) {
+    for (size_t i = 0; i < func->bbs.len; ++i) 
+    {
         const auto& bb = reinterpret_cast<koopa_raw_basic_block_t>(func->bbs.buffer[i]);
-        for (size_t j = 0; j < bb->insts.len; ++j) {
+        for (size_t j = 0; j < bb->insts.len; ++j) 
+        {
             auto inst = reinterpret_cast<koopa_raw_value_t>(bb->insts.buffer[j]);
             locals += (inst->ty->tag != KOOPA_RTT_UNIT);
             
-            if (inst->kind.tag == KOOPA_RVT_CALL) {
+            if (inst->kind.tag == KOOPA_RVT_CALL) 
+            {
                 need_ra = true;
-                max_args = max(max_args, int(inst->kind.data.call.args.len) - MAX_REG_ARGS);
+                max_args = max(max_args, int(inst->kind.data.call.args.len) - 8);
             }
         }
     }
 
     // 计算栈帧大小 (16字节对齐)
     int total_words = locals + need_ra + max(0, max_args);
-    stack_frame.length = (total_words * WORD_SIZE + 15) & ~15;
-    stack_frame.used = max(0, max_args) * WORD_SIZE;
+    stack_frame.length = (total_words * 4 + 15) & ~15;
+    stack_frame.used = max(0, max_args) * 4;
     stack_frame.saved_ra = need_ra;
 
     // 分配栈空间
-    if (stack_frame.length > 0) {
+    if (stack_frame.length > 0) 
+    {
         cout << "  addi sp, sp, " << -stack_frame.length << "\n";
     }
-
     // 保存返回地址
-    if (need_ra) {
-        cout << "  sw ra, " << stack_frame.length - WORD_SIZE << "(sp)\n";
+    if (need_ra) 
+    {
+        cout << "  sw ra, " << stack_frame.length - 4 << "(sp)\n";
     }
-
     // 访问基本块
     Visit(func->bbs);
     cout << "\n";
