@@ -532,8 +532,6 @@ void Visit(const koopa_raw_branch_t &branch)
 
 
 
-
-
 // 访问 call 指令
 void Visit(const koopa_raw_call_t &call, const koopa_raw_value_t &value) 
 {
@@ -541,84 +539,42 @@ void Visit(const koopa_raw_call_t &call, const koopa_raw_value_t &value)
   for (size_t i = 0; i < call.args.len; ++i) 
   {
     auto arg = reinterpret_cast<koopa_raw_value_t>(call.args.buffer[i]);
-    if (arg->kind.tag == KOOPA_RVT_INTEGER) 
+    string reg = (i < 8) ? "a" + to_string(i) : "t0";
+    switch (arg->kind.tag) 
     {
-      if (i < 8) 
-      {
-        cout << "  li a" << i << ", " << arg->kind.data.integer.value << endl;
-      } 
-      else 
-      {
-        cout << "  li t0, " << arg->kind.data.integer.value << endl;
-        cout << "  li t6, " << (i - 8) * 4 << endl;
-        cout << "  add t6, t6, sp" << endl;
-        cout << "  sw t0, 0(t6)" << endl;
-      }
-    } 
-    else if (arg->kind.tag == KOOPA_RVT_FUNC_ARG_REF) 
-    {
-      const auto& index = arg->kind.data.func_arg_ref.index;
-      if (index < 8) 
-      {
-        if (i < 8) 
+      case KOOPA_RVT_INTEGER:
+        cout << "  li " << reg << ", " << arg->kind.data.integer.value << endl;
+        break;
+      case KOOPA_RVT_FUNC_ARG_REF:
         {
-          cout << "  mv a" << i << ", a" << index << endl;
-        } 
-        else 
-        {
-          cout << "  mv t0, a" << index << endl;
-          cout << "  li t6, " << (i - 8) * 4 << endl;
-          cout << "  add t6, t6, sp" << endl;
-          cout << "  sw t0, 0(t6)" << endl;
+          const auto& index = arg->kind.data.func_arg_ref.index;
+          if (index < 8) 
+          {
+            cout << "  mv " << reg << ", a" << index << endl;
+          } 
+          else 
+          {
+            cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
+            cout << "  add t6, t6, sp" << endl;
+            cout << "  lw " << reg << ", 0(t6)" << endl;
+          }
         }
-      } 
-      else 
-      {
-        cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
+        break;
+      case KOOPA_RVT_GLOBAL_ALLOC:
+        cout << "  la t6, " << arg->name+1 << endl;
+        cout << "  lw " << reg << ", 0(t6)" << endl;
+        break;
+      default:
+        cout << "  li t6, " << loc[arg] << endl;
         cout << "  add t6, t6, sp" << endl;
-        cout << "  lw t0, 0(t6)" << endl;
-        if (i < 8) 
-        {
-          cout << "  mv a" << i << ", t0" << endl;
-        } 
-        else 
-        {
-          cout << "  li t6, " << (i - 8) * 4 << endl;
-          cout << "  add t6, t6, sp" << endl;
-          cout << "  sw t0, 0(t6)" << endl;
-        }
-      }
-    } 
-    else if (arg->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
+        cout << "  lw " << reg << ", 0(t6)" << endl;
+        break;
+    }
+    if (i >= 8) 
     {
-      cout << "  la t6, " << arg->name+1 << endl;
-      cout << "  lw t0, 0(t6)" << endl;
-      if (i < 8) 
-      {
-        cout << "  mv a" << i << ", t0" << endl;
-      } 
-      else 
-      {
-        cout << "  li t6, " << (i - 8) * 4 << endl;
-        cout << "  add t6, t6, sp" << endl;
-        cout << "  sw t0, 0(t6)" << endl;
-      }
-    } 
-    else 
-    {
-      cout << "  li t6, " << loc[arg] << endl;
+      cout << "  li t6, " << (i - 8) * 4 << endl;
       cout << "  add t6, t6, sp" << endl;
-      cout << "  lw t0, 0(t6)" << endl;
-      if (i < 8) 
-      {
-        cout << "  mv a" << i << ", t0" << endl;
-      } 
-      else 
-      {
-        cout << "  li t6, " << (i - 8) * 4 << endl;
-        cout << "  add t6, t6, sp" << endl;
-        cout << "  sw t0, 0(t6)" << endl;
-      }
+      cout << "  sw t0, 0(t6)" << endl;
     }
   }
 
@@ -626,7 +582,7 @@ void Visit(const koopa_raw_call_t &call, const koopa_raw_value_t &value)
   cout << "  call " << call.callee->name+1 << endl;
 
   // 若有返回值则将 a0 中的结果存入栈
-  if(value->ty->tag != KOOPA_RTT_UNIT) 
+  if (value->ty->tag != KOOPA_RTT_UNIT) 
   {
     loc[value] = stack_frame_used;
     stack_frame_used += 4;
