@@ -340,54 +340,10 @@ void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value)
 
 // 处理 store 指令，将源操作数存储到目标地址
 void Visit(const koopa_raw_store_t &store) 
-
 {
-  // 将源操作数加载到 t0 寄存器
-  if (store.value->kind.tag == KOOPA_RVT_INTEGER) 
-  {
-    cout << "  li t0, " << store.value->kind.data.integer.value << endl;
-  } 
-  else if (store.value->kind.tag == KOOPA_RVT_FUNC_ARG_REF) 
-  {
-    const auto& index = store.value->kind.data.func_arg_ref.index;
-    if (index < 8) 
-    {
-      cout << "  mv t0, a" << index << endl;
-    } 
-    else 
-    {
-      cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
-      cout << "  add t6, t6, sp" << endl;
-      cout << "  lw t0, 0(t6)" << endl;
-    }
-  } 
-  else if (store.value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
-  {
-    cout << "  la t6, " << store.value->name+1 << endl;
-    cout << "  lw t0, 0(t6)" << endl;
-  } 
-  else 
-  {
-    // 处理 KOOPA_RVT_LOAD, KOOPA_RVT_BINARY 之类的有返回值的语句
-    cout << "  li t6, " << loc[store.value] << endl;
-    cout << "  add t6, t6, sp" << endl;
-    cout << "  lw t0, 0(t6)" << endl;
-  }
-
-  // 将 t0 中的值存储到目标地址
-  if (store.dest->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
-  {
-    cout << "  la t6, " << store.dest->name+1 << endl;
-    cout << "  sw t0, 0(t6)" << endl;
-  } 
-  else 
-  {
-    cout << "  li t6, " << loc[store.dest] << endl;
-    cout << "  add t6, t6, sp" << endl;
-    cout << "  sw t0, 0(t6)" << endl;
-  }
+  load2reg(store.value, "t0");
+  save2mem(store.dest, "t0");
 }
-
 
 // 处理 binary 指令，执行二元运算并将结果存储到栈中
 void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value) 
