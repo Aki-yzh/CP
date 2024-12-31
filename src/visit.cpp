@@ -95,7 +95,7 @@ void Visit(const koopa_raw_function_t &func)
       if(inst->kind.tag == KOOPA_RVT_CALL)
       {
         return_addr = 1;
-        arg_var = std::max(arg_var, std::max(0, int(inst->kind.data.call.args.len) - 8));
+        arg_var = max(arg_var, max(0, int(inst->kind.data.call.args.len) - 8));
       }
     }
   }
@@ -107,24 +107,27 @@ void Visit(const koopa_raw_function_t &func)
   //分配栈空间
 
 
-  if (stack_frame_length != 0) {
-    std::cout << "  li t0, " << -stack_frame_length << std::endl;
-    std::cout << "  add sp, sp, t0" << std::endl;
+  if (stack_frame_length != 0) 
+  {
+    cout << "  li t0, " << -stack_frame_length << endl;
+    cout << "  add sp, sp, t0" << endl;
   }
 
-  if(return_addr) {
-    std::cout << "  li t0, " << stack_frame_length - 4 << std::endl;
-    std::cout << "  add t0, t0, sp" << std::endl;
-    std::cout << "  sw ra, 0(t0)" << std::endl;
+  if(return_addr)
+   {
+    cout << "  li t0, " << stack_frame_length - 4 << endl;
+    cout << "  add t0, t0, sp" << endl;
+    cout << "  sw ra, 0(t0)" << endl;
     saved_ra = 1;
   }
-  else {
+  else 
+  {
     saved_ra = 0;
   }
 
   // 访问所有基本块
   Visit(func->bbs);
-  std::cout << std::endl;
+  cout << endl;
 }
 
 // 访问基本块
