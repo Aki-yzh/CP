@@ -55,6 +55,7 @@ void Visit(const koopa_raw_slice_t &slice)
     }
   }
 }
+
 //--------
 // 访问函数
 void Visit(const koopa_raw_function_t &func) 
@@ -203,7 +204,33 @@ void Visit(const koopa_raw_jump_t &jump)
 {
   cout << "  j " << jump.target->name+1 << endl;
 }
-
+// 访问 return 指令
+void Visit(const koopa_raw_return_t &ret) 
+{
+  // 返回值存入 a0
+  if(ret.value != nullptr) 
+  {
+    if (ret.value->kind.tag == KOOPA_RVT_INTEGER) 
+    {
+      cout << "  li a0, " << ret.value->kind.data.integer.value << endl;
+    }
+    else 
+    {
+      cout << "  li t6, " << loc[ret.value] << endl<< "  add t6, t6, sp" << endl << "  lw a0, 0(t6)" << endl;
+    }
+  }
+  // 恢复 ra 寄存器
+  if (saved_ra) 
+  {
+    cout << "  li t0, " << stack_frame_length - 4 << endl << "  add t0, t0, sp" << endl << "  lw ra, 0(t0)" << endl;
+  }
+  // 恢复栈帧
+  if (stack_frame_length != 0) 
+  {
+    cout << "  li t0, " << stack_frame_length << endl << "  add sp, sp, t0" << endl;
+  }
+  cout << "  ret" << endl;
+}
 //---
 
 
@@ -258,33 +285,7 @@ static void save2mem(const koopa_raw_value_t &value, const std::string &reg) {
 
 
 
-// 访问 return 指令
-void Visit(const koopa_raw_return_t &ret) 
-{
-  // 返回值存入 a0
-  if(ret.value != nullptr) 
-  {
-    if (ret.value->kind.tag == KOOPA_RVT_INTEGER) 
-    {
-      cout << "  li a0, " << ret.value->kind.data.integer.value << endl;
-    }
-    else 
-    {
-      cout << "  li t6, " << loc[ret.value] << endl<< "  add t6, t6, sp" << endl << "  lw a0, 0(t6)" << endl;
-    }
-  }
-  // 恢复 ra 寄存器
-  if (saved_ra) 
-  {
-    cout << "  li t0, " << stack_frame_length - 4 << endl << "  add t0, t0, sp" << endl << "  lw ra, 0(t0)" << endl;
-  }
-  // 恢复栈帧
-  if (stack_frame_length != 0) 
-  {
-    cout << "  li t0, " << stack_frame_length << endl << "  add sp, sp, t0" << endl;
-  }
-  cout << "  ret" << endl;
-}
+
 
 
 // 处理 load 指令，将源操作数加载到 t0 寄存器，并存储结果到栈中
