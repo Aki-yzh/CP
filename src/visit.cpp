@@ -231,62 +231,30 @@ void Visit(const koopa_raw_return_t &ret)
   }
   cout << "  ret" << endl;
 }
-//---
-
-
-
-// 将标号为 reg 的寄存器中的value的值保存在内存中
-static void save2mem(const koopa_raw_value_t &value, const std::string &reg) {
-  assert(value->kind.tag != KOOPA_RVT_INTEGER);
-  if (value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) {
-    // la t6, var
-    std::cout << "  la t6, " << value->name+1 << std::endl;
-    // sw t0, 0(t6)
-    std::cout << "  sw " << reg << ", 0(t6)" << std::endl;
+// 访问 global alloc 指令
+void Visit(const koopa_raw_global_alloc_t &global_alloc, const koopa_raw_value_t &value) 
+{
+ cout << "  .data" <<endl << "  .globl " << value->name + 1 <<endl << value->name + 1 << ":" <<endl;
+  switch (global_alloc.init->kind.tag) 
+  {
+    case KOOPA_RVT_ZERO_INIT:
+      // 初始化为 0
+     cout << "  .zero 4" <<endl;
+     break;
+    case KOOPA_RVT_INTEGER:
+      // 初始化为 int
+     cout << "  .word " << global_alloc.init->kind.data.integer.value <<endl;
+     break;
+    default:
+      // 处理其他可能的初始化类型
+     cerr << "Unsupported initialization type" <<endl;
+     break;
   }
-  else {
-    std::cout << "  li t6, " << loc[value] << std::endl;
-    std::cout << "  add t6, t6, sp" << std::endl;
-    std::cout << "  sw " << reg << ", 0(t6)" << std::endl;
-  }
+
+ cout <<endl;
 }
 
-
-    static void load2reg(const koopa_raw_value_t &value, const std::string &reg) {
-      // std::cout<<value->kind.tag<<reg<<std::endl;
-      if (value->kind.tag == KOOPA_RVT_INTEGER) {
-        std::cout << "  li " << reg << ", " << value->kind.data.integer.value << std::endl;
-      }
-      else if (value->kind.tag == KOOPA_RVT_FUNC_ARG_REF) {
-        // 函数参数
-        const auto& index = value->kind.data.func_arg_ref.index;
-        if (index < 8) {
-          std::cout << "  mv " << reg << ", a" << index << std::endl;
-        }
-        else {
-          std::cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << std::endl;
-          std::cout << "  add t6, t6, sp" << std::endl;
-          std::cout << "  lw " << reg << ", 0(t6)" << std::endl;
-        }
-      }
-      else if (value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) {
-          // la t6, var
-          std::cout << "  la t6, " << value->name+1 << std::endl;
-          // lw t0, 0(t6)
-          std::cout << "  lw " << reg << ", 0(t6)" << std::endl;
-      }
-      else {
-        // value->kind.tag = KOOPA_RVT_LOAD, KOOPA_RVT_BINARY 之类的有返回值的语句
-        std::cout << "  li t6, " << loc[value] << std::endl;
-        std::cout << "  add t6, t6, sp" << std::endl;
-        std::cout << "  lw " << reg << ", 0(t6)" << std::endl;
-      }
-    }
-
-
-
-
-
+//---
 
 // 处理 load 指令，将源操作数加载到 t0 寄存器，并存储结果到栈中
 void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value) 
@@ -335,7 +303,6 @@ void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value)
     }
   }
 }
-
 
 
 // 处理 store 指令，将源操作数存储到目标地址
@@ -387,7 +354,6 @@ void Visit(const koopa_raw_store_t &store)
     cout << "  sw t0, 0(t6)" << endl;
   }
 }
-
 
 // 处理 binary 指令，执行二元运算并将结果存储到栈中
 void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value) 
@@ -509,7 +475,36 @@ void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value)
 void Visit(const koopa_raw_branch_t &branch) 
 {
     // 将条件值加载到寄存器 t0 中
-    load2reg(branch.cond, "t0");
+    if (branch.cond->kind.tag == KOOPA_RVT_INTEGER) 
+    {
+        cout << "  li t0, " << branch.cond->kind.data.integer.value << endl;
+    } 
+    else if (branch.cond->kind.tag == KOOPA_RVT_FUNC_ARG_REF) 
+    {
+        const auto& index = branch.cond->kind.data.func_arg_ref.index;
+        if (index < 8) 
+        {
+            cout << "  mv t0, a" << index << endl;
+        } 
+        else 
+        {
+            cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
+            cout << "  add t6, t6, sp" << endl;
+            cout << "  lw t0, 0(t6)" << endl;
+        }
+    } 
+    else if (branch.cond->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
+    {
+        cout << "  la t6, " << branch.cond->name+1 << endl;
+        cout << "  lw t0, 0(t6)" << endl;
+    }
+    else 
+    {
+       
+        cout << "  li t6, " << loc[branch.cond] << endl;
+        cout << "  add t6, t6, sp" << endl;
+        cout << "  lw t0, 0(t6)" << endl;
+    }
 
     // 根据条件跳转到相应的基本块
     cout << "  bnez t0, DOUBLE_JUMP_" << branch.true_bb->name + 1 << endl << "  j " << branch.false_bb->name + 1 << endl;
@@ -525,44 +520,114 @@ void Visit(const koopa_raw_branch_t &branch)
 
 
 
-// 访问 global alloc 指令
-void Visit(const koopa_raw_global_alloc_t &global_alloc, const koopa_raw_value_t &value) {
-  std::cout << "  .data" << std::endl;
-  std::cout << "  .globl " << value->name+1 << std::endl;
-  std::cout << value->name+1 << ":" << std::endl;
-  if (global_alloc.init->kind.tag == KOOPA_RVT_ZERO_INIT) {
-    // 初始化为 0
-    std::cout << "  .zero 4" << std::endl;
-  }
-  else if (global_alloc.init->kind.tag == KOOPA_RVT_INTEGER) {
-    // 初始化为 int
-    std::cout << "  .word " << global_alloc.init->kind.data.integer.value << std::endl;
-  }
-  std::cout << std::endl;
-}
+
 
 // 访问 call 指令
-void Visit(const koopa_raw_call_t &call, const koopa_raw_value_t &value) {
+void Visit(const koopa_raw_call_t &call, const koopa_raw_value_t &value) 
+{
   // 处理参数
-  for (size_t i = 0; i < call.args.len; ++i) {
+  for (size_t i = 0; i < call.args.len; ++i) 
+  {
     auto arg = reinterpret_cast<koopa_raw_value_t>(call.args.buffer[i]);
-    if (i < 8) {
-      load2reg(arg, "a" + std::to_string(i));
-    }
-    else {
-      load2reg(arg, "t0");
-      std::cout << "  li t6, " << (i - 8) * 4 << std::endl;
-      std::cout << "  add t6, t6, sp" << std::endl;
-      std::cout << "  sw t0, 0(t6)" << std::endl;
+    if (arg->kind.tag == KOOPA_RVT_INTEGER) 
+    {
+      if (i < 8) 
+      {
+        cout << "  li a" << i << ", " << arg->kind.data.integer.value << endl;
+      } 
+      else 
+      {
+        cout << "  li t0, " << arg->kind.data.integer.value << endl;
+        cout << "  li t6, " << (i - 8) * 4 << endl;
+        cout << "  add t6, t6, sp" << endl;
+        cout << "  sw t0, 0(t6)" << endl;
+      }
+    } 
+    else if (arg->kind.tag == KOOPA_RVT_FUNC_ARG_REF) 
+    {
+      const auto& index = arg->kind.data.func_arg_ref.index;
+      if (index < 8) 
+      {
+        if (i < 8) 
+        {
+          cout << "  mv a" << i << ", a" << index << endl;
+        } 
+        else 
+        {
+          cout << "  mv t0, a" << index << endl;
+          cout << "  li t6, " << (i - 8) * 4 << endl;
+          cout << "  add t6, t6, sp" << endl;
+          cout << "  sw t0, 0(t6)" << endl;
+        }
+      } 
+      else 
+      {
+        cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
+        cout << "  add t6, t6, sp" << endl;
+        cout << "  lw t0, 0(t6)" << endl;
+        if (i < 8) 
+        {
+          cout << "  mv a" << i << ", t0" << endl;
+        } 
+        else 
+        {
+          cout << "  li t6, " << (i - 8) * 4 << endl;
+          cout << "  add t6, t6, sp" << endl;
+          cout << "  sw t0, 0(t6)" << endl;
+        }
+      }
+    } 
+    else if (arg->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
+    {
+      cout << "  la t6, " << arg->name+1 << endl;
+      cout << "  lw t0, 0(t6)" << endl;
+      if (i < 8) 
+      {
+        cout << "  mv a" << i << ", t0" << endl;
+      } 
+      else 
+      {
+        cout << "  li t6, " << (i - 8) * 4 << endl;
+        cout << "  add t6, t6, sp" << endl;
+        cout << "  sw t0, 0(t6)" << endl;
+      }
+    } 
+    else 
+    {
+      cout << "  li t6, " << loc[arg] << endl;
+      cout << "  add t6, t6, sp" << endl;
+      cout << "  lw t0, 0(t6)" << endl;
+      if (i < 8) 
+      {
+        cout << "  mv a" << i << ", t0" << endl;
+      } 
+      else 
+      {
+        cout << "  li t6, " << (i - 8) * 4 << endl;
+        cout << "  add t6, t6, sp" << endl;
+        cout << "  sw t0, 0(t6)" << endl;
+      }
     }
   }
+
   // call half
-  std::cout << "  call " << call.callee->name+1 << std::endl;
+  cout << "  call " << call.callee->name+1 << endl;
 
   // 若有返回值则将 a0 中的结果存入栈
-  if(value->ty->tag != KOOPA_RTT_UNIT) {
+  if(value->ty->tag != KOOPA_RTT_UNIT) 
+  {
     loc[value] = stack_frame_used;
     stack_frame_used += 4;
-    save2mem(value, "a0");
+    if (value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
+    {
+      cout << "  la t6, " << value->name+1 << endl;
+      cout << "  sw a0, 0(t6)" << endl;
+    } 
+    else 
+    {
+      cout << "  li t6, " << loc[value] << endl;
+      cout << "  add t6, t6, sp" << endl;
+      cout << "  sw a0, 0(t6)" << endl;
+    }
   }
 }
