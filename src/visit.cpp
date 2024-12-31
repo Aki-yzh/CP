@@ -11,7 +11,8 @@ using namespace std;
 
 
 // 栈帧信息结构体
-struct StackFrame {
+struct StackFrame 
+{
     int length; // 栈帧长度
     int used;   // 已经使用的栈帧长度
     bool saved_ra; // 当前正在访问的函数有没有保存ra
@@ -485,7 +486,7 @@ void Visit(const koopa_raw_call_t &call, const koopa_raw_value_t &value)
             default:
                 cout << "  lw " << reg << ", " << stack_frame.loc[arg] << "(sp)\n";
         }
-
+        // 存储溢出参数
         if (i >= 8) 
         {
             cout << "  sw t0, " << (i - 8) * 4 << "(sp)\n";
