@@ -17,6 +17,12 @@ struct StackFrame {
     int used;   // 已经使用的栈帧长度
     bool saved_ra; // 当前正在访问的函数有没有保存ra
     StackFrame() : length(0), used(0), saved_ra(false) {}
+    // 添加计算栈位置的函数
+    string get_stack_loc(koopa_raw_value_t value) {
+        // 分配新的栈位置
+        used += 4;
+        return to_string(used - 4);
+    }
 };
 
 static StackFrame stack_frame;
@@ -221,7 +227,7 @@ void Visit(const koopa_raw_return_t &ret)
     }
     else 
     {
-      cout << "  li t6, " << loc[ret.value] << endl<< "  add t6, t6, sp" << endl << "  lw a0, 0(t6)" << endl;
+      cout << "  li t6, " << stack_frame.get_stack_loc(ret.value) << endl<< "  add t6, t6, sp" << endl << "  lw a0, 0(t6)" << endl;
     }
   }
   // 恢复 ra 寄存器
