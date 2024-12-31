@@ -291,21 +291,27 @@ static void save2mem(const koopa_raw_value_t &value, const std::string &reg) {
 void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value) 
 {
   // 将源操作数加载到 t0 寄存器
-  if (load.src->kind.tag == KOOPA_RVT_INTEGER) {
+  if (load.src->kind.tag == KOOPA_RVT_INTEGER) 
+  {
     cout << "  li t0, " << load.src->kind.data.integer.value << endl;
-  } else if (load.src->kind.tag == KOOPA_RVT_FUNC_ARG_REF) {
+  } 
+  else if (load.src->kind.tag == KOOPA_RVT_FUNC_ARG_REF) 
+  {
     const auto& index = load.src->kind.data.func_arg_ref.index;
-    if (index < 8) {
+    if (index < 8) 
+    {
       cout << "  mv t0, a" << index << endl;
-    } else {
+    } 
+    else 
+    {
       cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
       cout << "  add t6, t6, sp" << endl;
       cout << "  lw t0, 0(t6)" << endl;
     }
-  } else if (load.src->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) {
-    cout << "  la t6, " << load.src->name+1 << endl;
-    cout << "  lw t0, 0(t6)" << endl;
-  } else {
+  } 
+
+  else 
+  {
     cout << "  li t6, " << loc[load.src] << endl;
     cout << "  add t6, t6, sp" << endl;
     cout << "  lw t0, 0(t6)" << endl;
