@@ -388,13 +388,73 @@ void Visit(const koopa_raw_store_t &store)
   }
 }
 
+
 // 处理 binary 指令，执行二元运算并将结果存储到栈中
 void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value) 
 {
   // 将运算数存入 t0 和 t1
-  load2reg(binary.lhs, "t0");
-  load2reg(binary.rhs, "t1");
-  
+
+  // 处理 binary.lhs
+  if (binary.lhs->kind.tag == KOOPA_RVT_INTEGER) 
+  {
+    cout << "  li t0, " << binary.lhs->kind.data.integer.value << endl;
+  } 
+  else if (binary.lhs->kind.tag == KOOPA_RVT_FUNC_ARG_REF) 
+  {
+    const auto& index = binary.lhs->kind.data.func_arg_ref.index;
+    if (index < 8) 
+    {
+      cout << "  mv t0, a" << index << endl;
+    } 
+    else 
+    {
+      cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
+      cout << "  add t6, t6, sp" << endl;
+      cout << "  lw t0, 0(t6)" << endl;
+    }
+  } 
+  else if (binary.lhs->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
+  {
+    cout << "  la t6, " << binary.lhs->name+1 << endl;
+    cout << "  lw t0, 0(t6)" << endl;
+  } 
+  else 
+  {
+    cout << "  li t6, " << loc[binary.lhs] << endl;
+    cout << "  add t6, t6, sp" << endl;
+    cout << "  lw t0, 0(t6)" << endl;
+  }
+
+  // 处理 binary.rhs
+  if (binary.rhs->kind.tag == KOOPA_RVT_INTEGER) 
+  {
+    cout << "  li t1, " << binary.rhs->kind.data.integer.value << endl;
+  } 
+  else if (binary.rhs->kind.tag == KOOPA_RVT_FUNC_ARG_REF) 
+  {
+    const auto& index = binary.rhs->kind.data.func_arg_ref.index;
+    if (index < 8) 
+    {
+      cout << "  mv t1, a" << index << endl;
+    } 
+    else 
+    {
+      cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
+      cout << "  add t6, t6, sp" << endl;
+      cout << "  lw t1, 0(t6)" << endl;
+    }
+  } 
+  else if (binary.rhs->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
+  {
+    cout << "  la t6, " << binary.rhs->name+1 << endl;
+    cout << "  lw t1, 0(t6)" << endl;
+  } 
+  else 
+  {
+    cout << "  li t6, " << loc[binary.rhs] << endl;
+    cout << "  add t6, t6, sp" << endl;
+    cout << "  lw t1, 0(t6)" << endl;
+  }
   // 进行运算，结果存入t0
   static const unordered_map<koopa_raw_binary_op_t, vector<string>> opInstructions = 
   {
@@ -427,11 +487,22 @@ void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value)
   } 
   // 将 t0 中的结果存入栈
   // 若有返回值则将 t0 中的结果存入栈
+    // 若有返回值则将 a0 中的结果存入栈
   if(value->ty->tag != KOOPA_RTT_UNIT) 
   {
     loc[value] = stack_frame_used;
     stack_frame_used += 4;
-    save2mem(value, "t0");
+    if (value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
+    {
+      cout << "  la t6, " << value->name+1 << endl;
+      cout << "  sw t0, 0(t6)" << endl;
+    } 
+    else 
+    {
+      cout << "  li t6, " << loc[value] << endl;
+      cout << "  add t6, t6, sp" << endl;
+      cout << "  sw t0, 0(t6)" << endl;
+    }
   }
 }
 // 访问 br 指令
