@@ -307,12 +307,14 @@ class FuncFParamAST : public BaseAST
     return 0;
   }
 };
-class FuncExpAST : public BaseAST {
+class FuncExpAST : public BaseAST 
+{
 public:
     string ident;
     unique_ptr<vector<unique_ptr<BaseAST>>> func_r_param_list;
     
-    void Dump() const override {
+    void Dump() const override 
+    {
         auto func = query_symbol(ident);
         // 必须为全局符号
         assert(func.first == "sbtb_0_");
@@ -323,16 +325,20 @@ public:
         vector<int> params;
         params.reserve(func_r_param_list->size());
         
-        for(const auto& exp : *func_r_param_list) {
+        for(const auto& exp : *func_r_param_list) 
+        {
             exp->Dump();
             params.push_back(koopacnt-1);
         }
 
         // 输出函数调用
         // 如果是 int 函数，把返回值保存下来
-        if(func.second->type == SYM_TYPE_FUNCINT) {
+        if(func.second->type == SYM_TYPE_FUNCINT) 
+        {
             cout << "  %" << koopacnt << " = ";
-        } else {
+        } 
+        else 
+        {
             cout << "  ";
         }
         
@@ -340,18 +346,21 @@ public:
         cout << "call @" << ident << "(";
         
         // 输出参数列表
-        for(size_t i = 0; i < params.size(); ++i) {
+        for(size_t i = 0; i < params.size(); ++i) 
+        {
             cout << "%" << params[i];
             if(i < params.size() - 1) cout << ", ";
         }
         cout << ")\n";
 
-        if(func.second->type == SYM_TYPE_FUNCINT) {
+        if(func.second->type == SYM_TYPE_FUNCINT) 
+        {
             koopacnt++;
         }
     }
     
-    int EVa() const override {
+    int EVa() const override 
+    {
         return 0;
     }
 };
@@ -362,68 +371,60 @@ public:
 
 class FuncDefAST : public BaseAST 
 {
- public:
-  string func_type;
-  string ident;
-  unique_ptr<BaseAST> block;
-  unique_ptr<vector<unique_ptr<BaseAST> > > func_f_param_list;
-  void Dump() const override
-  {
-    // 插入符号
-  
-      if (func_type == "void") {
-        insert_symbol(ident, SYM_TYPE_FUNCVOID, 0);
-      }
-      else if (func_type == "int") {
-        insert_symbol(ident, SYM_TYPE_FUNCINT, 0);
-      }
-      enter_code_block();
-      // fun @func(@x: i32): i32 {}
-      cout << "fun @" << ident << "(";
-      for(auto& func_f_param: *func_f_param_list) {
-        func_f_param->Dump();
-        cout << ", ";
-      }
-      // 退格擦除最后一个逗号
-      if(!func_f_param_list->empty())
-        cout.seekp(-2, cout.end);
-      cout << ")";
-      if (func_type == "int") 
-      {
-        cout << ": i32 ";
-      }
+public:
+    string func_type; 
+    string ident;
+    unique_ptr<BaseAST> block;
+    unique_ptr<vector<unique_ptr<BaseAST>>> func_f_param_list;
 
-    cout << " {" << endl<< "%entry:" << endl;
-    entry_returned = 0;
-
-      for(auto& func_f_param: *func_f_param_list) 
-      {
-      // 为参数再分配一份内存
-      // @sbtb_233_x = alloc i32
-      // store @x, @sbtb_233_x
-      dynamic_cast<FuncFParamAST*>(func_f_param.get())->Alloc();
-    }
-    block->Dump();
-    // 若函数还未返回, 补一个ret
-    // 无返回值补 ret
-    if (!entry_returned) 
+    void Dump() const override 
     {
-    
-      if (func_type == "int")
-        cout << "  ret 0" << endl;
-      else if (func_type == "void")
-        cout << "  ret" << endl;
-      else
-        assert(0);
+        // 插入符号
+        insert_symbol(ident, 
+            func_type == "int" ? SYM_TYPE_FUNCINT : SYM_TYPE_FUNCVOID, 0);
+        enter_code_block();
+
+        // fun @func(@x: i32): i32 {}
+        cout << "fun @" << ident << "(";
+        
+        // 输出参数列表
+        if(!func_f_param_list->empty()) 
+        {
+            for(size_t i = 0; i < func_f_param_list->size(); ++i) 
+            {
+                (*func_f_param_list)[i]->Dump();
+                if(i < func_f_param_list->size() - 1) cout << ", ";
+            }
+        }
+
+        // 输出返回类型
+        cout << ")" << (func_type == "int" ? ": i32" : "") 
+             << " {\n%entry:\n";
+        
+        entry_returned = 0;
+
+        // 为参数再分配一份内存
+        // @sbtb_233_x = alloc i32
+        // store @x, @sbtb_233_x
+        for(const auto& param : *func_f_param_list) 
+        {
+            dynamic_cast<FuncFParamAST*>(param.get())->Alloc();
+        }
+
+        block->Dump();
+
+        // 若函数还未返回, 补一个ret
+        // 无返回值补 ret
+        if(!entry_returned) 
+        {
+            cout << "  ret" << (func_type == "int" ? " 0" : "") << "\n";
+        }
+
+        cout << "}\n\n";
+        exit_code_block();
     }
-    cout << "}" << endl<<endl;
-    exit_code_block();
-  }
-   int EVa() const override
-  {
-    
-    return 0;
-  }
+
+    int EVa() const override { return 0; }
 };
 
 class BlockAST : public BaseAST 
