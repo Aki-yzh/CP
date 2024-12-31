@@ -385,17 +385,11 @@ void Visit(const koopa_raw_store_t &store)
   }
 
   // 将 t0 中的值存储到目标地址
-  if (store.dest->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
-  {
-    cout << "  la t6, " << store.dest->name+1 << endl;
-    cout << "  sw t0, 0(t6)" << endl;
-  } 
-  else 
-  {
+
     cout << "  li t6, " << loc[store.dest] << endl;
     cout << "  add t6, t6, sp" << endl;
     cout << "  sw t0, 0(t6)" << endl;
-  }
+  
 }
 
 // 处理 binary 指令，执行二元运算并将结果存储到栈中
