@@ -92,7 +92,8 @@ using namespace std;
 //对 ::= 右侧的每个规则都设计一种 AST,对于比较复杂的则再做一层嵌套, 在 parse 到对应规则时, 构造对应的 AST.
 //格式均仿照开始给出的FuncDef实现
 
-//CompUnit      ::= FuncDef;
+//CompUnit      ::= [CompUnit] (Decl | FuncDef);
+//CompUnit      ::= CompUnitItemList 
 CompUnit
   : CompUnitItemList 
   {
@@ -101,6 +102,7 @@ CompUnit
     ast = move(comp_unit);
   }
   ;
+//CompUnitItemList ::=CompUnitItem | CompUnitItemList CompUnitItem 
 CompUnitItemList
   : CompUnitItem 
   {
@@ -115,6 +117,7 @@ CompUnitItemList
     $$ = vec;
   }
   ;
+  //CompUnitItem  ::=  (Decl | FuncDef);
 CompUnitItem
   : Decl 
   {
@@ -151,6 +154,7 @@ Decl
   ;
 
 //ConstDecl     ::= "const" BType ConstDef {"," ConstDef} ";";
+//ConstDecl     ::= "const" Type ConstDefList ';'
 ConstDecl
   : CONST Type ConstDefList ';' 
   {
@@ -162,7 +166,8 @@ ConstDecl
   ;
 
 
-//NEW,常量表(把constdecl再拆分)
+//NEW,常量表(把constdecl递归拆分)
+//ConstDefList ::=   : ConstDef   | ConstDefList ',' ConstDef 
 ConstDefList
   : ConstDef 
   {
@@ -200,6 +205,7 @@ ConstInitVal
   ;
 
 //VarDecl       ::= BType VarDef {"," VarDef} ";";
+//VarDecl  ::= Type VarDefList ';' 
 VarDecl
   : Type VarDefList ';' 
   {
@@ -209,7 +215,8 @@ VarDecl
     $$ = ast;
   }
   ;
-//NEW,变量表(把vardecl再拆分)
+//NEW,变量表(把vardecl再递归拆分)
+//VarDefList ::=  : VarDef | VarDefList ',' VarDef 
 VarDefList
   : VarDef 
   {
@@ -279,7 +286,8 @@ FuncDef
 
 // 同上, 不再解释
 
-
+//FuncFParams   ::= FuncFParam {"," FuncFParam};
+//FuncFParams   ::= FuncFParamList
 FuncFParams
   : 
   {
@@ -291,6 +299,7 @@ FuncFParams
     $$ = $1;
   }
   ;
+//FuncFParamList::= FuncFParam  | FuncFParamList ',' FuncFParam 
 FuncFParamList
   : FuncFParam 
   {
@@ -305,6 +314,7 @@ FuncFParamList
     $$ = vec;
   }
   ;
+  //FuncFParam    ::= BType IDENT;
 FuncFParam
   : Type IDENT 
   {
@@ -316,6 +326,7 @@ FuncFParam
   ;
 
 //Block         ::= "{" {BlockItem} "}";
+//Block         ::= '{' BlockItemList '}' 
 Block
   : '{' BlockItemList '}' 
   {
@@ -324,7 +335,7 @@ Block
     $$ = ast;
   }
   ;
-
+// BlockItemList  ::= | BlockItemList BlockItem 
 BlockItemList
   : 
   {
@@ -496,7 +507,7 @@ Number
     $$ = $1;
   }
   ;
-//UnaryExp      ::= PrimaryExp | UnaryOp UnaryExp;
+// UnaryExp      ::= PrimaryExp | IDENT "(" [FuncRParams] ")" | UnaryOp UnaryExp;
 UnaryExp
   : PrimaryExp 
   {
@@ -536,6 +547,7 @@ UnaryOp
     $$ = '!';
   }
   ;
+  
   FuncExp
   : IDENT '(' FuncRParams ')' 
   {
@@ -545,6 +557,7 @@ UnaryOp
     $$ = ast;
   }
   ;
+  //FuncRParams   ::= Exp {"," Exp};
 FuncRParams
   : 
   {
