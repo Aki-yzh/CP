@@ -199,30 +199,35 @@ void Visit(const koopa_raw_jump_t &jump)
 // 访问 return 指令
 void Visit(const koopa_raw_return_t &ret) 
 {
-  // 返回值存入 a0
-  if(ret.value != nullptr) 
-  {
-    if (ret.value->kind.tag == KOOPA_RVT_INTEGER) 
+    // 处理返回值
+    if(ret.value) 
     {
-      cout << "  li a0, " << ret.value->kind.data.integer.value << endl;
+        if (ret.value->kind.tag == KOOPA_RVT_INTEGER) 
+        {
+            cout << "  li a0, " << ret.value->kind.data.integer.value << "\n";
+        } 
+        else 
+        {
+            
+            cout << "  addi t6, sp, " << stack_frame.loc[ret.value] << "\n"
+                 << "  lw a0, 0(t6)\n";
+        }
     }
-    else 
+
+    // 恢复栈帧状态
+    if (stack_frame.saved_ra) 
     {
-      cout << "  li t6, " << stack_frame.loc[ret.value] << endl<< "  add t6, t6, sp" << endl << "  lw a0, 0(t6)" << endl;
+        cout << "  lw ra, " << stack_frame.length - 4 << "(sp)\n";
     }
-  }
-  // 恢复 ra 寄存器
-  if (stack_frame.saved_ra) 
-  {
-    cout << "  li t0, " << stack_frame.length - 4 << endl << "  add t0, t0, sp" << endl << "  lw ra, 0(t0)" << endl;
-  }
-  // 恢复栈帧
-  if (stack_frame.length != 0) 
-  {
-    cout << "  li t0, " << stack_frame.length << endl << "  add sp, sp, t0" << endl;
-  }
-  cout << "  ret" << endl;
+    
+    if (stack_frame.length) 
+    {
+        cout << "  addi sp, sp, " << stack_frame.length << "\n";
+    }
+
+    cout << "  ret\n";
 }
+
 
 // 访问 global alloc 指令
 void Visit(const koopa_raw_global_alloc_t &global_alloc, const koopa_raw_value_t &value) 
