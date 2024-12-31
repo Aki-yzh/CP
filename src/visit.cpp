@@ -68,68 +68,68 @@ void Visit(const koopa_raw_slice_t &slice)
 void Visit(const koopa_raw_function_t &func) 
 {
     // 忽略函数声明
-  if(func->bbs.len == 0)
-    return;
-  // 执行一些其他的必要操作
-  // ...
-   // 输出函数头部的汇编指令
-  cout << "  .text" << endl<< "  .globl " << func->name + 1 << endl << func->name + 1 << ":" << endl;
-  // 重置栈帧相关的变量
-  stack_frame = StackFrame();
-
-
-  // 计算栈帧长度需要的值
-  // 局部变量个数
-  int var_cnt = 0;
-  // 是否需要为 ra 分配栈空间
-  bool return_addr = 0;
-  // 需要为传参预留几个变量的栈空间
-  int arg_var = 0;
-
-
-  // 遍历基本块
-  for (size_t i = 0; i < func->bbs.len; ++i)
-  {
-    const auto& insts = reinterpret_cast<koopa_raw_basic_block_t>(func->bbs.buffer[i])->insts;
-    var_cnt += insts.len;
-    for (size_t j = 0; j < insts.len; ++j)
+    if(func->bbs.len == 0)
     {
-      auto inst = reinterpret_cast<koopa_raw_value_t>(insts.buffer[j]);
-      if(inst->ty->tag == KOOPA_RTT_UNIT)
-        var_cnt--;
-      if(inst->kind.tag == KOOPA_RVT_CALL)
-      {
-        return_addr = 1;
-        arg_var = max(arg_var, max(0, int(inst->kind.data.call.args.len) - 8));
-      }
+        return;
     }
-  }
-  // 每个变量占用4字节空间
-  stack_frame.length = (var_cnt + return_addr + arg_var) << 2;
-  // 将栈帧长度对齐到 16
-  stack_frame.length = (stack_frame.length + 16 - 1) & (~(16 - 1));
-  stack_frame.used = arg_var<<2;
-  //分配栈空间
 
+    // 输出函数头部的汇编指令
+    cout << "  .text" << endl
+         << "  .globl " << func->name + 1 << endl 
+         << func->name + 1 << ":" << endl;
 
-  if (stack_frame.length != 0) 
-  {
-    cout << "  li t0, " << -stack_frame.length << endl << "  add sp, sp, t0" << endl;
-  }
+    // 重置栈帧相关的变量
+    stack_frame = StackFrame();
 
-  if(return_addr)
-   {
-    cout << "  li t0, " << stack_frame.length - 4 << endl << "  add t0, t0, sp" << endl << "  sw ra, 0(t0)" << endl;
-    stack_frame.saved_ra = true;
-  }
-  else 
-  {
-    stack_frame.saved_ra = false;
-  }
+    // 计算栈帧长度需要的值
+    bool need_ra = false;    // 是否需要为 ra 分配栈空间
+    int arg_space = 0;      // 需要为传参预留的栈空间
 
-  // 访问所有基本块
-  Visit(func->bbs);
-  cout << endl;
+    // 遍历基本块计算栈空间需求
+    for (size_t i = 0; i < func->bbs.len; ++i) 
+    {
+        const auto& insts = reinterpret_cast<koopa_raw_basic_block_t>(func->bbs.buffer[i])->insts;
+        for (size_t j = 0; j < insts.len; ++j) 
+        {
+            auto inst = reinterpret_cast<koopa_raw_value_t>(insts.buffer[j]);
+            // 计算局部变量空间
+            if (inst->ty->tag != KOOPA_RTT_UNIT) 
+            {
+                stack_frame.used += 4;
+            }
+            // 处理函数调用
+            if (inst->kind.tag == KOOPA_RVT_CALL) 
+            {
+                need_ra = true;
+                arg_space = max(arg_space, 
+                    max(0, int(inst->kind.data.call.args.len) - 8) * 4);
+            }
+        }
+    }
+
+    // 计算栈帧大小并16字节对齐
+    stack_frame.length = ((stack_frame.used + (need_ra ? 4 : 0) + arg_space + 15) & ~15);
+
+    // 分配栈空间
+    if (stack_frame.length > 0) 
+    {
+        cout << "  addi sp, sp, " << -stack_frame.length << endl;
+    }
+
+    // 保存返回地址
+    if (need_ra) 
+    {
+        cout << "  sw ra, " << stack_frame.length - 4 << "(sp)" << endl;
+        stack_frame.saved_ra = true;
+    }
+    else 
+    {
+        stack_frame.saved_ra = false;
+    }
+
+    // 访问所有基本块
+    Visit(func->bbs);
+    cout << endl;
 }
 
 // 访问基本块
