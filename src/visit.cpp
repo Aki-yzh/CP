@@ -262,19 +262,13 @@ static void save2mem(const koopa_raw_value_t &value, const std::string &reg) {
 void Visit(const koopa_raw_return_t &ret) 
 {
   // 返回值存入 a0
-  if(ret.value != nullptr) {
+  if(ret.value != nullptr) 
+  {
     if (ret.value->kind.tag == KOOPA_RVT_INTEGER) 
     {
       cout << "  li a0, " << ret.value->kind.data.integer.value << endl;
     }
-    else 
-    {
-      cout << "  li t6, " << loc[ret.value] << endl;
-      cout << "  add t6, t6, sp" << endl;
-      cout << "  lw a0, 0(t6)" << endl;
-    }
   }
-
   // 恢复 ra 寄存器
   if (saved_ra) 
   {
