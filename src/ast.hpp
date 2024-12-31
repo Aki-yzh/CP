@@ -221,7 +221,7 @@ public:
         if(declaring_global_var) 
         { 
           // 全局变量
-            // global @var = alloc i32, [zeroinit|233]
+            // global @var = alloc i32, [zeroinit|xxx]
             cout << "global @" << current_code_block() << ident 
                  << " = alloc i32, "
                  << (type == 1 ? "zeroinit" 
@@ -294,10 +294,10 @@ class FuncFParamAST : public BaseAST
   
   void Alloc() const
   {
-      // @sbtb_233_x = alloc i32
+      // @sbtb_xxx_x = alloc i32
     cout << "  @" << current_code_block() << ident << " = alloc i32" << endl;
     insert_symbol(ident, SYM_TYPE_VAR, 0);
-    // store @x, @sbtb_233_x
+    // store @x, @sbtb_xxx_x
     cout << "  store @" << ident << ", @";
     cout << query_symbol(ident).first << ident << endl;
   }
@@ -399,8 +399,8 @@ public:
         entry_returned = 0;
 
         // 为参数再分配一份内存
-        // @sbtb_233_x = alloc i32
-        // store @x, @sbtb_233_x
+        // @sbtb_xxx_x = alloc i32
+        // store @x, @sbtb_xxx_x
         for(const auto& param : *func_f_param_list) 
         {
             dynamic_cast<FuncFParamAST*>(param.get())->Alloc();
@@ -541,7 +541,7 @@ class StmtAST : public BaseAST
         stmt_if->Dump();
         if(!entry_returned) 
         {
-        // jump %IED_233
+        // jump %IED_xxx
         cout << "  jump %IED_" << ifcur << endl;
         }
         
@@ -1036,7 +1036,7 @@ class LAndExpAST : public BaseAST
     
       int ifcur = ifcnt++;
       
-      // @LAR_233 = alloc i32
+      // @LAR_xxx = alloc i32
       cout << "  @" << "LAR_" << ifcur << " = alloc i32" << endl;
 
       // br %0, %then, %else
@@ -1054,7 +1054,7 @@ class LAndExpAST : public BaseAST
 
       if(!entry_returned) 
       {
-        // jump %IED_233
+        // jump %IED_xxx
         cout << "  jump %IED_" << ifcur << endl;
       }
 
@@ -1066,7 +1066,7 @@ class LAndExpAST : public BaseAST
 
       if(!entry_returned) 
       {
-        // jump %IED_233
+        // jump %IED_xxx
         cout << "  jump %IED_" << ifcur << endl;
       }
 
@@ -1123,13 +1123,13 @@ class LOrExpAST : public BaseAST
         // 短路求值, 相当于一个if
         int ifcur = ifcnt++;
         
-        // @LOR_233 = alloc i32
+        // @LOR_xxx = alloc i32
         cout << "  @" << "LOR_" << ifcur << " = alloc i32" << endl;
 
         // br %0, %then, %else
         cout << "  br %" << koopacnt-1 << ", %IT_" << ifcur << ", %IEL_" << ifcur << endl;
 
-        // %IT_233: 创建新的entry
+        // %IT_xxx: 创建新的entry
         cout << "%IT_" << ifcur << ":" << endl;
         entry_returned = 0;
         // || 左侧 LOrExp 为 1, 答案为 1, 即左侧 LOrExp 的值
@@ -1137,11 +1137,11 @@ class LOrExpAST : public BaseAST
 
         if(!entry_returned) 
         {
-          // jump %IED_233
+          // jump %IED_xxx
           cout << "  jump %IED_" << ifcur << endl;
         }
 
-        // %IEL_233: 创建新的entry
+        // %IEL_xxx: 创建新的entry
         cout << "%IEL_" << ifcur << ":" << endl;
         entry_returned = 0;
         // || 左侧 LOrExp 为 0, 答案为 LAndExp 的值
@@ -1151,11 +1151,11 @@ class LOrExpAST : public BaseAST
 
         if(!entry_returned) 
         {
-          // jump %IED_233
+          // jump %IED_xxx
           cout << "  jump %IED_" << ifcur << endl;
         }
 
-        // %IED_233: 创建新的entry
+        // %IED_xxx: 创建新的entry
         cout << "%IED_" << ifcur << ":" << endl;
         entry_returned = 0;
         cout << "  %" << koopacnt++ << " = load @" << "LOR_" << ifcur << endl;
