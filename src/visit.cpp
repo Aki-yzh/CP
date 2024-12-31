@@ -229,12 +229,15 @@ void Visit(const koopa_raw_return_t &ret)
 // 访问 global alloc 指令
 void Visit(const koopa_raw_global_alloc_t &global_alloc, const koopa_raw_value_t &value) 
 {
- cout << "  .data" <<endl << "  .globl " << value->name + 1 <<endl << value->name + 1 << ":" <<endl;
+     // 输出全局变量声明
+    cout << "  .data\n"
+         << "  .globl " << value->name + 1 << "\n"
+         << value->name + 1 << ":\n";
   switch (global_alloc.init->kind.tag) 
   {
     case KOOPA_RVT_ZERO_INIT:
       // 初始化为 0
-     cout << "  .zero 4" <<endl;
+     cout << "  .zero 4\n" ;
      break;
     case KOOPA_RVT_INTEGER:
       // 初始化为 int
@@ -242,7 +245,7 @@ void Visit(const koopa_raw_global_alloc_t &global_alloc, const koopa_raw_value_t
      break;
     default:
       // 处理其他可能的初始化类型
-     cerr << "Unsupported initialization type" <<endl;
+     cerr << "Unsupported initialization type\n";
      break;
   }
 
