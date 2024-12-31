@@ -63,69 +63,59 @@ void Visit(const koopa_raw_slice_t &slice)
   }
 }
 
-// 访问函数
 void Visit(const koopa_raw_function_t &func) 
 {
-    // 忽略函数声明
     if(func->bbs.len == 0) return;
 
-    // 输出函数头部的汇编指令
-    cout << "  .text" << endl
-         << "  .globl " << func->name + 1 << endl 
-         << func->name + 1 << ":" << endl;
+    // 输出函数头
+    cout << "  .text\n"
+         << "  .globl " << func->name + 1 << "\n" 
+         << func->name + 1 << ":\n";
 
     // 初始化栈帧
     stack_frame = StackFrame();
     
-    // 计算栈帧需求
-    int locals = 0;        // 局部变量空间
-    bool need_ra = false;  // 返回地址标记
-    int args = 0;         // 参数空间
+    // 计算栈空间需求
+    constexpr int WORD_SIZE = 4;
+    constexpr int MAX_REG_ARGS = 8;
+    int locals = 0;
+    bool need_ra = false;
+    int max_args = 0;
 
-    // 遍历统计栈空间
-    for (size_t i = 0; i < func->bbs.len; ++i) 
-    {
+    // 遍历统计
+    for (size_t i = 0; i < func->bbs.len; ++i) {
         const auto& bb = reinterpret_cast<koopa_raw_basic_block_t>(func->bbs.buffer[i]);
-        for (size_t j = 0; j < bb->insts.len; ++j) 
-        {
+        for (size_t j = 0; j < bb->insts.len; ++j) {
             auto inst = reinterpret_cast<koopa_raw_value_t>(bb->insts.buffer[j]);
-            locals += (inst->ty->tag != KOOPA_RTT_UNIT);  // 统计非unit指令
+            locals += (inst->ty->tag != KOOPA_RTT_UNIT);
             
-            // 处理函数调用，更新返回地址标记和参数空间
-            if (inst->kind.tag == KOOPA_RVT_CALL) 
-            {
+            if (inst->kind.tag == KOOPA_RVT_CALL) {
                 need_ra = true;
-                args = max(args, int(inst->kind.data.call.args.len) - 8);
+                max_args = max(max_args, int(inst->kind.data.call.args.len) - MAX_REG_ARGS);
             }
         }
     }
 
-    // 计算对齐的栈帧大小 (包含局部变量、返回地址和参数空间)
-
-    stack_frame.length = (((locals + need_ra + max(0, args)) << 2) + 15) & ~15;
-    stack_frame.used = max(0, args) << 2;
+    // 计算栈帧大小 (16字节对齐)
+    int total_words = locals + need_ra + max(0, max_args);
+    stack_frame.length = (total_words * WORD_SIZE + 15) & ~15;
+    stack_frame.used = max(0, max_args) * WORD_SIZE;
+    stack_frame.saved_ra = need_ra;
 
     // 分配栈空间
-    if (stack_frame.length > 0) 
-    {
-        cout << "  li t0, " << -stack_frame.length << endl
-             << "  add sp, sp, t0" << endl;
+    if (stack_frame.length > 0) {
+        cout << "  addi sp, sp, " << -stack_frame.length << "\n";
     }
 
-    // 设置返回地址标记并保存ra
-    stack_frame.saved_ra = need_ra;
-    if (need_ra) 
-    {
-        cout << "  li t0, " << stack_frame.length - 4 << endl
-             << "  add t0, t0, sp" << endl
-             << "  sw ra, 0(t0)" << endl;
+    // 保存返回地址
+    if (need_ra) {
+        cout << "  sw ra, " << stack_frame.length - WORD_SIZE << "(sp)\n";
     }
 
-    // 访问所有基本块
+    // 访问基本块
     Visit(func->bbs);
-    cout << endl;
+    cout << "\n";
 }
-
 // 访问基本块
 void Visit(const koopa_raw_basic_block_t &bb) 
 {
