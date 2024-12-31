@@ -14,8 +14,9 @@ static unordered_map<koopa_raw_value_t, int> loc;
 static int stack_frame_length = 0;
 // 已经使用的栈帧长度
 static int stack_frame_used = 0;
+
 // 当前正在访问的函数有没有保存ra
-static int saved_ra = 0;
+bool saved_ra = 0;
 
 // 访问 raw program
 void Visit(const koopa_raw_program_t &program) 
@@ -108,15 +109,12 @@ void Visit(const koopa_raw_function_t &func)
 
   if (stack_frame_length != 0) 
   {
-    cout << "  li t0, " << -stack_frame_length << endl;
-    cout << "  add sp, sp, t0" << endl;
+    cout << "  li t0, " << -stack_frame_length << endl << "  add sp, sp, t0" << endl;
   }
 
   if(return_addr)
    {
-    cout << "  li t0, " << stack_frame_length - 4 << endl;
-    cout << "  add t0, t0, sp" << endl;
-    cout << "  sw ra, 0(t0)" << endl;
+    cout << "  li t0, " << stack_frame_length - 4 << endl << "  add t0, t0, sp" << endl << "  sw ra, 0(t0)" << endl;
     saved_ra = 1;
   }
   else 
@@ -278,20 +276,15 @@ void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value)
         } 
         else 
         {
-          cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
-          cout << "  add t6, t6, sp" << endl;
-          cout << "  lw t0, 0(t6)" << endl;
+          cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
         }
       }
       break;
     case KOOPA_RVT_GLOBAL_ALLOC:
-      cout << "  la t6, " << load.src->name+1 << endl;
-      cout << "  lw t0, 0(t6)" << endl;
+      cout << "  la t6, " << load.src->name+1 << endl << "  lw t0, 0(t6)" << endl;
       break;
     default:
-      cout << "  li t6, " << loc[load.src] << endl;
-      cout << "  add t6, t6, sp" << endl;
-      cout << "  lw t0, 0(t6)" << endl;
+      cout << "  li t6, " << loc[load.src] << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
       break;
   }
 
@@ -302,14 +295,11 @@ void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value)
     stack_frame_used += 4;
     if (value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
     {
-      cout << "  la t6, " << value->name+1 << endl;
-      cout << "  sw t0, 0(t6)" << endl;
+      cout << "  la t6, " << value->name+1 << endl << "  sw t0, 0(t6)" << endl;
     } 
     else 
     {
-      cout << "  li t6, " << loc[value] << endl;
-      cout << "  add t6, t6, sp" << endl;
-      cout << "  sw t0, 0(t6)" << endl;
+      cout << "  li t6, " << loc[value] << endl << "  add t6, t6, sp" << endl << "  sw t0, 0(t6)" << endl;
     }
   }
 }
@@ -332,20 +322,15 @@ void Visit(const koopa_raw_store_t &store)
         } 
         else 
         {
-          cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
-          cout << "  add t6, t6, sp" << endl;
-          cout << "  lw t0, 0(t6)" << endl;
+          cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
         }
       }
       break;
     case KOOPA_RVT_GLOBAL_ALLOC:
-      cout << "  la t6, " << store.value->name+1 << endl;
-      cout << "  lw t0, 0(t6)" << endl;
+      cout << "  la t6, " << store.value->name+1 << endl << "  lw t0, 0(t6)" << endl;
       break;
     default:
-      cout << "  li t6, " << loc[store.value] << endl;
-      cout << "  add t6, t6, sp" << endl;
-      cout << "  lw t0, 0(t6)" << endl;
+      cout << "  li t6, " << loc[store.value] << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
       break;
   }
 
@@ -353,13 +338,10 @@ void Visit(const koopa_raw_store_t &store)
   switch (store.dest->kind.tag) 
   {
     case KOOPA_RVT_GLOBAL_ALLOC:
-      cout << "  la t6, " << store.dest->name+1 << endl;
-      cout << "  sw t0, 0(t6)" << endl;
+      cout << "  la t6, " << store.dest->name+1 << endl << "  sw t0, 0(t6)" << endl;
       break;
     default:
-      cout << "  li t6, " << loc[store.dest] << endl;
-      cout << "  add t6, t6, sp" << endl;
-      cout << "  sw t0, 0(t6)" << endl;
+      cout << "  li t6, " << loc[store.dest] << endl << "  add t6, t6, sp" << endl << "  sw t0, 0(t6)" << endl;
       break;
   }
 
@@ -384,20 +366,15 @@ void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value)
         } 
         else 
         {
-          cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
-          cout << "  add t6, t6, sp" << endl;
-          cout << "  lw t0, 0(t6)" << endl;
+          cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
         }
       }
       break;
     case KOOPA_RVT_GLOBAL_ALLOC:
-      cout << "  la t6, " << binary.lhs->name+1 << endl;
-      cout << "  lw t0, 0(t6)" << endl;
+      cout << "  la t6, " << binary.lhs->name+1 << endl << "  lw t0, 0(t6)" << endl;
       break;
     default:
-      cout << "  li t6, " << loc[binary.lhs] << endl;
-      cout << "  add t6, t6, sp" << endl;
-      cout << "  lw t0, 0(t6)" << endl;
+      cout << "  li t6, " << loc[binary.lhs] << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
       break;
   }
 
@@ -416,20 +393,15 @@ void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value)
         } 
         else 
         {
-          cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
-          cout << "  add t6, t6, sp" << endl;
-          cout << "  lw t1, 0(t6)" << endl;
+          cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw t1, 0(t6)" << endl;
         }
       }
       break;
     case KOOPA_RVT_GLOBAL_ALLOC:
-      cout << "  la t6, " << binary.rhs->name+1 << endl;
-      cout << "  lw t1, 0(t6)" << endl;
+      cout << "  la t6, " << binary.rhs->name+1 << endl << "  lw t1, 0(t6)" << endl;
       break;
     default:
-      cout << "  li t6, " << loc[binary.rhs] << endl;
-      cout << "  add t6, t6, sp" << endl;
-      cout << "  lw t1, 0(t6)" << endl;
+      cout << "  li t6, " << loc[binary.rhs] << endl << "  add t6, t6, sp" << endl << "  lw t1, 0(t6)" << endl;
       break;
   }
 
@@ -472,14 +444,11 @@ void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value)
     stack_frame_used += 4;
     if (value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
     {
-      cout << "  la t6, " << value->name+1 << endl;
-      cout << "  sw t0, 0(t6)" << endl;
+      cout << "  la t6, " << value->name+1 << endl << "  sw t0, 0(t6)" << endl;
     } 
     else 
     {
-      cout << "  li t6, " << loc[value] << endl;
-      cout << "  add t6, t6, sp" << endl;
-      cout << "  sw t0, 0(t6)" << endl;
+      cout << "  li t6, " << loc[value] << endl << "  add t6, t6, sp" << endl << "  sw t0, 0(t6)" << endl;
     }
   }
 }
@@ -502,26 +471,20 @@ void Visit(const koopa_raw_branch_t &branch)
                 } 
                 else 
                 {
-                    cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
-                    cout << "  add t6, t6, sp" << endl;
-                    cout << "  lw t0, 0(t6)" << endl;
+                    cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
                 }
             }
             break;
         case KOOPA_RVT_GLOBAL_ALLOC:
-            cout << "  la t6, " << branch.cond->name+1 << endl;
-            cout << "  lw t0, 0(t6)" << endl;
+            cout << "  la t6, " << branch.cond->name+1 << endl << "  lw t0, 0(t6)" << endl;
             break;
         default:
-            cout << "  li t6, " << loc[branch.cond] << endl;
-            cout << "  add t6, t6, sp" << endl;
-            cout << "  lw t0, 0(t6)" << endl;
+            cout << "  li t6, " << loc[branch.cond] << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
             break;
     }
 
     // 根据条件跳转到相应的基本块
-    cout << "  bnez t0, " << branch.true_bb->name + 1 << endl;
-    cout << "  j " << branch.false_bb->name + 1 << endl;
+    cout << "  bnez t0, " << branch.true_bb->name + 1 << endl << "  j " << branch.false_bb->name + 1 << endl;
 }
 
 // 视需求自行实现
@@ -550,27 +513,20 @@ void Visit(const koopa_raw_call_t &call, const koopa_raw_value_t &value)
           } 
           else 
           {
-            cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl;
-            cout << "  add t6, t6, sp" << endl;
-            cout << "  lw " << reg << ", 0(t6)" << endl;
+            cout << "  li t6, " << stack_frame_length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw " << reg << ", 0(t6)" << endl;
           }
         }
         break;
       case KOOPA_RVT_GLOBAL_ALLOC:
-        cout << "  la t6, " << arg->name+1 << endl;
-        cout << "  lw " << reg << ", 0(t6)" << endl;
+        cout << "  la t6, " << arg->name+1 << endl << "  lw " << reg << ", 0(t6)" << endl;
         break;
       default:
-        cout << "  li t6, " << loc[arg] << endl;
-        cout << "  add t6, t6, sp" << endl;
-        cout << "  lw " << reg << ", 0(t6)" << endl;
+        cout << "  li t6, " << loc[arg] << endl << "  add t6, t6, sp" << endl << "  lw " << reg << ", 0(t6)" << endl;
         break;
     }
     if (i >= 8) 
     {
-      cout << "  li t6, " << (i - 8) * 4 << endl;
-      cout << "  add t6, t6, sp" << endl;
-      cout << "  sw t0, 0(t6)" << endl;
+      cout << "  li t6, " << (i - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  sw t0, 0(t6)" << endl;
     }
   }
 
@@ -584,14 +540,11 @@ void Visit(const koopa_raw_call_t &call, const koopa_raw_value_t &value)
     stack_frame_used += 4;
     if (value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
     {
-      cout << "  la t6, " << value->name+1 << endl;
-      cout << "  sw a0, 0(t6)" << endl;
+      cout << "  la t6, " << value->name+1 << endl << "  sw a0, 0(t6)" << endl;
     } 
     else 
     {
-      cout << "  li t6, " << loc[value] << endl;
-      cout << "  add t6, t6, sp" << endl;
-      cout << "  sw a0, 0(t6)" << endl;
+      cout << "  li t6, " << loc[value] << endl << "  add t6, t6, sp" << endl << "  sw a0, 0(t6)" << endl;
     }
   }
 }
