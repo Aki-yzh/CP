@@ -1,19 +1,22 @@
+#include <cstring>
+#include "koopa.h"
+#include "visit.hpp"
 #include <cassert>
 #include <iostream>
+#include <vector>
 #include <unordered_map>
-#include <cstring>
-#include <algorithm>
-#include "visit.hpp"
-#include "koopa.h"
 
-// 类型为 koopa_raw_value 的有返回值的语句的相对于 sp 的存储位置
-static std::unordered_map<koopa_raw_value_t, int> loc;
+using namespace std;
+
+// 类型为 koopa_raw_value 的有返回值的语句的存储位置
+static unordered_map<koopa_raw_value_t, string> loc;
 // 栈帧长度
 static int stack_frame_length = 0;
 // 已经使用的栈帧长度
 static int stack_frame_used = 0;
 // 当前正在访问的函数有没有保存ra
 static int saved_ra = 0;
+
 
 // 访问 raw program
 void Visit(const koopa_raw_program_t &program) {
