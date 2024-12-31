@@ -420,35 +420,34 @@ void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value)
 // 访问 br 指令
 void Visit(const koopa_raw_branch_t &branch) 
 {
-    // 将条件值加载到寄存器 t0 中
+    // 加载条件值到 t0
     switch (branch.cond->kind.tag) 
     {
         case KOOPA_RVT_INTEGER:
-            cout << "  li t0, " << branch.cond->kind.data.integer.value << endl;
+            cout << "  li t0, " << branch.cond->kind.data.integer.value << "\n";
             break;
-        case KOOPA_RVT_FUNC_ARG_REF:
-            {
-                const auto& index = branch.cond->kind.data.func_arg_ref.index;
-                if (index < 8) 
-                {
-                    cout << "  mv t0, a" << index << endl;
-                } 
-                else 
-                {
-                    cout << "  li t6, " << stack_frame.length + (index - 8) * 4 << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
-                }
-            }
+            
+        case KOOPA_RVT_FUNC_ARG_REF: 
+        {
+            const auto& index = branch.cond->kind.data.func_arg_ref.index;
+            cout << (index < 8 
+                ? "  mv t0, a" + to_string(index)
+                : "  lw t0, " + to_string(stack_frame.length + (index - 8) * 4) + "(sp)") << "\n";
             break;
+        }
+            
         case KOOPA_RVT_GLOBAL_ALLOC:
-            cout << "  la t6, " << branch.cond->name+1 << endl << "  lw t0, 0(t6)" << endl;
+            cout << "  la t6, " << branch.cond->name + 1 << "\n  lw t0, 0(t6)\n";
             break;
+            
         default:
-            cout << "  li t6, " << stack_frame.loc[branch.cond] << endl << "  add t6, t6, sp" << endl << "  lw t0, 0(t6)" << endl;
+            cout << "  lw t0, " << stack_frame.loc[branch.cond] << "(sp)\n";
             break;
     }
 
-    // 根据条件跳转到相应的基本块
-    cout << "  bnez t0, " << branch.true_bb->name + 1 << endl << "  j " << branch.false_bb->name + 1 << endl;
+    // 条件跳转
+    cout << "  bnez t0, " << branch.true_bb->name + 1 
+         << "\n  j " << branch.false_bb->name + 1 << "\n";
 }
 
 // 视需求自行实现
