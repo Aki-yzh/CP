@@ -12,17 +12,21 @@
 using namespace std;
 
 static int koopacnt = 0;
+
 // 计数 if 语句，用于设置 entry
 static int ifcnt = 0;
+
 // 当前 entry 是否已经 结束, 若为 1 的话不应再生成任何语句
 static int entry_returned = 0;
+
 // 计数 while 语句，用于设置 entry
 static int whilecnt = 0;
 
 // 当前 while 语句的标号栈
 static stack<int> whileStack;
+
 // 当前是否在声明全局变量，用于 VarDef::Dump
-static int declaring_global_var = 0;
+static bool declaring_global_var = 0;
 
 // 所有 AST 的基类
 class BaseAST 
@@ -36,7 +40,8 @@ class BaseAST
 // CompUnit ::= CompUnitItemList;
 // CompUnitItemList ::= CompUnitItem | CompUnitItemList CompUnitItem;
 
-class CompUnitAST : public BaseAST {
+class CompUnitAST : public BaseAST 
+{
  public:
   unique_ptr<vector<unique_ptr<BaseAST> > > comp_unit_item_list;
   void Dump() const override
@@ -59,9 +64,9 @@ class CompUnitAST : public BaseAST {
       insert_symbol("putarray", SYM_TYPE_FUNCVOID, 0);
       insert_symbol("starttime", SYM_TYPE_FUNCVOID, 0);
       insert_symbol("stoptime", SYM_TYPE_FUNCVOID, 0);
-      for(auto& comp_unit_item: *comp_unit_item_list) {
+      for(auto& comp_unit_item: *comp_unit_item_list) 
+      {
         comp_unit_item->Dump();
-        
       }
       exit_code_block();
   }
@@ -159,12 +164,10 @@ class ConstDefAST : public BaseAST
   unique_ptr<BaseAST> val;
   void Dump() const override
   {
-    //===
      insert_symbol(ident, SYM_TYPE_CONST, val->EVa());
   }
   int EVa() const override
   {
-    
     return 0;
   }
 };
@@ -208,47 +211,48 @@ class InitValAST : public BaseAST
 // VarDef ::= IDENT | IDENT "=" InitVal;
 class VarDefAST : public BaseAST 
 {
- public:
-  int type;
-  string ident;
-  unique_ptr<BaseAST> init_val;
-  void Dump() const override
-  {
-       if(declaring_global_var) { // 全局变量
-      if(type==1) {
-        // global @var = alloc i32, zeroinit
-        cout << "global @" << current_code_block() << ident;
-        cout << " = alloc i32, zeroinit" << endl;
-        insert_symbol(ident, SYM_TYPE_VAR, 0);
-      }
-      else if(type==2) {
-        // global @var = alloc i32, 233
-        cout << "global @" << current_code_block() << ident;
-        cout << " = alloc i32, ";
-        cout << dynamic_cast<InitValAST*>(init_val.get())->EVa() << endl;
-        insert_symbol(ident, SYM_TYPE_VAR, 0);
-      }
-      cout << endl;
-    }
-    else { // 局部变量
-      // 先 alloc 一段内存
-      // @x = alloc i32
-      cout << "  @" << current_code_block() << ident << " = alloc i32" << endl;
-      insert_symbol(ident, SYM_TYPE_VAR, 0);
-      if(type==2) {
-      init_val->Dump();
-      // 存入 InitVal
-      // store %1, @x
-      cout << "  store %" << koopacnt-1 << ", @";
-      cout << query_symbol(ident).first << ident << endl;
-    }
-  }
-  }
-   int EVa() const override
-  {
+public:
+    int type;
+    string ident;
+    unique_ptr<BaseAST> init_val;
     
-    return 0;
-  }
+    void Dump() const override 
+    {
+        if(declaring_global_var) 
+        { 
+          // 全局变量
+            // global @var = alloc i32, [zeroinit|233]
+            cout << "global @" << current_code_block() << ident 
+                 << " = alloc i32, "
+                 << (type == 1 ? "zeroinit" 
+                              : to_string(dynamic_cast<InitValAST*>(init_val.get())->EVa()))
+                 << "\n\n";
+                 
+            insert_symbol(ident, SYM_TYPE_VAR, 0);
+        } 
+        else 
+        { 
+          // 局部变量
+            // 先 alloc 一段内存
+            // @x = alloc i32
+            cout << "  @" << current_code_block() << ident << " = alloc i32\n";
+            insert_symbol(ident, SYM_TYPE_VAR, 0);
+            
+            if(type == 2) 
+            {
+                init_val->Dump();
+                // 存入 InitVal
+                // store %1, @x
+                cout << "  store %" << koopacnt-1 << ", @"
+                     << query_symbol(ident).first << ident << "\n";
+            }
+        }
+    }
+    
+    int EVa() const override 
+    {
+        return 0;
+    }
 };
 
 
