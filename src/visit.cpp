@@ -76,7 +76,7 @@ void Visit(const koopa_raw_function_t &func)
   // 局部变量个数
   int var_cnt = 0;
   // 是否需要为 ra 分配栈空间
-  int return_addr = 0;
+  bool return_addr = 0;
   // 需要为传参预留几个变量的栈空间
   int arg_var = 0;
 
