@@ -287,10 +287,10 @@ class FuncFParamAST : public BaseAST {
   
   void Alloc() const
   {
-      // @SYM_TABLE_233_x = alloc i32
+      // @sbtb_233_x = alloc i32
     cout << "  @" << current_code_block() << ident << " = alloc i32" << endl;
     insert_symbol(ident, SYM_TYPE_VAR, 0);
-    // store @x, @SYM_TABLE_233_x
+    // store @x, @sbtb_233_x
     cout << "  store @" << ident << ", @";
     cout << query_symbol(ident).first << ident << endl;
   }
@@ -308,7 +308,7 @@ class FuncExpAST : public BaseAST {
   {
       auto func = query_symbol(ident);
     // 必须为全局符号
-    assert(func.first == "SYM_TABLE_0_");
+    assert(func.first == "sbtb_0_");
     // 必须是函数
     assert(func.second->type == SYM_TYPE_FUNCVOID || func.second->type == SYM_TYPE_FUNCINT);
     // 计算所有的参数
@@ -385,8 +385,8 @@ class FuncDefAST : public BaseAST
       for(auto& func_f_param: *func_f_param_list) 
       {
       // 为参数再分配一份内存
-      // @SYM_TABLE_233_x = alloc i32
-      // store @x, @SYM_TABLE_233_x
+      // @sbtb_233_x = alloc i32
+      // store @x, @sbtb_233_x
       dynamic_cast<FuncFParamAST*>(func_f_param.get())->Alloc();
     }
     block->Dump();
