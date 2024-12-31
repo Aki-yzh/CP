@@ -48,10 +48,10 @@ namespace SymbolTableNamespace
         symbol_table_stack.pop();
     }
 
-    // 返回当前作用域的标号, 格式形如 "sbtb_233"
+    // 返回当前作用域的标号, 格式形如 "SYM_TABLE_233"
     inline string current_code_block()
     {
-        return "sbtb_" + to_string(symbol_table_stack.top().first) + "_";
+        return "SYM_TABLE_" + to_string(symbol_table_stack.top().first) + "_";
     }
 
     // 在符号表栈中寻找符号, 返回其所在符号表的 标号 和其本身的 iterator
