@@ -54,7 +54,7 @@ namespace SymbolTableNamespace
         return "SYM_TABLE_" + to_string(symbol_table_stack.top().first) + "_";
     }
 
-    // 在符号表中寻找符号, 返回其所在符号表的 标号 和其本身的 iterator
+    // 在符号表栈中寻找符号, 返回其所在符号表的 标号 和其本身的 iterator
     inline optional<pair<int, symbol_table_t::iterator>> find_iter(const string &symbol)
     {
         auto temp_stack = symbol_table_stack;
