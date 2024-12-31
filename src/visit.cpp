@@ -74,24 +74,23 @@ void Visit(const koopa_raw_function_t &func)
 
   // 计算栈帧长度需要的值
   // 局部变量个数
-  int local_var = 0;
+  int var_cnt = 0;
   // 是否需要为 ra 分配栈空间
   int return_addr = 0;
   // 需要为传参预留几个变量的栈空间
   int arg_var = 0;
 
 
-
   // 遍历基本块
   for (size_t i = 0; i < func->bbs.len; ++i)
   {
     const auto& insts = reinterpret_cast<koopa_raw_basic_block_t>(func->bbs.buffer[i])->insts;
-    local_var += insts.len;
+    var_cnt += insts.len;
     for (size_t j = 0; j < insts.len; ++j)
     {
       auto inst = reinterpret_cast<koopa_raw_value_t>(insts.buffer[j]);
       if(inst->ty->tag == KOOPA_RTT_UNIT)
-        local_var--;
+        var_cnt--;
       if(inst->kind.tag == KOOPA_RVT_CALL)
       {
         return_addr = 1;
@@ -100,7 +99,7 @@ void Visit(const koopa_raw_function_t &func)
     }
   }
   // 每个变量占用4字节空间
-  stack_frame_length = (local_var + return_addr + arg_var) << 2;
+  stack_frame_length = (var_cnt + return_addr + arg_var) << 2;
   // 将栈帧长度对齐到 16
   stack_frame_length = (stack_frame_length + 16 - 1) & (~(16 - 1));
   stack_frame_used = arg_var<<2;
@@ -527,9 +526,6 @@ void Visit(const koopa_raw_branch_t &branch)
 
 // 视需求自行实现
 // ...
-
-
-
 
 
 // 访问 call 指令
