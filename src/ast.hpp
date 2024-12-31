@@ -535,28 +535,28 @@ class StmtAST : public BaseAST
           // br %0, %then, %end
 
           // br %0, %then, %else
-        cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur << ", %" << (type == 6 ? "STMTIF_ELSE_" : "STMTIF_END_") << ifcur << endl;
-        cout << "%STMTIF_THEN_" << ifcur << ":" << endl;
+        cout << "  br %" << koopacnt-1 << ", %IT_" << ifcur << ", %" << (type == 6 ? "IEL_" : "IED_") << ifcur << endl;
+        cout << "%IT_" << ifcur << ":" << endl;
         entry_returned = 0;
         stmt_if->Dump();
         if(!entry_returned) 
         {
-        // jump %STMTIF_END_233
-        cout << "  jump %STMTIF_END_" << ifcur << endl;
+        // jump %IED_233
+        cout << "  jump %IED_" << ifcur << endl;
         }
         
         if(type==6) 
         {
-          cout << "%STMTIF_ELSE_" << ifcur << ":" << endl;
+          cout << "%IEL_" << ifcur << ":" << endl;
           entry_returned = 0;
           stmt_else->Dump();
           if(!entry_returned) 
           {
     
-            cout << "  jump %STMTIF_END_" << ifcur << endl;
+            cout << "  jump %IED_" << ifcur << endl;
           }
         }
-          cout << "%STMTIF_END_" << ifcur << ":" << endl;
+          cout << "%IED_" << ifcur << ":" << endl;
           entry_returned = 0;
         break;
       }
@@ -1040,10 +1040,10 @@ class LAndExpAST : public BaseAST
       cout << "  @" << "STMTIF_LAND_RESULT_" << ifcur << " = alloc i32" << endl;
 
       // br %0, %then, %else
-      cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur<< ", %STMTIF_ELSE_" << ifcur << endl;
+      cout << "  br %" << koopacnt-1 << ", %IT_" << ifcur<< ", %IEL_" << ifcur << endl;
 
 
-      cout << "%STMTIF_THEN_" << ifcur << ":" << endl;
+      cout << "%IT_" << ifcur << ":" << endl;
       entry_returned = 0;
 
       eqexp->Dump();
@@ -1054,24 +1054,24 @@ class LAndExpAST : public BaseAST
 
       if(!entry_returned) 
       {
-        // jump %STMTIF_END_233
-        cout << "  jump %STMTIF_END_" << ifcur << endl;
+        // jump %IED_233
+        cout << "  jump %IED_" << ifcur << endl;
       }
 
 
-      cout << "%STMTIF_ELSE_" << ifcur << ":" << endl;
+      cout << "%IEL_" << ifcur << ":" << endl;
       entry_returned = 0;
 
       cout << "  store 0, @"<< "STMTIF_LAND_RESULT_" << ifcur << endl;
 
       if(!entry_returned) 
       {
-        // jump %STMTIF_END_233
-        cout << "  jump %STMTIF_END_" << ifcur << endl;
+        // jump %IED_233
+        cout << "  jump %IED_" << ifcur << endl;
       }
 
    
-      cout << "%STMTIF_END_" << ifcur << ":" << endl;
+      cout << "%IED_" << ifcur << ":" << endl;
       entry_returned = 0;
       cout << "  %" << koopacnt++ << " = load @"<< "STMTIF_LAND_RESULT_" << ifcur << endl;
       break;
@@ -1127,21 +1127,21 @@ class LOrExpAST : public BaseAST
         cout << "  @" << "STMTIF_LOR_RESULT_" << ifcur << " = alloc i32" << endl;
 
         // br %0, %then, %else
-        cout << "  br %" << koopacnt-1 << ", %STMTIF_THEN_" << ifcur << ", %STMTIF_ELSE_" << ifcur << endl;
+        cout << "  br %" << koopacnt-1 << ", %IT_" << ifcur << ", %IEL_" << ifcur << endl;
 
-        // %STMTIF_THEN_233: 创建新的entry
-        cout << "%STMTIF_THEN_" << ifcur << ":" << endl;
+        // %IT_233: 创建新的entry
+        cout << "%IT_" << ifcur << ":" << endl;
         entry_returned = 0;
         // || 左侧 LOrExp 为 1, 答案为 1, 即左侧 LOrExp 的值
         cout << "  store 1, @" << "STMTIF_LOR_RESULT_" << ifcur << endl;
 
         if(!entry_returned) {
-          // jump %STMTIF_END_233
-          cout << "  jump %STMTIF_END_" << ifcur << endl;
+          // jump %IED_233
+          cout << "  jump %IED_" << ifcur << endl;
         }
 
-        // %STMTIF_ELSE_233: 创建新的entry
-        cout << "%STMTIF_ELSE_" << ifcur << ":" << endl;
+        // %IEL_233: 创建新的entry
+        cout << "%IEL_" << ifcur << ":" << endl;
         entry_returned = 0;
         // || 左侧 LOrExp 为 0, 答案为 LAndExp 的值
         landexp->Dump();
@@ -1149,12 +1149,12 @@ class LOrExpAST : public BaseAST
         cout << "  %" << koopacnt++ << " = ne %"<< koopacnt-2 << ", 0" << endl << "  store %" << koopacnt-1 << ", @"<< "STMTIF_LOR_RESULT_" << ifcur << endl;
 
         if(!entry_returned) {
-          // jump %STMTIF_END_233
-          cout << "  jump %STMTIF_END_" << ifcur << endl;
+          // jump %IED_233
+          cout << "  jump %IED_" << ifcur << endl;
         }
 
-        // %STMTIF_END_233: 创建新的entry
-        cout << "%STMTIF_END_" << ifcur << ":" << endl;
+        // %IED_233: 创建新的entry
+        cout << "%IED_" << ifcur << ":" << endl;
         entry_returned = 0;
         cout << "  %" << koopacnt++ << " = load @" << "STMTIF_LOR_RESULT_" << ifcur << endl;
        break;
