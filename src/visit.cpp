@@ -9,14 +9,13 @@
 using namespace std;
 
 // 类型为 koopa_raw_value 的有返回值的语句的存储位置
-static unordered_map<koopa_raw_value_t, int> loc;
+static unordered_map<koopa_raw_value_t, string> loc;
 
 // 栈帧信息结构体
 struct StackFrame {
     int length; // 栈帧长度
     int used;   // 已经使用的栈帧长度
     bool saved_ra; // 当前正在访问的函数有没有保存ra
-
     StackFrame() : length(0), used(0), saved_ra(false) {}
 };
 
@@ -156,7 +155,7 @@ void Visit(const koopa_raw_value_t &value)
       break;
        // 访问 alloc 指令
     case KOOPA_RVT_ALLOC:
-      loc[value] = stack_frame.used;
+      loc[value] = to_string(stack_frame.used);
       stack_frame.used += 4;
       break;
       // 访问 load 指令
@@ -296,7 +295,7 @@ void Visit(const koopa_raw_load_t &load, const koopa_raw_value_t &value)
   // 若有返回值则保存到栈里
   if (value->ty->tag != KOOPA_RTT_UNIT) 
   {
-    loc[value] = stack_frame.used;
+    loc[value] = to_string(stack_frame.used);
     stack_frame.used += 4;
     if (value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
     {
@@ -445,7 +444,7 @@ void Visit(const koopa_raw_binary_t &binary, const koopa_raw_value_t &value)
     // 若有返回值则将 a0 中的结果存入栈
   if(value->ty->tag != KOOPA_RTT_UNIT) 
   {
-    loc[value] = stack_frame.used;
+    loc[value] = to_string(stack_frame.used);
     stack_frame.used += 4;
     if (value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
     {
@@ -541,7 +540,7 @@ void Visit(const koopa_raw_call_t &call, const koopa_raw_value_t &value)
   // 若有返回值则将 a0 中的结果存入栈
   if (value->ty->tag != KOOPA_RTT_UNIT) 
   {
-    loc[value] = stack_frame.used;
+    loc[value] = to_string(stack_frame.used);
     stack_frame.used += 4;
     if (value->kind.tag == KOOPA_RVT_GLOBAL_ALLOC) 
     {
